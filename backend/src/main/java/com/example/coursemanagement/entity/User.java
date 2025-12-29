@@ -17,6 +17,7 @@ public class User {
     private String email;
     private String phone;
     private Integer status;
+    private Integer programId;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 }

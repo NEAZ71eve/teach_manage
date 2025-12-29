@@ -2,13 +2,16 @@ package com.example.coursemanagement.controller;
 
 import com.example.coursemanagement.entity.Role;
 import com.example.coursemanagement.entity.RolePermission;
+import com.example.coursemanagement.entity.RoleProgram;
 import com.example.coursemanagement.service.PermissionService;
 import com.example.coursemanagement.service.RolePermissionService;
+import com.example.coursemanagement.service.RoleProgramService;
 import com.example.coursemanagement.service.RoleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -26,6 +29,9 @@ public class RoleController {
     
     @Autowired
     private RolePermissionService rolePermissionService;
+    
+    @Autowired
+    private RoleProgramService roleProgramService;
 
     /**
      * 查询所有角色
@@ -90,5 +96,37 @@ public class RoleController {
     public ResponseEntity<Integer> assignPermissions(@PathVariable Integer id, @RequestBody List<Integer> permissionIds) {
         int result = rolePermissionService.assignPermissions(id, permissionIds);
         return ResponseEntity.ok(result);
+    }
+    
+    /**
+     * 根据角色ID查询关联的专业
+     */
+    @GetMapping("/{id}/programs")
+    public ResponseEntity<List<RoleProgram>> getRolePrograms(@PathVariable Integer id) {
+        List<RoleProgram> rolePrograms = roleProgramService.findByRoleId(id);
+        return ResponseEntity.ok(rolePrograms);
+    }
+    
+    /**
+     * 为角色分配专业
+     */
+    @PostMapping("/{id}/programs")
+    public ResponseEntity<Integer> assignPrograms(@PathVariable Integer id, @RequestBody List<Integer> programIds) {
+        int result = roleProgramService.assignPrograms(id, programIds);
+        return ResponseEntity.ok(result);
+    }
+    
+    /**
+     * 获取所有角色-专业关联
+     */
+    @GetMapping("/programs")
+    public ResponseEntity<List<RoleProgram>> getAllRolePrograms() {
+        List<RoleProgram> allRolePrograms = new ArrayList<>();
+        List<Role> roles = roleService.findAll();
+        for (Role role : roles) {
+            List<RoleProgram> rolePrograms = roleProgramService.findByRoleId(role.getRoleId());
+            allRolePrograms.addAll(rolePrograms);
+        }
+        return ResponseEntity.ok(allRolePrograms);
     }
 }

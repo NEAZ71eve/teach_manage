@@ -48,21 +48,7 @@ public class UserRepository {
      * 新增用户
      */
     public int save(User user) {
-        String sql = "INSERT INTO user (username, password, real_name, email, phone, status, create_time, update_time) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())";
-        return jdbcTemplate.update(sql, 
-                user.getUsername(), 
-                user.getPassword(), 
-                user.getRealName(), 
-                user.getEmail(), 
-                user.getPhone(), 
-                user.getStatus());
-    }
-
-    /**
-     * 更新用户
-     */
-    public int update(User user) {
-        String sql = "UPDATE user SET username = ?, password = ?, real_name = ?, email = ?, phone = ?, status = ?, update_time = NOW() WHERE user_id = ?";
+        String sql = "INSERT INTO user (username, password, real_name, email, phone, status, program_id, create_time, update_time) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
         return jdbcTemplate.update(sql, 
                 user.getUsername(), 
                 user.getPassword(), 
@@ -70,7 +56,36 @@ public class UserRepository {
                 user.getEmail(), 
                 user.getPhone(), 
                 user.getStatus(),
-                user.getUserId());
+                user.getProgramId());
+    }
+
+    /**
+     * 更新用户
+     */
+    public int update(User user) {
+        String sql;
+        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+            sql = "UPDATE user SET username = ?, password = ?, real_name = ?, email = ?, phone = ?, status = ?, program_id = ?, update_time = NOW() WHERE user_id = ?";
+            return jdbcTemplate.update(sql, 
+                    user.getUsername(), 
+                    user.getPassword(), 
+                    user.getRealName(), 
+                    user.getEmail(), 
+                    user.getPhone(), 
+                    user.getStatus(),
+                    user.getProgramId(),
+                    user.getUserId());
+        } else {
+            sql = "UPDATE user SET username = ?, real_name = ?, email = ?, phone = ?, status = ?, program_id = ?, update_time = NOW() WHERE user_id = ?";
+            return jdbcTemplate.update(sql, 
+                    user.getUsername(), 
+                    user.getRealName(), 
+                    user.getEmail(), 
+                    user.getPhone(), 
+                    user.getStatus(),
+                    user.getProgramId(),
+                    user.getUserId());
+        }
     }
 
     /**

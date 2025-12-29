@@ -13,15 +13,25 @@
       <el-table-column prop="status" label="状态" width="100">
         <template #default="scope">
           <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'">
-            {{ scope.row.status === 1 ? '启用' : '禁用' }}
+            {{ scope.row.status === 1 ? "启用" : "禁用" }}
           </el-tag>
         </template>
       </el-table-column>
       <el-table-column prop="createTime" label="创建时间" width="180" />
-      <el-table-column label="操作" width="200" fixed="right">
+      <el-table-column label="操作" width="240" fixed="right">
         <template #default="scope">
-          <el-button type="primary" size="small" @click="openEditDialog(scope.row)">编辑</el-button>
-          <el-button type="danger" size="small" @click="deleteUser(scope.row.userId)">删除</el-button>
+          <el-button
+            type="primary"
+            size="small"
+            @click="openEditDialog(scope.row)"
+            >编辑</el-button
+          >
+          <el-button
+            type="danger"
+            size="small"
+            @click="deleteUser(scope.row.userId)"
+            >删除</el-button
+          >
         </template>
       </el-table-column>
     </el-table>
@@ -32,17 +42,57 @@
         <el-form-item label="用户名" required>
           <el-input v-model="formData.username" placeholder="请输入用户名" />
         </el-form-item>
+        <el-form-item
+          label="密码"
+          required
+          :rules="[
+            {
+              required: !formData.userId,
+              message: '请输入密码',
+              trigger: 'blur',
+            },
+          ]"
+        >
+          <el-input
+            v-model="formData.password"
+            type="password"
+            placeholder="请输入密码"
+          />
+        </el-form-item>
         <el-form-item label="真实姓名" required>
           <el-input v-model="formData.realName" placeholder="请输入真实姓名" />
         </el-form-item>
         <el-form-item label="邮箱" required>
-          <el-input v-model="formData.email" placeholder="请输入邮箱" type="email" />
+          <el-input
+            v-model="formData.email"
+            placeholder="请输入邮箱"
+            type="email"
+          />
         </el-form-item>
         <el-form-item label="电话" required>
           <el-input v-model="formData.phone" placeholder="请输入电话" />
         </el-form-item>
+        <el-form-item label="角色" required>
+          <el-select
+            v-model="formData.roleIds"
+            multiple
+            placeholder="请选择角色"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="role in roles"
+              :key="role.roleId"
+              :label="role.roleName"
+              :value="role.roleId"
+            />
+          </el-select>
+        </el-form-item>
         <el-form-item label="状态">
-          <el-switch v-model="formData.status" :active-value="1" :inactive-value="0" />
+          <el-switch
+            v-model="formData.status"
+            :active-value="1"
+            :inactive-value="0"
+          />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -56,96 +106,153 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
-import { getUsers, addUser, updateUser, deleteUser as deleteUserApi } from '../api/user'
+import { ref, onMounted } from "vue";
+import { ElMessage } from "element-plus";
+import {
+  getUsers,
+  addUser,
+  updateUser,
+  deleteUser as deleteUserApi,
+  getUserRoles,
+  assignRoles,
+} from "../api/user";
+import { getRoles } from "../api/role";
 
-const users = ref([])
-const dialogVisible = ref(false)
-const dialogTitle = ref('新增用户')
+const users = ref([]);
+const roles = ref([]);
+const dialogVisible = ref(false);
+const dialogTitle = ref("新增用户");
 const formData = ref({
   userId: null,
-  username: '',
-  realName: '',
-  email: '',
-  phone: '',
-  status: 1
-})
+  username: "",
+  password: "",
+  realName: "",
+  email: "",
+  phone: "",
+  roleIds: [],
+  status: 1,
+});
 
 // 获取用户列表
 const loadUsers = async () => {
   try {
-    const response = await getUsers()
-    users.value = response
+    const response = await getUsers();
+    users.value = response;
   } catch (error) {
-    ElMessage.error('获取用户列表失败')
-    console.error('获取用户列表失败:', error)
+    ElMessage.error("获取用户列表失败");
+    console.error("获取用户列表失败:", error);
   }
-}
+};
+
+// 获取角色列表
+const loadRoles = async () => {
+  try {
+    const response = await getRoles();
+    roles.value = response;
+  } catch (error) {
+    ElMessage.error("获取角色列表失败");
+    console.error("获取角色列表失败:", error);
+  }
+};
+
+// 获取用户角色
+const loadUserRoles = async (userId) => {
+  try {
+    const response = await getUserRoles(userId);
+    formData.value.roleIds = response.map((item) => item.roleId);
+  } catch (error) {
+    ElMessage.error("获取用户角色失败");
+    console.error("获取用户角色失败:", error);
+  }
+};
 
 // 打开新增对话框
 const openAddDialog = () => {
-  dialogTitle.value = '新增用户'
+  dialogTitle.value = "新增用户";
   formData.value = {
     userId: null,
-    username: '',
-    realName: '',
-    email: '',
-    phone: '',
-    status: 1
-  }
-  dialogVisible.value = true
-}
+    username: "",
+    password: "",
+    realName: "",
+    email: "",
+    phone: "",
+    roleIds: [],
+    status: 1,
+  };
+  dialogVisible.value = true;
+};
 
 // 打开编辑对话框
 const openEditDialog = (user) => {
-  dialogTitle.value = '编辑用户'
-  formData.value = { ...user }
-  dialogVisible.value = true
-}
+  dialogTitle.value = "编辑用户";
+  formData.value = {
+    ...user,
+    password: "", // 编辑时清空密码，如需修改密码则重新输入
+    roleIds: [],
+  };
+  dialogVisible.value = true;
+  // 获取用户角色
+  loadUserRoles(user.userId);
+};
 
 // 保存用户
 const saveUser = async () => {
   try {
-    let response
+    let userId;
+
+    // 准备保存的数据
+    const userData = {
+      ...formData.value,
+    };
+
     if (formData.value.userId) {
-      response = await updateUser(formData.value.userId, formData.value)
+      // 更新用户
+      await updateUser(formData.value.userId, userData);
+      userId = formData.value.userId;
     } else {
-      response = await addUser(formData.value)
+      // 新增用户
+      const response = await addUser(userData);
+      if (response > 0) {
+        userId = response;
+      } else {
+        ElMessage.error("新增用户失败");
+        return;
+      }
     }
-    if (response > 0) {
-      ElMessage.success(formData.value.userId ? '更新用户成功' : '新增用户成功')
-      dialogVisible.value = false
-      loadUsers()
-    } else {
-      ElMessage.error(formData.value.userId ? '更新用户失败' : '新增用户失败')
-    }
+
+    // 分配角色
+    await assignRoles(userId, formData.value.roleIds);
+
+    ElMessage.success(formData.value.userId ? "更新用户成功" : "新增用户成功");
+    dialogVisible.value = false;
+    loadUsers();
   } catch (error) {
-    ElMessage.error(formData.value.userId ? '更新用户失败' : '新增用户失败')
-    console.error('保存用户失败:', error)
+    ElMessage.error(formData.value.userId ? "更新用户失败" : "新增用户失败");
+    console.error("保存用户失败:", error);
   }
-}
+};
 
 // 删除用户
 const deleteUser = async (userId) => {
   try {
-    const response = await deleteUserApi(userId)
+    const response = await deleteUserApi(userId);
     if (response > 0) {
-      ElMessage.success('删除用户成功')
-      loadUsers()
+      ElMessage.success("删除用户成功");
+      loadUsers();
     } else {
-      ElMessage.error('删除用户失败')
+      ElMessage.error("删除用户失败");
     }
   } catch (error) {
-    ElMessage.error('删除用户失败')
-    console.error('删除用户失败:', error)
+    ElMessage.error("删除用户失败");
+    console.error("删除用户失败:", error);
   }
-}
+};
 
-// 页面加载时获取用户列表
+// 页面加载时获取用户列表和角色列表
 onMounted(() => {
-  loadUsers()
-})
+  loadUsers();
+  loadRoles();
+});
 </script>
 
 <style scoped>

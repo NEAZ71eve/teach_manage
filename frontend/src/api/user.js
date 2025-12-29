@@ -63,6 +63,32 @@ export const deleteUser = (userId) => {
 };
 
 /**
+ * 获取用户角色列表
+ * @param {number} userId - 用户ID
+ * @returns {Promise}
+ */
+export const getUserRoles = (userId) => {
+  return request({
+    url: `/users/${userId}/roles`,
+    method: "GET",
+  });
+};
+
+/**
+ * 为用户分配角色
+ * @param {number} userId - 用户ID
+ * @param {Array<number>} roleIds - 角色ID列表
+ * @returns {Promise}
+ */
+export const assignRoles = (userId, roleIds) => {
+  return request({
+    url: `/users/${userId}/roles`,
+    method: "POST",
+    data: roleIds,
+  });
+};
+
+/**
  * 用户登录
  * @param {object} loginForm - 登录表单信息
  * @returns {Promise}
