@@ -83,4 +83,12 @@ public class TrainingProgramController {
     public ResponseEntity<Boolean> deleteBatch(@RequestBody List<Integer> ids) {
         return ResponseEntity.ok(trainingProgramService.removeByIds(ids));
     }
+    
+    /**
+     * 根据老师ID查询培养方案列表
+     */
+    @GetMapping("/by-teacher/{teacherId}")
+    public ResponseEntity<List<TrainingProgram>> getTrainingProgramsByTeacher(@PathVariable Integer teacherId) {
+        return ResponseEntity.ok(trainingProgramService.getByTeacherId(teacherId));
+    }
 }

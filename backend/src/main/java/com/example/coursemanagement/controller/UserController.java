@@ -1,6 +1,9 @@
 package com.example.coursemanagement.controller;
 
 import com.example.coursemanagement.entity.User;
+import com.example.coursemanagement.entity.UserRole;
+import com.example.coursemanagement.service.RoleService;
+import com.example.coursemanagement.service.UserRoleService;
 import com.example.coursemanagement.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +20,12 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+    
+    @Autowired
+    private RoleService roleService;
+    
+    @Autowired
+    private UserRoleService userRoleService;
 
     /**
      * 查询所有用户
@@ -62,6 +71,24 @@ public class UserController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Integer> deleteUser(@PathVariable Integer id) {
         int result = userService.deleteById(id);
+        return ResponseEntity.ok(result);
+    }
+    
+    /**
+     * 根据用户ID查询角色列表
+     */
+    @GetMapping("/{id}/roles")
+    public ResponseEntity<List<UserRole>> getUserRoles(@PathVariable Integer id) {
+        List<UserRole> userRoles = userRoleService.findByUserId(id);
+        return ResponseEntity.ok(userRoles);
+    }
+    
+    /**
+     * 为用户分配角色
+     */
+    @PostMapping("/{id}/roles")
+    public ResponseEntity<Integer> assignRoles(@PathVariable Integer id, @RequestBody List<Integer> roleIds) {
+        int result = userRoleService.assignRoles(id, roleIds);
         return ResponseEntity.ok(result);
     }
 }

@@ -8,9 +8,10 @@ import lombok.Data;
 @Data
 public class ExamPaperQuestion {
 
-    private Integer id;
+    private Integer detailId;
     private String paperId;
     private String questionId;
+    private Integer kpId;
     private Integer questionOrder;
-    private Double score;
+    private Double questionScore;
 }

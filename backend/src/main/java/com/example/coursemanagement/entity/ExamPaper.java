@@ -15,6 +15,7 @@ public class ExamPaper {
     private Integer courseId;
     private Double totalScore;
     private String paperType;
+    private String createTeacher;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 }

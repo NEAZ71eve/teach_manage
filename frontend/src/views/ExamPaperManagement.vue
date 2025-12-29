@@ -34,7 +34,7 @@
         <el-table-column type="selection" width="55" />
         <el-table-column prop="paperId" label="试卷ID" width="80" />
         <el-table-column prop="paperName" label="试卷名称" width="200" />
-        <el-table-column prop="programId" label="课程ID" width="80" />
+        <el-table-column prop="courseId" label="课程ID" width="80" />
         <el-table-column prop="totalScore" label="总分" width="80" />
         <el-table-column prop="createTime" label="创建时间" width="180" />
         <el-table-column label="操作" width="250" fixed="right">
@@ -98,7 +98,7 @@
           />
         </el-form-item>
         <el-form-item label="所属课程" required>
-          <el-select v-model="paperForm.programId" placeholder="请选择课程">
+          <el-select v-model="paperForm.courseId" placeholder="请选择课程">
             <el-option
               v-for="course in courses"
               :key="course.courseId"
@@ -163,7 +163,7 @@
         </el-form-item>
         <el-form-item label="难度分布" required>
           <div class="difficulty-distribution">
-            <el-form-item label="容易" prop="easyWeight" required>
+            <el-form-item label="容易" required>
               <el-slider
                 v-model="autoGenerateForm.difficultyDistribution.easy"
                 :min="0"
@@ -173,7 +173,7 @@
                 :input-format="(value) => value * 100 + '%'"
               />
             </el-form-item>
-            <el-form-item label="中等" prop="mediumWeight" required>
+            <el-form-item label="中等" required>
               <el-slider
                 v-model="autoGenerateForm.difficultyDistribution.medium"
                 :min="0"
@@ -183,7 +183,7 @@
                 :input-format="(value) => value * 100 + '%'"
               />
             </el-form-item>
-            <el-form-item label="困难" prop="hardWeight" required>
+            <el-form-item label="困难" required>
               <el-slider
                 v-model="autoGenerateForm.difficultyDistribution.hard"
                 :min="0"
@@ -323,7 +323,10 @@ import {
 } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { getAllCourses } from "../api/course";
-import { getAllKnowledgePoints } from "../api/knowledgePoint";
+import {
+  getAllKnowledgePoints,
+  getKnowledgePointsByCourseId,
+} from "../api/knowledgePoint";
 import { getQuestionsByCourseId } from "../api/question";
 import {
   getExamPapers,
@@ -351,8 +354,9 @@ const dialogTitle = ref("添加试卷");
 const paperForm = reactive({
   paperId: null,
   paperName: "",
-  programId: null,
+  courseId: null,
   totalScore: 100,
+  paperType: "手动组卷",
   createTeacher: "1", // 示例教师ID
 });
 
@@ -378,10 +382,11 @@ const allKnowledgePoints = ref([]);
 const fetchCourses = async () => {
   try {
     const response = await getAllCourses();
+    console.log("获取到的课程列表:", response);
     courses.value = response;
   } catch (error) {
     console.error("获取课程列表失败:", error);
-    // 不显示错误信息，避免影响页面渲染
+    ElMessage.error("获取课程列表失败");
   }
 };
 
@@ -389,10 +394,22 @@ const fetchCourses = async () => {
 const fetchKnowledgePoints = async () => {
   try {
     const response = await getAllKnowledgePoints();
-    allKnowledgePoints.value = response;
+    console.log("原始知识点数据:", response);
+    // 将下划线命名转换为驼峰命名
+    allKnowledgePoints.value = response.map((point) => ({
+      pointId: point.point_id,
+      pointName: point.point_name,
+      courseId: point.course_id,
+      parentId: point.parent_id,
+      description: point.description,
+      difficulty: point.difficulty,
+      createTime: point.create_time,
+      updateTime: point.update_time,
+    }));
+    console.log("转换后的知识点数据:", allKnowledgePoints.value);
   } catch (error) {
     console.error("获取知识点列表失败:", error);
-    // 不显示错误信息，避免影响页面渲染
+    ElMessage.error("获取知识点列表失败");
   }
 };
 
@@ -425,19 +442,97 @@ const handleSelectionChange = (selection) => {
 };
 
 // 课程变化时更新知识点列表
-const handleCourseChange = (courseId) => {
-  // 过滤出该课程的知识点
-  const courseKnowledgePoints = allKnowledgePoints.value.filter(
-    (point) => point.courseId === courseId
-  );
-  // 初始化知识点权重
-  autoGenerateForm.knowledgePointWeights = courseKnowledgePoints.map(
-    (point) => ({
-      pointId: point.pointId,
-      pointName: point.pointName,
-      weight: 1 / courseKnowledgePoints.length,
-    })
-  );
+const handleCourseChange = async (courseId) => {
+  console.log("选择的课程ID:", courseId, "类型:", typeof courseId);
+
+  if (!courseId) {
+    autoGenerateForm.knowledgePointWeights = [];
+    return;
+  }
+
+  try {
+    // 直接调用API获取该课程的知识点，而不是从所有知识点中过滤
+    const response = await getKnowledgePointsByCourseId(courseId);
+    console.log("直接获取的课程知识点:", response);
+
+    // 检查response是否为数组
+    if (!Array.isArray(response)) {
+      console.error("API返回的不是数组:", response);
+      autoGenerateForm.knowledgePointWeights = [];
+      ElMessage.warning("获取知识点数据格式错误");
+      return;
+    }
+
+    // 直接使用返回的扁平结构数据，后端已经返回驼峰命名的字段名
+    const courseKnowledgePoints = response
+      .filter((point) => point && point.pointId && point.pointName) // 过滤掉无效数据
+      .map((point) => ({
+        pointId: point.pointId,
+        pointName: point.pointName,
+        courseId: point.courseId,
+        parentId: point.parentId,
+        description: point.description,
+        difficulty: point.difficulty,
+        createTime: point.createTime,
+        updateTime: point.updateTime,
+      }));
+
+    console.log("转换后的课程知识点:", courseKnowledgePoints);
+
+    // 初始化知识点权重
+    if (courseKnowledgePoints.length > 0) {
+      // 根据知识点数量和难度分布随机生成权重，确保总和为1.0
+      const weights = [];
+      const totalPoints = courseKnowledgePoints.length;
+      let remainingWeight = 1.0;
+
+      // 为前n-1个知识点随机生成权重
+      for (let i = 0; i < totalPoints - 1; i++) {
+        // 每个知识点的权重范围在0.01到remainingWeight之间，确保至少有0.01的权重
+        const maxWeight = remainingWeight - (totalPoints - 1 - i) * 0.01;
+        const weight = parseFloat((Math.random() * maxWeight).toFixed(2));
+        weights.push(weight);
+        remainingWeight -= weight;
+      }
+
+      // 最后一个知识点的权重为剩余权重
+      weights.push(parseFloat(remainingWeight.toFixed(2)));
+
+      // 打乱权重顺序
+      for (let i = weights.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [weights[i], weights[j]] = [weights[j], weights[i]];
+      }
+
+      // 分配权重给知识点
+      autoGenerateForm.knowledgePointWeights = courseKnowledgePoints.map(
+        (point, index) => ({
+          pointId: point.pointId,
+          pointName: point.pointName,
+          weight: weights[index],
+        })
+      );
+
+      console.log(
+        "初始化的知识点权重:",
+        autoGenerateForm.knowledgePointWeights
+      );
+
+      // 验证权重总和
+      const weightSum = autoGenerateForm.knowledgePointWeights.reduce(
+        (sum, item) => sum + item.weight,
+        0
+      );
+      console.log("权重总和:", weightSum);
+    } else {
+      autoGenerateForm.knowledgePointWeights = [];
+      ElMessage.warning("该课程下暂无知识点数据");
+    }
+  } catch (error) {
+    console.error("获取课程知识点失败:", error);
+    ElMessage.error("获取课程知识点失败");
+    autoGenerateForm.knowledgePointWeights = [];
+  }
 };
 
 // 批量删除
@@ -559,7 +654,7 @@ const handleAddQuestion = async () => {
     );
     if (currentPaper) {
       // 根据课程ID获取可用题目
-      const questions = await getQuestionsByCourseId(currentPaper.programId);
+      const questions = await getQuestionsByCourseId(currentPaper.courseId);
       // 过滤掉已添加到试卷的题目
       const existingQuestionIds = paperQuestions.value.map(
         (item) => item.questionId
@@ -645,9 +740,14 @@ const handleClearQuestions = async () => {
 };
 
 // 自动组卷
-const handleAutoGeneratePaper = () => {
+const handleAutoGeneratePaper = async () => {
   resetAutoGenerateForm();
   autoGenerateDialogVisible.value = true;
+
+  // 如果courseId已设置，确保知识点权重被正确初始化
+  if (autoGenerateForm.courseId) {
+    await handleCourseChange(autoGenerateForm.courseId);
+  }
 };
 
 // 生成试卷
@@ -664,6 +764,7 @@ const handleGeneratePaper = async () => {
 
     // 调用自动组卷API
     const params = {
+      paperName: autoGenerateForm.paperName,
       courseId: autoGenerateForm.courseId,
       totalScore: autoGenerateForm.totalScore,
       knowledgePointWeights: knowledgePointWeights,
@@ -685,8 +786,9 @@ const resetPaperForm = () => {
   Object.assign(paperForm, {
     paperId: null,
     paperName: "",
-    programId: courses.value.length > 0 ? courses.value[0].courseId : null,
+    courseId: courses.value.length > 0 ? courses.value[0].courseId : null,
     totalScore: 100,
+    paperType: "手动组卷",
     createTeacher: "1",
   });
 };
@@ -704,11 +806,6 @@ const resetAutoGenerateForm = () => {
     },
     knowledgePointWeights: [],
   });
-
-  // 初始化知识点权重
-  if (autoGenerateForm.courseId) {
-    handleCourseChange(autoGenerateForm.courseId);
-  }
 };
 
 // 页面挂载时获取数据

@@ -9,7 +9,11 @@ const instance = axios.create({
 // 请求拦截器
 instance.interceptors.request.use(
   config => {
-    // 可以在这里添加认证token等
+    // 添加认证token
+    const token = localStorage.getItem('token')
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`
+    }
     return config
   },
   error => {

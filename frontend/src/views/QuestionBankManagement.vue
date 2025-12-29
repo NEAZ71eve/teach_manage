@@ -11,11 +11,11 @@
               style="width: 120px; margin-right: 10px"
             >
               <el-option label="全部题型" value="" />
-              <el-option label="单选题" value="单选题" />
-              <el-option label="多选题" value="多选题" />
-              <el-option label="判断题" value="判断题" />
-              <el-option label="填空题" value="填空题" />
-              <el-option label="简答题" value="简答题" />
+              <el-option label="单选题" :value="1" />
+              <el-option label="多选题" :value="2" />
+              <el-option label="判断题" :value="3" />
+              <el-option label="填空题" :value="4" />
+              <el-option label="简答题" :value="5" />
             </el-select>
             <el-select
               v-model="searchParams.difficulty"
@@ -23,9 +23,22 @@
               style="width: 120px; margin-right: 10px"
             >
               <el-option label="全部难度" value="" />
-              <el-option label="容易" value="容易" />
+              <el-option label="简单" value="简单" />
               <el-option label="中等" value="中等" />
               <el-option label="困难" value="困难" />
+            </el-select>
+            <el-select
+              v-model="searchParams.categoryId"
+              placeholder="选择分类"
+              style="width: 120px; margin-right: 10px"
+            >
+              <el-option label="全部分类" value="" />
+              <el-option
+                v-for="category in categories"
+                :key="category.categoryId"
+                :label="category.categoryName"
+                :value="category.categoryId"
+              />
             </el-select>
             <el-button
               type="danger"
@@ -53,15 +66,23 @@
         <el-table-column prop="questionId" label="题目ID" width="80" />
         <el-table-column prop="questionType" label="题型" width="100" />
         <el-table-column prop="courseName" label="所属学科" width="150" />
-        <el-table-column prop="pointName" label="知识点" width="150" />
+        <el-table-column prop="kpName" label="知识点" width="150" />
+        <el-table-column prop="categoryName" label="分类" width="120" />
         <el-table-column
-          prop="content"
+          prop="questionContent"
           label="题目内容"
           min-width="300"
           @click="handleViewQuestion(scope.row)"
         />
         <el-table-column prop="difficulty" label="难度" width="80" />
         <el-table-column prop="score" label="分值" width="80" />
+        <el-table-column prop="status" label="状态" width="100">
+          <template #default="scope">
+            <el-tag :type="getStatusTagType(scope.row.status)">{{
+              scope.row.status
+            }}</el-tag>
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="scope">
             <el-button
@@ -113,11 +134,11 @@
             v-model="questionForm.questionType"
             placeholder="请选择题型"
           >
-            <el-option label="单选题" value="单选题" />
-            <el-option label="多选题" value="多选题" />
-            <el-option label="判断题" value="判断题" />
-            <el-option label="填空题" value="填空题" />
-            <el-option label="简答题" value="简答题" />
+            <el-option label="单选题" :value="1" />
+            <el-option label="多选题" :value="2" />
+            <el-option label="判断题" :value="3" />
+            <el-option label="填空题" :value="4" />
+            <el-option label="简答题" :value="5" />
           </el-select>
         </el-form-item>
         <el-form-item label="所属课程" required>
@@ -131,18 +152,28 @@
           </el-select>
         </el-form-item>
         <el-form-item label="所属知识点" required>
-          <el-select v-model="questionForm.pointId" placeholder="请选择知识点">
+          <el-select v-model="questionForm.kpId" placeholder="请选择知识点">
             <el-option
               v-for="point in knowledgePoints"
-              :key="point.pointId"
-              :label="point.pointName"
-              :value="point.pointId"
+              :key="point.kpId"
+              :label="point.kpName"
+              :value="point.kpId"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="题目分类" required>
+          <el-select v-model="questionForm.categoryId" placeholder="请选择分类">
+            <el-option
+              v-for="category in categories"
+              :key="category.categoryId"
+              :label="category.categoryName"
+              :value="category.categoryId"
             />
           </el-select>
         </el-form-item>
         <el-form-item label="题目内容" required>
           <el-input
-            v-model="questionForm.content"
+            v-model="questionForm.questionContent"
             type="textarea"
             placeholder="请输入题目内容"
             :rows="4"
@@ -152,7 +183,7 @@
         <!-- 选项（仅客观题显示） -->
         <el-form-item
           label="选项"
-          v-if="['单选题', '多选题'].includes(questionForm.questionType)"
+          v-if="[1, 2].includes(questionForm.questionType)"
         >
           <div
             v-for="(option, index) in options"
@@ -160,7 +191,7 @@
             class="option-item"
           >
             <el-input
-              v-model="option.content"
+              v-model="option.optionText"
               placeholder="请输入选项内容"
               prefix-icon="el-icon--right"
             >
@@ -170,6 +201,13 @@
                 >
               </template>
             </el-input>
+            <el-checkbox
+              v-model="option.isCorrect"
+              :label="index"
+              style="margin-left: 10px"
+            >
+              正确答案
+            </el-checkbox>
             <el-button
               type="danger"
               size="small"
@@ -193,35 +231,30 @@
 
         <el-form-item label="正确答案" required>
           <el-input
-            v-model="questionForm.answer"
+            v-model="questionForm.correctAnswer"
             placeholder="请输入正确答案"
-            v-if="
-              ['单选题', '填空题', '简答题'].includes(questionForm.questionType)
-            "
+            v-if="[1, 4, 5].includes(questionForm.questionType)"
           />
-          <el-checkbox-group
-            v-model="correctAnswers"
-            v-else-if="questionForm.questionType === '多选题'"
-          >
-            <el-checkbox
-              v-for="(option, index) in options"
-              :key="index"
-              :label="String.fromCharCode(65 + index)"
-            >
-              {{ String.fromCharCode(65 + index) }}. {{ option.content }}
-            </el-checkbox>
-          </el-checkbox-group>
           <el-radio-group
-            v-model="questionForm.answer"
-            v-else-if="questionForm.questionType === '判断题'"
+            v-model="questionForm.correctAnswer"
+            v-else-if="questionForm.questionType === 3"
           >
-            <el-radio label="对" />对 <el-radio label="错" />错
+            <el-radio label="1" />对 <el-radio label="0" />错
           </el-radio-group>
+        </el-form-item>
+
+        <el-form-item label="答案解析">
+          <el-input
+            v-model="questionForm.analysis"
+            type="textarea"
+            placeholder="请输入答案解析"
+            :rows="3"
+          />
         </el-form-item>
 
         <el-form-item label="难度" required>
           <el-select v-model="questionForm.difficulty" placeholder="请选择难度">
-            <el-option label="容易" value="容易" />
+            <el-option label="简单" value="简单" />
             <el-option label="中等" value="中等" />
             <el-option label="困难" value="困难" />
           </el-select>
@@ -234,6 +267,17 @@
             min="0.5"
             step="0.5"
           />
+        </el-form-item>
+
+        <el-form-item label="标签">
+          <el-select v-model="selectedTags" multiple placeholder="请选择标签">
+            <el-option
+              v-for="tag in tags"
+              :key="tag.tagId"
+              :label="tag.tagName"
+              :value="tag.tagId"
+            />
+          </el-select>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -252,36 +296,52 @@
             currentQuestion?.questionId
           }}</el-descriptions-item>
           <el-descriptions-item label="题型">{{
-            currentQuestion?.questionType
+            getQuestionTypeName(currentQuestion?.questionType)
           }}</el-descriptions-item>
           <el-descriptions-item label="所属学科">{{
             currentQuestion?.courseName
           }}</el-descriptions-item>
           <el-descriptions-item label="知识点">{{
-            currentQuestion?.pointName
+            currentQuestion?.kpName
+          }}</el-descriptions-item>
+          <el-descriptions-item label="分类">{{
+            currentQuestion?.categoryName
           }}</el-descriptions-item>
           <el-descriptions-item label="题目内容">
-            <div v-html="currentQuestion?.content"></div>
+            <div v-html="currentQuestion?.questionContent"></div>
           </el-descriptions-item>
           <el-descriptions-item
             label="选项"
-            v-if="['单选题', '多选题'].includes(currentQuestion?.questionType)"
+            v-if="[1, 2].includes(currentQuestion?.questionType)"
           >
             <div v-if="currentQuestion?.options">
               <div
-                v-for="(option, index) in JSON.parse(currentQuestion.options)"
+                v-for="(option, index) in currentQuestion.options"
                 :key="index"
                 class="option-item"
               >
                 <span class="option-label"
                   >{{ String.fromCharCode(65 + index) }}.</span
                 >
-                <span>{{ option.content }}</span>
+                <span>{{ option.optionText }}</span>
+                <el-tag
+                  v-if="option.isCorrect"
+                  type="success"
+                  size="small"
+                  style="margin-left: 10px"
+                  >正确</el-tag
+                >
               </div>
             </div>
           </el-descriptions-item>
           <el-descriptions-item label="正确答案">{{
-            currentQuestion?.answer
+            formatAnswer(
+              currentQuestion?.correctAnswer,
+              currentQuestion?.questionType
+            )
+          }}</el-descriptions-item>
+          <el-descriptions-item label="答案解析">{{
+            currentQuestion?.analysis || "无"
           }}</el-descriptions-item>
           <el-descriptions-item label="难度">{{
             currentQuestion?.difficulty
@@ -289,6 +349,29 @@
           <el-descriptions-item label="分值">{{
             currentQuestion?.score
           }}</el-descriptions-item>
+          <el-descriptions-item label="状态">
+            <el-tag :type="getStatusTagType(currentQuestion?.status)">{{
+              currentQuestion?.status
+            }}</el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="标签" v-if="currentQuestion?.tags">
+            <el-tag
+              v-for="tag in currentQuestion.tags"
+              :key="tag.tagId"
+              style="margin-right: 5px; margin-bottom: 5px"
+            >
+              {{ tag.tagName }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item
+            label="使用情况"
+            v-if="currentQuestion?.statistics"
+          >
+            <div>使用次数: {{ currentQuestion.statistics.usageCount }}</div>
+            <div>正确率: {{ currentQuestion.statistics.correctRate }}%</div>
+            <div>答对次数: {{ currentQuestion.statistics.correctCount }}</div>
+            <div>答错次数: {{ currentQuestion.statistics.incorrectCount }}</div>
+          </el-descriptions-item>
         </el-descriptions>
       </div>
       <template #footer>
@@ -325,6 +408,7 @@ const selectedQuestionIds = ref([]);
 const searchParams = reactive({
   questionType: "",
   difficulty: "",
+  categoryId: "",
 });
 
 // 对话框
@@ -333,14 +417,16 @@ const dialogTitle = ref("添加题目");
 const questionForm = reactive({
   questionId: null,
   courseId: null,
-  pointId: null,
-  questionType: "单选题",
-  content: "",
-  options: "",
-  answer: "",
+  kpId: null,
+  categoryId: null,
+  questionType: 1,
+  questionContent: "",
+  correctAnswer: "",
+  analysis: "",
   difficulty: "中等",
   score: 5,
-  teacherId: 1, // 示例教师ID，实际应从登录用户获取
+  status: "待审核",
+  creatorId: 1, // 示例创建者ID，实际应从登录用户获取
 });
 
 // 查看题目详情对话框
@@ -350,10 +436,15 @@ const currentQuestion = ref(null);
 // 课程和知识点数据
 const courses = ref([]);
 const knowledgePoints = ref([]);
+const categories = ref([]);
+const tags = ref([]);
 
 // 选项管理
-const options = ref([{ content: "" }, { content: "" }]);
-const correctAnswers = ref([]);
+const options = ref([
+  { optionText: "", isCorrect: false },
+  { optionText: "", isCorrect: false },
+]);
+const selectedTags = ref([]);
 
 // 获取课程列表
 const fetchCourses = async () => {
@@ -375,7 +466,7 @@ const fetchKnowledgePoints = async () => {
     const response = await getAllKnowledgePoints();
     knowledgePoints.value = response;
     if (response.length > 0) {
-      questionForm.pointId = response[0].pointId;
+      questionForm.kpId = response[0].kpId;
     }
   } catch (error) {
     ElMessage.error("获取知识点列表失败");
@@ -399,6 +490,35 @@ const fetchQuestions = async () => {
   }
 };
 
+// 获取题目分类
+const fetchCategories = async () => {
+  try {
+    const response = await fetch("/api/question/categories");
+    if (response.ok) {
+      const data = await response.json();
+      categories.value = data;
+      if (data.length > 0) {
+        questionForm.categoryId = data[0].categoryId;
+      }
+    }
+  } catch (error) {
+    console.error("获取题目分类失败:", error);
+  }
+};
+
+// 获取题目标签
+const fetchTags = async () => {
+  try {
+    const response = await fetch("/api/question/tags");
+    if (response.ok) {
+      const data = await response.json();
+      tags.value = data;
+    }
+  } catch (error) {
+    console.error("获取题目标签失败:", error);
+  }
+};
+
 // 分页处理
 const handleSizeChange = (size) => {
   pageSize.value = size;
@@ -417,20 +537,22 @@ const handleSelectionChange = (selection) => {
 
 // 添加选项
 const addOption = () => {
-  options.value.push({ content: "" });
+  options.value.push({ optionText: "", isCorrect: false });
 };
 
 // 题型变化时重置相关字段
 watch(
   () => questionForm.questionType,
   (newType) => {
-    if (newType === "单选题" || newType === "多选题") {
-      options.value = [{ content: "" }, { content: "" }];
-      correctAnswers.value = [];
-    } else if (newType === "判断题") {
-      questionForm.answer = "对";
+    if ([1, 2].includes(newType)) {
+      options.value = [
+        { optionText: "", isCorrect: false },
+        { optionText: "", isCorrect: false },
+      ];
+    } else if (newType === 3) {
+      questionForm.correctAnswer = "1";
     } else {
-      questionForm.answer = "";
+      questionForm.correctAnswer = "";
     }
   }
 );
@@ -483,16 +605,15 @@ const handleEditQuestion = (row) => {
   Object.assign(questionForm, row);
 
   // 处理选项
-  if (["单选题", "多选题"].includes(row.questionType)) {
-    options.value = row.options
-      ? JSON.parse(row.options)
-      : [{ content: "" }, { content: "" }];
+  if ([1, 2].includes(row.questionType)) {
+    options.value = row.options || [
+      { optionText: "", isCorrect: false },
+      { optionText: "", isCorrect: false },
+    ];
   }
 
-  // 处理多选题答案
-  if (row.questionType === "多选题") {
-    correctAnswers.value = row.answer ? row.answer.split("") : [];
-  }
+  // 处理标签
+  selectedTags.value = row.tags ? row.tags.map((tag) => tag.tagId) : [];
 
   dialogVisible.value = true;
 };
@@ -500,25 +621,24 @@ const handleEditQuestion = (row) => {
 // 保存题目
 const handleSaveQuestion = async () => {
   try {
-    // 处理多选题答案
-    if (questionForm.questionType === "多选题") {
-      questionForm.answer = correctAnswers.value.sort().join("");
-    }
+    // 准备题目数据
+    const questionData = { ...questionForm };
 
     // 处理选项
-    if (["单选题", "多选题"].includes(questionForm.questionType)) {
-      questionForm.options = JSON.stringify(
-        options.value.filter((opt) => opt.content)
-      );
+    if ([1, 2].includes(questionForm.questionType)) {
+      questionData.options = options.value.filter((opt) => opt.optionText);
     }
+
+    // 处理标签
+    questionData.tags = selectedTags.value.map((tagId) => ({ tagId }));
 
     if (questionForm.questionId) {
       // 更新题目
-      await updateQuestion(questionForm.questionId, questionForm);
+      await updateQuestion(questionForm.questionId, questionData);
       ElMessage.success("题目更新成功");
     } else {
       // 添加题目
-      await addQuestion(questionForm);
+      await addQuestion(questionData);
       ElMessage.success("题目添加成功");
     }
     dialogVisible.value = false;
@@ -554,20 +674,24 @@ const resetQuestionForm = () => {
   Object.assign(questionForm, {
     questionId: null,
     courseId: courses.value.length > 0 ? courses.value[0].courseId : null,
-    pointId:
-      knowledgePoints.value.length > 0
-        ? knowledgePoints.value[0].pointId
-        : null,
-    questionType: "单选题",
-    content: "",
-    options: "",
-    answer: "",
+    kpId:
+      knowledgePoints.value.length > 0 ? knowledgePoints.value[0].kpId : null,
+    categoryId:
+      categories.value.length > 0 ? categories.value[0].categoryId : null,
+    questionType: 1,
+    questionContent: "",
+    correctAnswer: "",
+    analysis: "",
     difficulty: "中等",
     score: 5,
-    teacherId: 1,
+    status: "待审核",
+    creatorId: 1,
   });
-  options.value = [{ content: "" }, { content: "" }];
-  correctAnswers.value = [];
+  options.value = [
+    { optionText: "", isCorrect: false },
+    { optionText: "", isCorrect: false },
+  ];
+  selectedTags.value = [];
 };
 
 // 查看题目详情
@@ -576,10 +700,46 @@ const handleViewQuestion = (row) => {
   viewDialogVisible.value = true;
 };
 
+// 获取状态标签类型
+const getStatusTagType = (status) => {
+  switch (status) {
+    case "待审核":
+      return "warning";
+    case "已审核":
+      return "success";
+    case "已拒绝":
+      return "danger";
+    default:
+      return "info";
+  }
+};
+
+// 获取题型名称
+const getQuestionTypeName = (type) => {
+  const typeMap = {
+    1: "单选题",
+    2: "多选题",
+    3: "判断题",
+    4: "填空题",
+    5: "简答题",
+  };
+  return typeMap[type] || "未知题型";
+};
+
+// 格式化答案
+const formatAnswer = (answer, type) => {
+  if (type === 3) {
+    return answer === "1" ? "对" : "错";
+  }
+  return answer;
+};
+
 // 页面挂载时获取数据
 onMounted(async () => {
   await fetchCourses();
   await fetchKnowledgePoints();
+  await fetchCategories();
+  await fetchTags();
   await fetchQuestions();
 });
 </script>

@@ -4,7 +4,6 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -19,10 +18,9 @@ public class Semester {
     private Integer semesterId;
     private String semesterName;
     private String semesterCode;
-    private LocalDate startDate;
-    private LocalDate endDate;
+    private String startDate;
+    private String endDate;
     private String status;
-    private Boolean isCurrent;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
     // 关联的课程列表 

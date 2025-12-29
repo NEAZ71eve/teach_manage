@@ -39,28 +39,26 @@ public class SemesterRepository {
      * 新增学期
      */
     public int save(Semester semester) {
-        String sql = "INSERT INTO semester (semester_name, semester_code, start_date, end_date, status, is_current, create_time, update_time) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())";
+        String sql = "INSERT INTO semester (semester_name, semester_code, start_date, end_date, status, create_time, update_time) VALUES (?, ?, ?, ?, ?, NOW(), NOW())";
         return jdbcTemplate.update(sql, 
                 semester.getSemesterName(), 
                 semester.getSemesterCode(), 
-                semester.getStartDate(), 
-                semester.getEndDate(),
-                semester.getStatus(),
-                semester.getIsCurrent());
+                semester.getStartDate() != null ? java.sql.Date.valueOf(java.time.LocalDate.parse(semester.getStartDate())) : null,
+                semester.getEndDate() != null ? java.sql.Date.valueOf(java.time.LocalDate.parse(semester.getEndDate())) : null,
+                semester.getStatus());
     }
 
     /**
      * 更新学期
      */
     public int update(Semester semester) {
-        String sql = "UPDATE semester SET semester_name = ?, semester_code = ?, start_date = ?, end_date = ?, status = ?, is_current = ?, update_time = NOW() WHERE semester_id = ?";
+        String sql = "UPDATE semester SET semester_name = ?, semester_code = ?, start_date = ?, end_date = ?, status = ?, update_time = NOW() WHERE semester_id = ?";
         return jdbcTemplate.update(sql, 
                 semester.getSemesterName(), 
                 semester.getSemesterCode(), 
-                semester.getStartDate(), 
-                semester.getEndDate(),
+                semester.getStartDate() != null ? java.sql.Date.valueOf(java.time.LocalDate.parse(semester.getStartDate())) : null,
+                semester.getEndDate() != null ? java.sql.Date.valueOf(java.time.LocalDate.parse(semester.getEndDate())) : null,
                 semester.getStatus(),
-                semester.getIsCurrent(),
                 semester.getSemesterId());
     }
 

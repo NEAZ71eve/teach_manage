@@ -147,7 +147,7 @@ public class CourseScheduleRepository {
      * 根据学期ID和班级名称查询周课表
      */
     public List<CourseSchedule> findWeekScheduleByClass(Integer semesterId, String className) {
-        String sql = "SELECT * FROM course_schedule WHERE semester_id = ? AND class_name = ? ORDER BY week_day, class_section";
+        String sql = "SELECT cs.*, c.course_name FROM course_schedule cs JOIN course c ON cs.course_id = c.course_id WHERE cs.semester_id = ? AND cs.class_name = ? ORDER BY cs.week_day, cs.class_section";
         return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(CourseSchedule.class), semesterId, className);
     }
 }

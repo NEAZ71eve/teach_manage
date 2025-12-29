@@ -21,7 +21,7 @@ public class ExamPaperQuestionRepository {
      * 根据试卷ID获取题目列表
      */
     public List<ExamPaperQuestion> findByPaperId(String paperId) {
-        String sql = "SELECT detail_id as id, paper_id as paperId, question_id as questionId, question_order as questionOrder, question_score as score FROM paper_question WHERE paper_id = ?";
+        String sql = "SELECT detail_id as detailId, paper_id as paperId, question_id as questionId, kp_id as kpId, question_order as questionOrder, question_score as questionScore FROM paper_question WHERE paper_id = ?";
         return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(ExamPaperQuestion.class), paperId);
     }
 
@@ -29,7 +29,7 @@ public class ExamPaperQuestionRepository {
      * 根据题目ID获取试卷题目关联列表
      */
     public List<ExamPaperQuestion> findByQuestionId(Integer questionId) {
-        String sql = "SELECT detail_id as id, paper_id as paperId, question_id as questionId, question_order as questionOrder, question_score as score FROM paper_question WHERE question_id = ?";
+        String sql = "SELECT detail_id as detailId, paper_id as paperId, question_id as questionId, kp_id as kpId, question_order as questionOrder, question_score as questionScore FROM paper_question WHERE question_id = ?";
         return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(ExamPaperQuestion.class), questionId);
     }
     
@@ -44,24 +44,26 @@ public class ExamPaperQuestionRepository {
      * 新增试卷题目关联
      */
     public int save(ExamPaperQuestion examPaperQuestion) {
-        String sql = "INSERT INTO paper_question (paper_id, question_id, question_order, question_score) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO paper_question (paper_id, question_id, kp_id, question_order, question_score) VALUES (?, ?, ?, ?, ?)";
         return jdbcTemplate.update(sql, 
                 examPaperQuestion.getPaperId(), 
                 examPaperQuestion.getQuestionId(), 
+                examPaperQuestion.getKpId(),
                 examPaperQuestion.getQuestionOrder(), 
-                examPaperQuestion.getScore());
+                examPaperQuestion.getQuestionScore());
     }
 
     /**
      * 更新试卷题目关联
      */
     public int update(ExamPaperQuestion examPaperQuestion) {
-        String sql = "UPDATE paper_question SET question_id = ?, question_order = ?, question_score = ? WHERE detail_id = ?";
+        String sql = "UPDATE paper_question SET question_id = ?, kp_id = ?, question_order = ?, question_score = ? WHERE detail_id = ?";
         return jdbcTemplate.update(sql, 
                 examPaperQuestion.getQuestionId(), 
+                examPaperQuestion.getKpId(),
                 examPaperQuestion.getQuestionOrder(), 
-                examPaperQuestion.getScore(), 
-                examPaperQuestion.getId());
+                examPaperQuestion.getQuestionScore(), 
+                examPaperQuestion.getDetailId());
     }
 
     /**

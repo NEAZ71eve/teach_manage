@@ -1,4 +1,4 @@
-import request from './request'
+import request from "./request";
 
 /**
  * 获取用户列表
@@ -6,10 +6,10 @@ import request from './request'
  */
 export const getUsers = () => {
   return request({
-    url: '/users',
-    method: 'GET'
-  })
-}
+    url: "/users",
+    method: "GET",
+  });
+};
 
 /**
  * 根据ID获取用户
@@ -19,9 +19,9 @@ export const getUsers = () => {
 export const getUserById = (userId) => {
   return request({
     url: `/users/${userId}`,
-    method: 'GET'
-  })
-}
+    method: "GET",
+  });
+};
 
 /**
  * 新增用户
@@ -30,11 +30,11 @@ export const getUserById = (userId) => {
  */
 export const addUser = (user) => {
   return request({
-    url: '/users',
-    method: 'POST',
-    data: user
-  })
-}
+    url: "/users",
+    method: "POST",
+    data: user,
+  });
+};
 
 /**
  * 更新用户
@@ -45,10 +45,10 @@ export const addUser = (user) => {
 export const updateUser = (userId, user) => {
   return request({
     url: `/users/${userId}`,
-    method: 'PUT',
-    data: user
-  })
-}
+    method: "PUT",
+    data: user,
+  });
+};
 
 /**
  * 删除用户
@@ -58,6 +58,19 @@ export const updateUser = (userId, user) => {
 export const deleteUser = (userId) => {
   return request({
     url: `/users/${userId}`,
-    method: 'DELETE'
-  })
-}
+    method: "DELETE",
+  });
+};
+
+/**
+ * 用户登录
+ * @param {object} loginForm - 登录表单信息
+ * @returns {Promise}
+ */
+export const login = (loginForm) => {
+  return request({
+    url: "/login",
+    method: "POST",
+    data: loginForm,
+  });
+};

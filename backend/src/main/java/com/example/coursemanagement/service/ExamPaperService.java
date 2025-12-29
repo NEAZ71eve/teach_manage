@@ -79,10 +79,11 @@ public interface ExamPaperService {
     /**
      * 自动组卷
      * @param courseId 课程ID
+     * @param paperName 试卷名称
      * @param totalScore 试卷总分
      * @param knowledgePointWeights 知识点权重映射
      * @param difficultyDistribution 难度分布
      * @return 生成的试卷ID
      */
-    String autoGeneratePaper(String courseId, Double totalScore, Map<String, Double> knowledgePointWeights, Map<String, Double> difficultyDistribution);
+    String autoGeneratePaper(String courseId, String paperName, Double totalScore, Map<String, Double> knowledgePointWeights, Map<String, Double> difficultyDistribution);
 }

@@ -12,6 +12,7 @@ public class CourseSchedule {
 
     private Integer scheduleId;
     private Integer courseId;
+    private String courseName;
     private Integer semesterId;
     private Integer weekDay;
     private Integer classSection;

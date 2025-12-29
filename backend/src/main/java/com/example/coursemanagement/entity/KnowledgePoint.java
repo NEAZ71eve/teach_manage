@@ -16,8 +16,13 @@ public class KnowledgePoint {
     private Integer parentId;
     private String description;
     private String difficulty;
+    private Integer kpOrder;
+    private Integer isActive;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
     // 用于树形结构展示的子知识点列表
     private List<KnowledgePoint> children;
+    // 关联字段
+    private String courseName;
+    private String parentName;
 }

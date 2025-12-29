@@ -1,6 +1,8 @@
 package com.example.coursemanagement.controller;
 
 import com.example.coursemanagement.entity.Question;
+import com.example.coursemanagement.entity.QuestionCategory;
+import com.example.coursemanagement.entity.QuestionTag;
 import com.example.coursemanagement.service.QuestionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -34,10 +36,11 @@ public class QuestionController {
     @GetMapping("/page")
     public ResponseEntity<Map<String, Object>> getQuestionPage(@RequestParam(defaultValue = "1") Integer page, 
                                                                @RequestParam(defaultValue = "10") Integer limit,
-                                                               @RequestParam(required = false) String questionType,
-                                                               @RequestParam(required = false) String difficulty) {
-        List<Question> questions = questionService.listPage(page, limit, questionType, difficulty);
-        int total = questionService.count(questionType, difficulty);
+                                                               @RequestParam(required = false) Integer questionType,
+                                                               @RequestParam(required = false) String difficulty,
+                                                               @RequestParam(required = false) Integer categoryId) {
+        List<Question> questions = questionService.listPage(page, limit, questionType, difficulty, categoryId);
+        int total = questionService.count(questionType, difficulty, categoryId);
         Map<String, Object> result = new HashMap<>();
         result.put("records", questions);
         result.put("total", total);
@@ -65,16 +68,16 @@ public class QuestionController {
     /**
      * 根据知识点ID查询题目
      */
-    @GetMapping("/point/{pointId}")
-    public ResponseEntity<List<Question>> getQuestionsByPointId(@PathVariable String pointId) {
-        return ResponseEntity.ok(questionService.listByPointId(pointId));
+    @GetMapping("/knowledge-point/{kpId}")
+    public ResponseEntity<List<Question>> getQuestionsByKpId(@PathVariable Integer kpId) {
+        return ResponseEntity.ok(questionService.listByKpId(kpId));
     }
 
     /**
      * 根据题型查询题目
      */
     @GetMapping("/type/{questionType}")
-    public ResponseEntity<List<Question>> getQuestionsByType(@PathVariable String questionType) {
+    public ResponseEntity<List<Question>> getQuestionsByType(@PathVariable Integer questionType) {
         return ResponseEntity.ok(questionService.listByType(questionType));
     }
 
@@ -84,6 +87,14 @@ public class QuestionController {
     @GetMapping("/difficulty/{difficulty}")
     public ResponseEntity<List<Question>> getQuestionsByDifficulty(@PathVariable String difficulty) {
         return ResponseEntity.ok(questionService.listByDifficulty(difficulty));
+    }
+    
+    /**
+     * 根据分类查询题目
+     */
+    @GetMapping("/category/{categoryId}")
+    public ResponseEntity<List<Question>> getQuestionsByCategoryId(@PathVariable Integer categoryId) {
+        return ResponseEntity.ok(questionService.listByCategoryId(categoryId));
     }
 
     /**
@@ -117,5 +128,37 @@ public class QuestionController {
     @DeleteMapping("/batch")
     public ResponseEntity<Boolean> deleteBatch(@RequestBody List<Integer> ids) {
         return ResponseEntity.ok(questionService.removeByIds(ids));
+    }
+    
+    /**
+     * 查询所有题目分类
+     */
+    @GetMapping("/categories")
+    public ResponseEntity<List<QuestionCategory>> getCategories() {
+        return ResponseEntity.ok(questionService.listCategories());
+    }
+    
+    /**
+     * 查询所有题目标签
+     */
+    @GetMapping("/tags")
+    public ResponseEntity<List<QuestionTag>> getTags() {
+        return ResponseEntity.ok(questionService.listTags());
+    }
+    
+    /**
+     * 更新题目使用状态
+     */
+    @PutMapping("/{id}/used-status")
+    public ResponseEntity<Boolean> updateUsedStatus(@PathVariable Integer id, @RequestParam Integer isUsed) {
+        return ResponseEntity.ok(questionService.updateUsedStatus(id, isUsed));
+    }
+    
+    /**
+     * 审核题目
+     */
+    @PutMapping("/{id}/review")
+    public ResponseEntity<Boolean> reviewQuestion(@PathVariable Integer id, @RequestParam String status, @RequestParam Integer reviewerId, @RequestParam(required = false) String remark) {
+        return ResponseEntity.ok(questionService.reviewQuestion(id, status, reviewerId, remark));
     }
 }

@@ -56,7 +56,7 @@ public class KnowledgePointServiceImpl implements KnowledgePointService {
     @Override
     public boolean removeById(Integer id) {
         // 检查该知识点是否已被题目引用
-        List<?> questions = questionRepository.findByPointId(id);
+        List<?> questions = questionRepository.findByKpId(id);
         if (!questions.isEmpty()) {
             throw new IllegalArgumentException("该知识点已被题目引用，不可删除");
         }
@@ -67,7 +67,7 @@ public class KnowledgePointServiceImpl implements KnowledgePointService {
     public boolean removeByIds(List<Integer> ids) {
         // 检查所有知识点是否已被题目引用
         for (Integer id : ids) {
-            List<?> questions = questionRepository.findByPointId(id);
+            List<?> questions = questionRepository.findByKpId(id);
             if (!questions.isEmpty()) {
                 throw new IllegalArgumentException("部分知识点已被题目引用，不可批量删除");
             }

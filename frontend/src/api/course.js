@@ -148,3 +148,52 @@ export const getCoursesBySemester = (semesterId) => {
     method: 'GET'
   })
 }
+
+/**
+ * 根据培养方案ID获取课程列表
+ * @param {number} programId - 培养方案ID
+ * @returns {Promise}
+ */
+export const getCoursesByProgram = (programId) => {
+  return request({
+    url: `/course/by-program/${programId}`,
+    method: 'GET'
+  })
+}
+
+/**
+ * 根据专业ID和学期ID获取课程列表
+ * @param {number} majorId - 专业ID
+ * @param {number} semesterId - 学期ID
+ * @returns {Promise}
+ */
+export const getCoursesByMajorAndSemester = (majorId, semesterId) => {
+  return request({
+    url: `/course/by-major/${majorId}/semester/${semesterId}`,
+    method: 'GET'
+  })
+}
+
+/**
+ * 获取培养方案四年八个学期的完整课程安排
+ * @param {number} programId - 培养方案ID
+ * @returns {Promise}
+ */
+export const getProgramFullSchedule = (programId) => {
+  return request({
+    url: `/course/program-full-schedule/${programId}`,
+    method: 'GET'
+  })
+}
+
+/**
+ * 获取课程属性统计信息
+ * @param {number} programId - 培养方案ID
+ * @returns {Promise}
+ */
+export const getCourseStatistics = (programId) => {
+  return request({
+    url: `/course/statistics/${programId}`,
+    method: 'GET'
+  })
+}

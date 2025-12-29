@@ -4,7 +4,12 @@ import com.example.coursemanagement.entity.ExamPaper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
+
+import java.sql.PreparedStatement;
+import java.sql.Statement;
 
 import java.util.List;
 import java.util.Optional;
@@ -47,12 +52,26 @@ public class ExamPaperRepository {
      * 新增试卷
      */
     public int save(ExamPaper paper) {
-        String sql = "INSERT INTO exam_paper (paper_name, course_id, total_score, paper_type) VALUES (?, ?, ?, ?)";
-        return jdbcTemplate.update(sql, 
-                paper.getPaperName(), 
-                paper.getCourseId(), 
-                paper.getTotalScore(), 
-                paper.getPaperType());
+        String sql = "INSERT INTO exam_paper (paper_name, course_id, total_score, paper_type, create_teacher, create_time, update_time) VALUES (?, ?, ?, ?, ?, NOW(), NOW())";
+        
+        // 使用GeneratedKeyHolder获取自动生成的主键
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        int result = jdbcTemplate.update(
+                connection -> {
+                    PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+                    ps.setString(1, paper.getPaperName());
+                    ps.setInt(2, paper.getCourseId());
+                    ps.setDouble(3, paper.getTotalScore());
+                    ps.setString(4, paper.getPaperType());
+                    ps.setString(5, paper.getCreateTeacher() != null ? paper.getCreateTeacher() : "admin");
+                    return ps;
+                },
+                keyHolder
+        );
+        
+        // 设置生成的主键到实体对象
+        paper.setPaperId(keyHolder.getKey().intValue());
+        return result; // 返回实际影响的行数
     }
 
     /**

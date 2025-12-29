@@ -48,4 +48,9 @@ public interface TrainingProgramService {
      * 查询培养方案总数
      */
     int count();
+    
+    /**
+     * 根据老师ID查询培养方案列表
+     */
+    List<TrainingProgram> getByTeacherId(Integer teacherId);
 }

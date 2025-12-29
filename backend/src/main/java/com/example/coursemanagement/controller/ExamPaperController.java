@@ -132,11 +132,42 @@ public class ExamPaperController {
     @SuppressWarnings("unchecked")
     public ResponseEntity<String> autoGeneratePaper(@RequestBody Map<String, Object> params) {
         String courseId = String.valueOf(params.get("courseId"));
-        Double totalScore = (Double) params.get("totalScore");
-        Map<String, Double> knowledgePointWeights = (Map<String, Double>) params.get("knowledgePointWeights");
-        Map<String, Double> difficultyDistribution = (Map<String, Double>) params.get("difficultyDistribution");
+        String paperName = String.valueOf(params.get("paperName"));
+        Double totalScore = params.get("totalScore") instanceof Double ? (Double) params.get("totalScore") : Double.valueOf(params.get("totalScore").toString());
         
-        String paperId = examPaperService.autoGeneratePaper(courseId, totalScore, knowledgePointWeights, difficultyDistribution);
+        // 处理知识点权重，确保所有值都是Double类型
+        Map<String, Object> rawKnowledgePointWeights = (Map<String, Object>) params.get("knowledgePointWeights");
+        Map<String, Double> knowledgePointWeights = new java.util.HashMap<>();
+        for (Map.Entry<String, Object> entry : rawKnowledgePointWeights.entrySet()) {
+            Object value = entry.getValue();
+            Double doubleValue;
+            if (value instanceof Double) {
+                doubleValue = (Double) value;
+            } else if (value instanceof Integer) {
+                doubleValue = ((Integer) value).doubleValue();
+            } else {
+                doubleValue = Double.parseDouble(value.toString());
+            }
+            knowledgePointWeights.put(entry.getKey(), doubleValue);
+        }
+        
+        // 处理难度分布，确保所有值都是Double类型
+        Map<String, Object> rawDifficultyDistribution = (Map<String, Object>) params.get("difficultyDistribution");
+        Map<String, Double> difficultyDistribution = new java.util.HashMap<>();
+        for (Map.Entry<String, Object> entry : rawDifficultyDistribution.entrySet()) {
+            Object value = entry.getValue();
+            Double doubleValue;
+            if (value instanceof Double) {
+                doubleValue = (Double) value;
+            } else if (value instanceof Integer) {
+                doubleValue = ((Integer) value).doubleValue();
+            } else {
+                doubleValue = Double.parseDouble(value.toString());
+            }
+            difficultyDistribution.put(entry.getKey(), doubleValue);
+        }
+        
+        String paperId = examPaperService.autoGeneratePaper(courseId, paperName, totalScore, knowledgePointWeights, difficultyDistribution);
         return ResponseEntity.ok(paperId);
     }
 }

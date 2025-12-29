@@ -66,4 +66,10 @@ public class TrainingProgramServiceImpl implements TrainingProgramService {
     public int count() {
         return trainingProgramRepository.count();
     }
+    
+    @Override
+    @Cacheable(value = "trainingProgram", key = "'teacher:' + #teacherId")
+    public List<TrainingProgram> getByTeacherId(Integer teacherId) {
+        return trainingProgramRepository.findByTeacherId(teacherId);
+    }
 }

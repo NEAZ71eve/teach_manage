@@ -99,6 +99,7 @@
             type="date"
             placeholder="开始日期将自动生成"
             style="width: 100%"
+            value-format="YYYY-MM-DD"
           />
         </el-form-item>
         <el-form-item label="结束日期" required>
@@ -107,6 +108,7 @@
             type="date"
             placeholder="结束日期将自动生成"
             style="width: 100%"
+            value-format="YYYY-MM-DD"
           />
         </el-form-item>
         <el-form-item label="是否当前学期">
@@ -171,27 +173,35 @@ const generateSemesterInfo = () => {
   const nextYear = year + 1;
   const semesterName = `${year}-${nextYear}学年第${semesterType.value}学期`;
 
-  // 生成默认日期范围
+  // 生成默认日期范围（YYYY-MM-DD格式字符串）
   let startDate, endDate;
   if (semesterType.value === 1) {
     // 第一学期：9月1日到次年1月15日
-    startDate = new Date(`${year}-09-01`);
-    endDate = new Date(`${nextYear}-01-15`);
+    startDate = `${year}-09-01`;
+    endDate = `${nextYear}-01-15`;
   } else {
     // 第二学期：2月20日到6月30日
-    startDate = new Date(`${nextYear}-02-20`);
-    endDate = new Date(`${nextYear}-06-30`);
+    startDate = `${nextYear}-02-20`;
+    endDate = `${nextYear}-06-30`;
   }
 
   // 生成学期代码，格式：年-年-学期
   const semesterCode = `${year}-${nextYear}-${semesterType.value}`;
 
+  // 设置默认状态为'未开始'
+  const currentDate = new Date();
+  let status = "未开始";
+  if (currentDate >= new Date(startDate) && currentDate <= new Date(endDate)) {
+    status = "进行中";
+  } else if (currentDate > new Date(endDate)) {
+    status = "已结束";
+  }
+
   semesterForm.semesterName = semesterName;
   semesterForm.semesterCode = semesterCode;
   semesterForm.startDate = startDate;
   semesterForm.endDate = endDate;
-  semesterForm.status = "正常";
-  semesterForm.isCurrent = false;
+  semesterForm.status = status;
 };
 
 // 监听学年和学期变化，自动更新学期信息

@@ -6,7 +6,7 @@
           <span>知识点管理</span>
           <div class="header-actions">
             <el-select v-model="selectedCourse" placeholder="选择课程" style="width: 200px; margin-right: 10px;" @change="handleCourseChange">
-              <el-option label="全部课程" value="0" />
+              <el-option label="全部课程" :value="0" />
               <el-option v-for="course in courses" :key="course.courseId" :label="course.courseName" :value="course.courseId" />
             </el-select>
             <el-button

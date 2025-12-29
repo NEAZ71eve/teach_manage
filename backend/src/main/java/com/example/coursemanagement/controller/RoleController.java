@@ -1,6 +1,9 @@
 package com.example.coursemanagement.controller;
 
 import com.example.coursemanagement.entity.Role;
+import com.example.coursemanagement.entity.RolePermission;
+import com.example.coursemanagement.service.PermissionService;
+import com.example.coursemanagement.service.RolePermissionService;
 import com.example.coursemanagement.service.RoleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +20,12 @@ public class RoleController {
 
     @Autowired
     private RoleService roleService;
+    
+    @Autowired
+    private PermissionService permissionService;
+    
+    @Autowired
+    private RolePermissionService rolePermissionService;
 
     /**
      * 查询所有角色
@@ -62,6 +71,24 @@ public class RoleController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Integer> deleteRole(@PathVariable Integer id) {
         int result = roleService.deleteById(id);
+        return ResponseEntity.ok(result);
+    }
+    
+    /**
+     * 根据角色ID查询权限列表
+     */
+    @GetMapping("/{id}/permissions")
+    public ResponseEntity<List<RolePermission>> getRolePermissions(@PathVariable Integer id) {
+        List<RolePermission> rolePermissions = rolePermissionService.findByRoleId(id);
+        return ResponseEntity.ok(rolePermissions);
+    }
+    
+    /**
+     * 为角色分配权限
+     */
+    @PostMapping("/{id}/permissions")
+    public ResponseEntity<Integer> assignPermissions(@PathVariable Integer id, @RequestBody List<Integer> permissionIds) {
+        int result = rolePermissionService.assignPermissions(id, permissionIds);
         return ResponseEntity.ok(result);
     }
 }

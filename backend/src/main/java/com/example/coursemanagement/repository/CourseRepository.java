@@ -39,7 +39,7 @@ public class CourseRepository {
      * 新增课程
      */
     public int save(Course course) {
-        String sql = "INSERT INTO course (course_name, course_code, major_id, program_id, credit, total_hours, theoretical_hours, practical_hours, course_type, course_nature, exam_mark, course_category, description, create_time, update_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
+        String sql = "INSERT INTO course (course_name, course_code, major_id, program_id, credit, total_hours, theoretical_hours, practical_hours, course_type, course_nature, exam_mark, course_category, description, teacher_ids, create_time, update_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
         return jdbcTemplate.update(sql, 
                 course.getCourseName(), 
                 course.getCourseCode(), 
@@ -53,14 +53,15 @@ public class CourseRepository {
                 course.getCourseNature(), 
                 course.getExamMark(), 
                 course.getCourseCategory(), 
-                course.getDescription());
+                course.getDescription(),
+                course.getTeacherIds());
     }
 
     /**
      * 更新课程
      */
     public int update(Course course) {
-        String sql = "UPDATE course SET course_name = ?, course_code = ?, major_id = ?, program_id = ?, credit = ?, total_hours = ?, theoretical_hours = ?, practical_hours = ?, course_type = ?, course_nature = ?, exam_mark = ?, course_category = ?, description = ?, update_time = NOW() WHERE course_id = ?";
+        String sql = "UPDATE course SET course_name = ?, course_code = ?, major_id = ?, program_id = ?, credit = ?, total_hours = ?, theoretical_hours = ?, practical_hours = ?, course_type = ?, course_nature = ?, exam_mark = ?, course_category = ?, description = ?, teacher_ids = ?, update_time = NOW() WHERE course_id = ?";
         return jdbcTemplate.update(sql, 
                 course.getCourseName(), 
                 course.getCourseCode(), 
@@ -74,7 +75,8 @@ public class CourseRepository {
                 course.getCourseNature(), 
                 course.getExamMark(), 
                 course.getCourseCategory(), 
-                course.getDescription(), 
+                course.getDescription(),
+                course.getTeacherIds(), 
                 course.getCourseId());
     }
 
@@ -117,5 +119,37 @@ public class CourseRepository {
     public int count() {
         String sql = "SELECT COUNT(*) FROM course";
         return jdbcTemplate.queryForObject(sql, Integer.class);
+    }
+    
+    /**
+     * 根据培养方案ID查询课程列表
+     */
+    public List<Course> findByProgramId(Integer programId) {
+        String sql = "SELECT * FROM course WHERE program_id = ?";
+        return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Course.class), programId);
+    }
+    
+    /**
+     * 根据专业ID查询课程列表
+     */
+    public List<Course> findByMajorId(Integer majorId) {
+        String sql = "SELECT * FROM course WHERE major_id = ?";
+        return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Course.class), majorId);
+    }
+    
+    /**
+     * 根据培养方案ID和学期ID查询课程列表
+     */
+    public List<Course> findByProgramIdAndSemesterId(Integer programId, Integer semesterId) {
+        String sql = "SELECT c.* FROM course c JOIN course_semester cs ON c.course_id = cs.course_id WHERE c.program_id = ? AND cs.semester_id = ?";
+        return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Course.class), programId, semesterId);
+    }
+    
+    /**
+     * 根据专业ID和学期ID查询课程列表
+     */
+    public List<Course> findByMajorIdAndSemesterId(Integer majorId, Integer semesterId) {
+        String sql = "SELECT c.* FROM course c JOIN course_semester cs ON c.course_id = cs.course_id WHERE c.major_id = ? AND cs.semester_id = ?";
+        return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Course.class), majorId, semesterId);
     }
 }

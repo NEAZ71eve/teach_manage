@@ -131,4 +131,44 @@ public class CourseController {
     public ResponseEntity<List<com.example.coursemanagement.entity.Semester>> getAllSemesters() {
         return ResponseEntity.ok(semesterService.list());
     }
+    
+    /**
+     * 根据培养方案ID查询课程列表
+     */
+    @GetMapping("/by-program/{programId}")
+    public ResponseEntity<List<Course>> getCoursesByProgram(@PathVariable Integer programId) {
+        return ResponseEntity.ok(courseService.getCoursesByProgramId(programId));
+    }
+    
+    /**
+     * 根据专业ID查询课程列表
+     */
+    @GetMapping("/by-major/{majorId}")
+    public ResponseEntity<List<Course>> getCoursesByMajor(@PathVariable Integer majorId) {
+        return ResponseEntity.ok(courseService.getCoursesByMajorId(majorId));
+    }
+    
+    /**
+     * 根据专业ID和学期ID查询课程列表
+     */
+    @GetMapping("/by-major/{majorId}/semester/{semesterId}")
+    public ResponseEntity<List<Course>> getCoursesByMajorAndSemester(@PathVariable Integer majorId, @PathVariable Integer semesterId) {
+        return ResponseEntity.ok(courseService.getCoursesByMajorAndSemester(majorId, semesterId));
+    }
+    
+    /**
+     * 获取培养方案四年八个学期的完整课程安排
+     */
+    @GetMapping("/program-full-schedule/{programId}")
+    public ResponseEntity<Map<Integer, List<Course>>> getProgramFullSchedule(@PathVariable Integer programId) {
+        return ResponseEntity.ok(courseService.getFullCourseScheduleByProgramId(programId));
+    }
+    
+    /**
+     * 获取课程属性统计信息
+     */
+    @GetMapping("/statistics/{programId}")
+    public ResponseEntity<Map<String, Object>> getCourseStatistics(@PathVariable Integer programId) {
+        return ResponseEntity.ok(courseService.getCourseStatistics(programId));
+    }
 }

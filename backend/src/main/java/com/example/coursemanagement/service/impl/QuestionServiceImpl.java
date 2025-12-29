@@ -1,8 +1,12 @@
 package com.example.coursemanagement.service.impl;
 
 import com.example.coursemanagement.entity.Question;
+import com.example.coursemanagement.entity.QuestionCategory;
+import com.example.coursemanagement.entity.QuestionTag;
 import com.example.coursemanagement.repository.ExamPaperQuestionRepository;
+import com.example.coursemanagement.repository.QuestionCategoryRepository;
 import com.example.coursemanagement.repository.QuestionRepository;
+import com.example.coursemanagement.repository.QuestionTagRepository;
 import com.example.coursemanagement.service.QuestionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,6 +24,12 @@ public class QuestionServiceImpl implements QuestionService {
 
     @Autowired
     private ExamPaperQuestionRepository examPaperQuestionRepository;
+    
+    @Autowired
+    private QuestionCategoryRepository questionCategoryRepository;
+    
+    @Autowired
+    private QuestionTagRepository questionTagRepository;
 
     @Override
     public List<Question> list() {
@@ -37,18 +47,23 @@ public class QuestionServiceImpl implements QuestionService {
     }
 
     @Override
-    public List<Question> listByPointId(String pointId) {
-        return questionRepository.findByPointId(Integer.parseInt(pointId));
+    public List<Question> listByKpId(Integer kpId) {
+        return questionRepository.findByKpId(kpId);
     }
 
     @Override
-    public List<Question> listByType(String questionType) {
+    public List<Question> listByType(Integer questionType) {
         return questionRepository.findByType(questionType);
     }
 
     @Override
     public List<Question> listByDifficulty(String difficulty) {
         return questionRepository.findByDifficulty(difficulty);
+    }
+    
+    @Override
+    public List<Question> listByCategoryId(Integer categoryId) {
+        return questionRepository.findByCategoryId(categoryId);
     }
 
     @Override
@@ -84,12 +99,45 @@ public class QuestionServiceImpl implements QuestionService {
     }
 
     @Override
-    public List<Question> listPage(Integer page, Integer limit, String questionType, String difficulty) {
-        return questionRepository.findByPage(page, limit, questionType, difficulty);
+    public List<Question> listPage(Integer page, Integer limit, Integer questionType, String difficulty, Integer categoryId) {
+        return questionRepository.findByPage(page, limit, questionType, difficulty, categoryId);
     }
 
     @Override
-    public int count(String questionType, String difficulty) {
-        return questionRepository.count(questionType, difficulty);
+    public int count(Integer questionType, String difficulty, Integer categoryId) {
+        return questionRepository.count(questionType, difficulty, categoryId);
+    }
+    
+    @Override
+    public List<QuestionCategory> listCategories() {
+        return questionCategoryRepository.findAll();
+    }
+    
+    @Override
+    public List<QuestionTag> listTags() {
+        return questionTagRepository.findAll();
+    }
+    
+    @Override
+    public boolean updateUsedStatus(Integer questionId, Integer isUsed) {
+        // 更新题目使用状态
+        String sql = "UPDATE question SET is_used = ? WHERE question_id = ?";
+        return questionRepository.updateUsedStatus(sql, isUsed, questionId) > 0;
+    }
+    
+    @Override
+    public boolean reviewQuestion(Integer questionId, String status, Integer reviewerId, String remark) {
+        // 检查题目是否存在
+        Question question = questionRepository.findById(questionId).orElse(null);
+        if (question == null) {
+            return false;
+        }
+        
+        // 更新题目审核状态
+        question.setStatus(status);
+        question.setReviewerId(reviewerId);
+        question.setReviewRemark(remark);
+        
+        return questionRepository.update(question) > 0;
     }
 }

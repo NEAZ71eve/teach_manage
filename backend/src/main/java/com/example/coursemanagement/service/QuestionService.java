@@ -1,6 +1,8 @@
 package com.example.coursemanagement.service;
 
 import com.example.coursemanagement.entity.Question;
+import com.example.coursemanagement.entity.QuestionCategory;
+import com.example.coursemanagement.entity.QuestionTag;
 
 import java.util.List;
 
@@ -27,17 +29,22 @@ public interface QuestionService {
     /**
      * 根据知识点ID查询题目
      */
-    List<Question> listByPointId(String pointId);
+    List<Question> listByKpId(Integer kpId);
 
     /**
      * 根据题型查询题目
      */
-    List<Question> listByType(String questionType);
+    List<Question> listByType(Integer questionType);
 
     /**
      * 根据难度查询题目
      */
     List<Question> listByDifficulty(String difficulty);
+
+    /**
+     * 根据分类查询题目
+     */
+    List<Question> listByCategoryId(Integer categoryId);
 
     /**
      * 新增题目
@@ -62,10 +69,30 @@ public interface QuestionService {
     /**
      * 分页查询题目
      */
-    List<Question> listPage(Integer page, Integer limit, String questionType, String difficulty);
+    List<Question> listPage(Integer page, Integer limit, Integer questionType, String difficulty, Integer categoryId);
 
     /**
      * 查询题目总数
      */
-    int count(String questionType, String difficulty);
+    int count(Integer questionType, String difficulty, Integer categoryId);
+    
+    /**
+     * 查询所有题目分类
+     */
+    List<QuestionCategory> listCategories();
+    
+    /**
+     * 查询所有题目标签
+     */
+    List<QuestionTag> listTags();
+    
+    /**
+     * 根据题目ID更新使用状态
+     */
+    boolean updateUsedStatus(Integer questionId, Integer isUsed);
+    
+    /**
+     * 审核题目
+     */
+    boolean reviewQuestion(Integer questionId, String status, Integer reviewerId, String remark);
 }

@@ -56,9 +56,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getCurrentSemester, getAllSemesters, getWeekScheduleByClass } from '../api/semester'
+import { getCurrentSemester, getAllSemesters, getWeekScheduleByClass, getCourseSchedules } from '../api/semester'
 
 // 周几选项
 const weekDays = [
@@ -85,8 +85,21 @@ const timeSlots = [
   { section: 10, time: '19:55-20:40' }
 ]
 
-// 班级名称列表（模拟数据，实际应从后端获取）
-const classNames = ref(['计算机科学与技术1班', '计算机科学与技术2班', '软件工程1班', '软件工程2班', '人工智能1班'])
+// 班级名称列表
+const classNames = ref([])
+
+// 获取班级列表
+const fetchClassNames = async () => {
+  try {
+    const response = await getCourseSchedules(selectedSemesterId.value)
+    // 从课程表数据中提取不重复的班级名称
+    const uniqueClassNames = [...new Set(response.map(item => item.className))]
+    classNames.value = uniqueClassNames
+  } catch (error) {
+    ElMessage.error('获取班级列表失败')
+    console.error('获取班级列表失败:', error)
+  }
+}
 
 // 学期列表
 const semesters = ref([])
@@ -109,11 +122,27 @@ const fetchSemesters = async () => {
     } else if (semesters.value.length > 0) {
       selectedSemesterId.value = semesters.value[0].semesterId
     }
+    
+    // 获取班级列表
+    if (selectedSemesterId.value) {
+      await fetchClassNames()
+    }
   } catch (error) {
     ElMessage.error('获取学期列表失败')
     console.error('获取学期列表失败:', error)
   }
 }
+
+// 监听学期选择变化
+watch(selectedSemesterId, async (newValue) => {
+  if (newValue) {
+    await fetchClassNames()
+    // 重置班级选择
+    selectedClassName.value = ''
+    // 清空课表数据
+    weekSchedule.value = []
+  }
+})
 
 // 获取周课表
 const fetchWeekSchedule = async () => {

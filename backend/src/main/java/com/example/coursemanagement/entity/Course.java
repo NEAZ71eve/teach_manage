@@ -29,6 +29,7 @@ public class Course {
     private String examMark;
     private String courseCategory;
     private String description;
+    private String teacherIds;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
     // 关联的学期列表

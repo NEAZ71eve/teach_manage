@@ -10,7 +10,9 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -99,5 +101,80 @@ public class CourseServiceImpl implements CourseService {
                 .map(courseId -> courseRepository.findById(courseId).orElse(null))
                 .filter(course -> course != null)
                 .collect(Collectors.toList());
+    }
+    
+    @Override
+    public List<Course> getCoursesByProgramId(Integer programId) {
+        return courseRepository.findByProgramId(programId);
+    }
+    
+    @Override
+    public List<Course> getCoursesByMajorId(Integer majorId) {
+        return courseRepository.findByMajorId(majorId);
+    }
+    
+    @Override
+    public List<Course> getCoursesByMajorAndSemester(Integer majorId, Integer semesterId) {
+        return courseRepository.findByMajorIdAndSemesterId(majorId, semesterId);
+    }
+    
+    @Override
+    public Map<Integer, List<Course>> getFullCourseScheduleByProgramId(Integer programId) {
+        Map<Integer, List<Course>> schedule = new HashMap<>();
+        // 假设学期ID为1-8，对应四年八个学期
+        for (int i = 1; i <= 8; i++) {
+            List<Course> courses = courseRepository.findByProgramIdAndSemesterId(programId, i);
+            schedule.put(i, courses);
+        }
+        return schedule;
+    }
+    
+    @Override
+    public Map<String, Object> getCourseStatistics(Integer programId) {
+        Map<String, Object> statistics = new HashMap<>();
+        List<Course> courses = courseRepository.findByProgramId(programId);
+        
+        // 计算总学分
+        Double totalCredit = courses.stream()
+                .mapToDouble(Course::getCredit)
+                .sum();
+        
+        // 计算总学时
+        Integer totalHours = courses.stream()
+                .mapToInt(Course::getTotalHours)
+                .sum();
+        
+        // 计算理论学时
+        Integer totalTheoreticalHours = courses.stream()
+                .mapToInt(Course::getTheoreticalHours)
+                .sum();
+        
+        // 计算实践学时
+        Integer totalPracticalHours = courses.stream()
+                .mapToInt(Course::getPracticalHours)
+                .sum();
+        
+        // 按课程类型统计
+        Map<String, Long> courseTypeCount = courses.stream()
+                .collect(Collectors.groupingBy(Course::getCourseType, Collectors.counting()));
+        
+        // 按课程性质统计
+        Map<String, Long> courseNatureCount = courses.stream()
+                .collect(Collectors.groupingBy(Course::getCourseNature, Collectors.counting()));
+        
+        // 按课程类别统计
+        Map<String, Long> courseCategoryCount = courses.stream()
+                .collect(Collectors.groupingBy(Course::getCourseCategory, Collectors.counting()));
+        
+        statistics.put("totalCourses", courses.size());
+        statistics.put("totalCredit", totalCredit);
+        statistics.put("totalHours", totalHours);
+        statistics.put("totalTheoreticalHours", totalTheoreticalHours);
+        statistics.put("totalPracticalHours", totalPracticalHours);
+        statistics.put("courseTypeCount", courseTypeCount);
+        statistics.put("courseNatureCount", courseNatureCount);
+        statistics.put("courseCategoryCount", courseCategoryCount);
+        
+        return statistics;
     }
 }
