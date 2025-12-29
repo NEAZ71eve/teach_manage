@@ -111,3 +111,26 @@ export const deleteKnowledgePointBatch = (ids) => {
     data: ids,
   });
 };
+
+/**
+ * 根据课程ID获取知识点树结构
+ * @param {number} courseId - 课程ID
+ * @returns {Promise}
+ */
+export const getKnowledgePointTree = (courseId) => {
+  return request({
+    url: `/knowledge-point/tree/${courseId}`,
+    method: "GET",
+  });
+};
+
+/**
+ * 获取所有知识点树结构
+ * @returns {Promise}
+ */
+export const getAllKnowledgePointTree = () => {
+  return request({
+    url: "/knowledge-point/tree",
+    method: "GET",
+  });
+};

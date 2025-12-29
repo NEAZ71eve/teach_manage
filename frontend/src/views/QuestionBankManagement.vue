@@ -243,6 +243,60 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- 查看题目详情对话框 -->
+    <el-dialog v-model="viewDialogVisible" title="题目详情" width="800px">
+      <div class="question-detail">
+        <el-descriptions :column="1" border>
+          <el-descriptions-item label="题目ID">{{
+            currentQuestion?.questionId
+          }}</el-descriptions-item>
+          <el-descriptions-item label="题型">{{
+            currentQuestion?.questionType
+          }}</el-descriptions-item>
+          <el-descriptions-item label="所属学科">{{
+            currentQuestion?.courseName
+          }}</el-descriptions-item>
+          <el-descriptions-item label="知识点">{{
+            currentQuestion?.pointName
+          }}</el-descriptions-item>
+          <el-descriptions-item label="题目内容">
+            <div v-html="currentQuestion?.content"></div>
+          </el-descriptions-item>
+          <el-descriptions-item
+            label="选项"
+            v-if="['单选题', '多选题'].includes(currentQuestion?.questionType)"
+          >
+            <div v-if="currentQuestion?.options">
+              <div
+                v-for="(option, index) in JSON.parse(currentQuestion.options)"
+                :key="index"
+                class="option-item"
+              >
+                <span class="option-label"
+                  >{{ String.fromCharCode(65 + index) }}.</span
+                >
+                <span>{{ option.content }}</span>
+              </div>
+            </div>
+          </el-descriptions-item>
+          <el-descriptions-item label="正确答案">{{
+            currentQuestion?.answer
+          }}</el-descriptions-item>
+          <el-descriptions-item label="难度">{{
+            currentQuestion?.difficulty
+          }}</el-descriptions-item>
+          <el-descriptions-item label="分值">{{
+            currentQuestion?.score
+          }}</el-descriptions-item>
+        </el-descriptions>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="viewDialogVisible = false">关闭</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -514,6 +568,12 @@ const resetQuestionForm = () => {
   });
   options.value = [{ content: "" }, { content: "" }];
   correctAnswers.value = [];
+};
+
+// 查看题目详情
+const handleViewQuestion = (row) => {
+  currentQuestion.value = row;
+  viewDialogVisible.value = true;
 };
 
 // 页面挂载时获取数据

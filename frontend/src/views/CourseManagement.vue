@@ -88,6 +88,9 @@
         <el-form-item label="专业ID" required>
           <el-input v-model.number="courseForm.majorId" placeholder="请输入专业ID" type="number" />
         </el-form-item>
+        <el-form-item label="培养方案ID">
+          <el-input v-model.number="courseForm.programId" placeholder="请输入培养方案ID" type="number" />
+        </el-form-item>
         <el-form-item label="学分" required>
           <el-input v-model.number="courseForm.credit" placeholder="请输入学分" type="number" step="0.5" />
         </el-form-item>
@@ -174,6 +177,7 @@ const courseForm = reactive({
   courseName: '',
   courseCode: '',
   majorId: 1,
+  programId: null,
   credit: 3,
   totalHours: 48,
   theoreticalHours: 32,
@@ -284,6 +288,7 @@ const handleAddCourse = () => {
     courseName: '',
     courseCode: '',
     majorId: 1,
+    programId: null,
     credit: 3,
     totalHours: 48,
     theoreticalHours: 32,

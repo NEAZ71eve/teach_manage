@@ -27,7 +27,7 @@ public class KnowledgePointRepository {
             point.setPointId(rs.getInt("kp_id"));
             point.setPointName(rs.getString("kp_name"));
             point.setCourseId(rs.getInt("course_id"));
-            point.setParentId(rs.getInt("parent_kp_id"));
+            point.setParentId(rs.getObject("parent_kp_id", Integer.class));
             point.setDescription(rs.getString("kp_desc"));
             point.setDifficulty(rs.getString("kp_difficulty"));
             point.setCreateTime(rs.getTimestamp("create_time").toLocalDateTime());
@@ -46,7 +46,7 @@ public class KnowledgePointRepository {
             point.setPointId(rs.getInt("kp_id"));
             point.setPointName(rs.getString("kp_name"));
             point.setCourseId(rs.getInt("course_id"));
-            point.setParentId(rs.getInt("parent_kp_id"));
+            point.setParentId(rs.getObject("parent_kp_id", Integer.class));
             point.setDescription(rs.getString("kp_desc"));
             point.setDifficulty(rs.getString("kp_difficulty"));
             point.setCreateTime(rs.getTimestamp("create_time").toLocalDateTime());
@@ -66,7 +66,7 @@ public class KnowledgePointRepository {
             point.setPointId(rs.getInt("kp_id"));
             point.setPointName(rs.getString("kp_name"));
             point.setCourseId(rs.getInt("course_id"));
-            point.setParentId(rs.getInt("parent_kp_id"));
+            point.setParentId(rs.getObject("parent_kp_id", Integer.class));
             point.setDescription(rs.getString("kp_desc"));
             point.setDifficulty(rs.getString("kp_difficulty"));
             point.setCreateTime(rs.getTimestamp("create_time").toLocalDateTime());
@@ -85,7 +85,7 @@ public class KnowledgePointRepository {
             point.setPointId(rs.getInt("kp_id"));
             point.setPointName(rs.getString("kp_name"));
             point.setCourseId(rs.getInt("course_id"));
-            point.setParentId(rs.getInt("parent_kp_id"));
+            point.setParentId(rs.getObject("parent_kp_id", Integer.class));
             point.setDescription(rs.getString("kp_desc"));
             point.setDifficulty(rs.getString("kp_difficulty"));
             point.setCreateTime(rs.getTimestamp("create_time").toLocalDateTime());
@@ -148,7 +148,7 @@ public class KnowledgePointRepository {
             point.setPointId(rs.getInt("kp_id"));
             point.setPointName(rs.getString("kp_name"));
             point.setCourseId(rs.getInt("course_id"));
-            point.setParentId(rs.getInt("parent_kp_id"));
+            point.setParentId(rs.getObject("parent_kp_id", Integer.class));
             point.setDescription(rs.getString("kp_desc"));
             point.setDifficulty(rs.getString("kp_difficulty"));
             point.setCreateTime(rs.getTimestamp("create_time").toLocalDateTime());

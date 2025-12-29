@@ -1,6 +1,8 @@
 package com.example.coursemanagement.entity;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -8,7 +10,9 @@ import java.util.List;
 /**
  * 课程实体类
  */
-@Data
+@Getter
+@Setter
+@ToString(exclude = "semesters")
 public class Course {
 
     private Integer courseId;

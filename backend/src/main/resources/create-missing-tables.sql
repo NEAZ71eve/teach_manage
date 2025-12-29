@@ -1,0 +1,31 @@
+-- 创建缺失的表
+
+-- 学期表
+CREATE TABLE IF NOT EXISTS semester (
+    semester_id INT PRIMARY KEY AUTO_INCREMENT,
+    semester_name VARCHAR(50) NOT NULL COMMENT '学期名称，如：2023-2024学年第一学期',
+    semester_code VARCHAR(20) NOT NULL UNIQUE COMMENT '学期代码，如：202301',
+    start_date DATE NOT NULL COMMENT '学期开始日期',
+    end_date DATE NOT NULL COMMENT '学期结束日期',
+    status ENUM('进行中', '已结束', '未开始') DEFAULT '未开始' COMMENT '学期状态',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='学期表';
+
+-- 课程学期关联表
+CREATE TABLE IF NOT EXISTS course_semester (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    course_id INT NOT NULL COMMENT '课程ID',
+    semester_id INT NOT NULL COMMENT '学期ID',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_course_semester (course_id, semester_id),
+    FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (semester_id) REFERENCES semester(semester_id) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='课程学期关联表';
+
+-- 插入初始学期数据
+INSERT INTO semester (semester_name, semester_code, start_date, end_date, status) VALUES 
+('2023-2024学年第一学期', '202301', '2023-09-01', '2024-01-15', '已结束'),
+('2023-2024学年第二学期', '202302', '2024-02-20', '2024-06-30', '已结束'),
+('2024-2025学年第一学期', '202401', '2024-09-02', '2025-01-16', '进行中');

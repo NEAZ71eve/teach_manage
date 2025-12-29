@@ -68,6 +68,22 @@ public class KnowledgePointController {
     }
 
     /**
+     * 根据课程ID查询知识点树结构
+     */
+    @GetMapping("/tree/{courseId}")
+    public ResponseEntity<List<KnowledgePoint>> getKnowledgePointTree(@PathVariable Integer courseId) {
+        return ResponseEntity.ok(knowledgePointService.getKnowledgePointTree(courseId));
+    }
+
+    /**
+     * 查询所有知识点树结构
+     */
+    @GetMapping("/tree")
+    public ResponseEntity<List<KnowledgePoint>> getAllKnowledgePointTree() {
+        return ResponseEntity.ok(knowledgePointService.getAllKnowledgePointTree());
+    }
+
+    /**
      * 新增知识点
      */
     @PostMapping

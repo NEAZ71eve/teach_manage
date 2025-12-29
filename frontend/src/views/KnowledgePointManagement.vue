@@ -5,7 +5,7 @@
         <div class="card-header">
           <span>知识点管理</span>
           <div class="header-actions">
-            <el-select v-model="selectedCourse" placeholder="选择课程" style="width: 200px; margin-right: 10px;">
+            <el-select v-model="selectedCourse" placeholder="选择课程" style="width: 200px; margin-right: 10px;" @change="handleCourseChange">
               <el-option label="全部课程" value="0" />
               <el-option v-for="course in courses" :key="course.courseId" :label="course.courseName" :value="course.courseId" />
             </el-select>
@@ -25,52 +25,37 @@
         </div>
       </template>
 
-      <el-table
-        :data="knowledgePoints"
-        border
-        stripe
-        @selection-change="handleSelectionChange"
-      >
-        <el-table-column type="selection" width="55" />
-        <el-table-column prop="pointId" label="知识点ID" width="120" />
-        <el-table-column prop="pointName" label="知识点名称" width="180" />
-        <el-table-column prop="courseId" label="课程ID" width="100" />
-        <el-table-column prop="parentId" label="父知识点ID" width="120">
-          <template #default="scope">
-            <span v-if="scope.row.parentId">{{ scope.row.parentId }}</span>
-            <span v-else>无</span>
+      <div class="tree-container">
+        <el-tree
+          ref="treeRef"
+          :data="knowledgePointTree"
+          :props="treeProps"
+          show-checkbox
+          node-key="pointId"
+          @check-change="handleCheckChange"
+          @node-click="handleNodeClick"
+          style="width: 100%"
+        >
+          <template #default="{ node, data }">
+            <span class="tree-node-content">
+              <span>{{ node.label }}</span>
+              <span class="node-actions">
+                <el-button type="primary" size="small" @click.stop="handleEditPoint(data)">
+                  <el-icon><Edit /></el-icon>
+                  编辑
+                </el-button>
+                <el-button type="danger" size="small" @click.stop="handleDeletePoint(data.pointId)">
+                  <el-icon><Delete /></el-icon>
+                  删除
+                </el-button>
+                <el-button type="success" size="small" @click.stop="handleAddChildPoint(data)">
+                  <el-icon><Plus /></el-icon>
+                  添加子知识点
+                </el-button>
+              </span>
+            </span>
           </template>
-        </el-table-column>
-        <el-table-column prop="difficulty" label="难度" width="80" />
-        <el-table-column prop="createTime" label="创建时间" width="180" formatter="formatDate" />
-        <el-table-column label="操作" width="200" fixed="right">
-          <template #default="scope">
-            <el-button type="primary" size="small" @click="handleEditPoint(scope.row)">
-              <el-icon><Edit /></el-icon>
-              编辑
-            </el-button>
-            <el-button type="danger" size="small" @click="handleDeletePoint(scope.row.pointId)">
-              <el-icon><Delete /></el-icon>
-              删除
-            </el-button>
-            <el-button type="success" size="small" @click="handleAddChildPoint(scope.row)">
-              <el-icon><Plus /></el-icon>
-              添加子知识点
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-
-      <div class="pagination mt-4">
-        <el-pagination
-          v-model:current-page="currentPage"
-          v-model:page-size="pageSize"
-          :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next, jumper"
-          :total="total"
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-        />
+        </el-tree>
       </div>
     </el-card>
 
@@ -88,7 +73,7 @@
         <el-form-item label="父知识点">
           <el-select v-model="pointForm.parentId" placeholder="请选择父知识点">
             <el-option label="无父知识点" value="0" />
-            <el-option v-for="point in allKnowledgePoints" :key="point.pointId" :label="point.pointName" :value="point.pointId" />
+            <el-option v-for="point in getFilteredKnowledgePoints()" :key="point.pointId" :label="point.pointName" :value="point.pointId" />
           </el-select>
         </el-form-item>
         <el-form-item label="难度">
@@ -118,22 +103,28 @@ import { Plus, Edit, Delete } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getAllCourses } from '../api/course'
 import { 
-  getKnowledgePoints,
   getAllKnowledgePoints, 
+  getKnowledgePointsByCourseId,
   addKnowledgePoint, 
   updateKnowledgePoint, 
   deleteKnowledgePoint,
   deleteKnowledgePointBatch
 } from '../api/knowledgePoint'
 
-// 表格数据
-const knowledgePoints = ref([])
+// Tree组件实例
+const treeRef = ref(null)
+
+// 树形结构数据
+const knowledgePointTree = ref([])
 const allKnowledgePoints = ref([])
-const total = ref(0)
-const currentPage = ref(1)
-const pageSize = ref(10)
 const selectedPointIds = ref([])
 const selectedCourse = ref(0)
+
+// 树形结构配置
+const treeProps = {
+  label: 'pointName',
+  children: 'children'
+}
 
 // 对话框
 const dialogVisible = ref(false)
@@ -164,57 +155,89 @@ const fetchCourses = async () => {
   }
 }
 
-// 获取知识点列表
-const fetchKnowledgePoints = async () => {
+// 获取知识点树结构
+const fetchKnowledgePointTree = async () => {
   try {
-    // 获取所有知识点用于下拉选择
-    const allPoints = await getAllKnowledgePoints()
-    allKnowledgePoints.value = allPoints
-    
-    // 过滤课程
-    let filteredPoints = allPoints
-    if (selectedCourse.value && selectedCourse.value !== '0') {
-      filteredPoints = allPoints.filter(point => point.courseId === selectedCourse.value)
+    let response
+    if (selectedCourse.value === 0) {
+      // 获取所有课程的知识点树
+      response = await getAllKnowledgePoints()
+      // 将扁平数据转换为树形结构
+      knowledgePointTree.value = buildTree(response)
+    } else {
+      // 获取指定课程的知识点列表（扁平结构）
+      response = await getKnowledgePointsByCourseId(selectedCourse.value)
+      // 将扁平数据转换为树形结构
+      knowledgePointTree.value = buildTree(response)
     }
     
-    // 手动实现分页
-    const startIndex = (currentPage.value - 1) * pageSize.value
-    const endIndex = startIndex + pageSize.value
-    knowledgePoints.value = filteredPoints.slice(startIndex, endIndex)
-    total.value = filteredPoints.length
+    // 获取所有知识点用于下拉选择（始终获取，确保数据最新）
+    allKnowledgePoints.value = await getAllKnowledgePoints()
   } catch (error) {
     ElMessage.error('获取知识点列表失败')
     console.error('获取知识点列表失败:', error)
   }
 }
 
-// 分页处理
-const handleSizeChange = (size) => {
-  pageSize.value = size
-  fetchKnowledgePoints()
+// 筛选指定课程的所有知识点（用于父知识点选择）
+const getFilteredKnowledgePoints = () => {
+  if (selectedCourse.value === 0) {
+    return allKnowledgePoints.value
+  } else {
+    return allKnowledgePoints.value.filter(point => point.courseId === selectedCourse.value)
+  }
 }
 
-const handleCurrentChange = (page) => {
-  currentPage.value = page
-  fetchKnowledgePoints()
+// 将扁平数据转换为树形结构
+const buildTree = (list) => {
+  const map = new Map()
+  const roots = []
+  
+  // 构建节点映射
+  list.forEach(item => {
+    item.children = []
+    map.set(item.pointId, item)
+  })
+  
+  // 构建树形结构
+  list.forEach(item => {
+    const parentId = item.parentId
+    if (parentId === null) {
+      // 根节点
+      roots.push(item)
+    } else {
+      // 子节点，添加到父节点的children中
+      const parent = map.get(parentId)
+      if (parent) {
+        parent.children.push(item)
+      }
+    }
+  })
+  
+  return roots
 }
 
-// 选择处理
-const handleSelectionChange = (selection) => {
-  selectedPointIds.value = selection.map((item) => item.pointId)
+// 复选框变化处理
+const handleCheckChange = () => {
+  // 使用Tree组件的getCheckedKeys方法获取所有选中的节点ID
+  if (treeRef.value) {
+    selectedPointIds.value = treeRef.value.getCheckedKeys()
+  }
 }
 
-// 格式化日期
-const formatDate = (row, column, cellValue, index) => {
-  if (!cellValue) return ''
-  const date = new Date(cellValue)
-  return date.toLocaleString()
+// 节点点击事件
+const handleNodeClick = (data, node) => {
+  // 节点点击事件，可以用于展开/折叠节点
 }
 
 // 添加知识点
 const handleAddPoint = () => {
   dialogTitle.value = '添加知识点'
   resetPointForm()
+  // 如果选择了特定课程，自动分配该课程
+  if (selectedCourse.value !== 0) {
+    pointForm.courseId = selectedCourse.value
+  }
   dialogVisible.value = true
 }
 
@@ -231,6 +254,10 @@ const handleAddChildPoint = (parentPoint) => {
 const handleEditPoint = (point) => {
   dialogTitle.value = '编辑知识点'
   Object.assign(pointForm, point)
+  // 将null转换为0，以便在下拉框中显示
+  if (pointForm.parentId === null) {
+    pointForm.parentId = 0
+  }
   dialogVisible.value = true
 }
 
@@ -249,7 +276,7 @@ const handleDeletePoint = async (pointId) => {
     
     await deleteKnowledgePoint(pointId)
     ElMessage.success('知识点删除成功')
-    fetchKnowledgePoints()
+    fetchKnowledgePointTree()
   } catch (error) {
     if (error !== 'cancel') {
       ElMessage.error('知识点删除失败')
@@ -274,7 +301,7 @@ const handleBatchDelete = async () => {
     await deleteKnowledgePointBatch(selectedPointIds.value)
     ElMessage.success('批量删除成功')
     selectedPointIds.value = []
-    fetchKnowledgePoints()
+    fetchKnowledgePointTree()
   } catch (error) {
     if (error !== 'cancel') {
       ElMessage.error('批量删除失败')
@@ -300,7 +327,7 @@ const handleSavePoint = async () => {
       ElMessage.success('知识点添加成功')
     }
     dialogVisible.value = false
-    fetchKnowledgePoints()
+    fetchKnowledgePointTree()
   } catch (error) {
     ElMessage.error(pointForm.pointId ? '知识点更新失败' : '知识点添加失败')
     console.error('保存知识点失败:', error)
@@ -321,13 +348,13 @@ const resetPointForm = () => {
 
 // 课程选择变化
 const handleCourseChange = () => {
-  fetchKnowledgePoints()
+  fetchKnowledgePointTree()
 }
 
 // 页面挂载时获取数据
 onMounted(async () => {
   await fetchCourses()
-  await fetchKnowledgePoints()
+  await fetchKnowledgePointTree()
 })
 </script>
 
@@ -348,9 +375,40 @@ onMounted(async () => {
   margin-bottom: 16px;
 }
 
-.mt-4 {
-  margin-top: 16px;
+.tree-container {
+  border: 1px solid #ebeef5;
+  border-radius: 4px;
+  padding: 20px;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.tree-node-content {
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  height: 32px;
+  line-height: 32px;
+}
+
+.node-actions {
+  display: flex;
+  gap: 5px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.tree-node-content:hover .node-actions {
+  opacity: 1;
+}
+
+:deep(.el-tree-node__content) {
+  height: auto;
+  padding: 4px 0;
+}
+
+:deep(.el-tree-node) {
+  margin: 4px 0;
 }
 </style>

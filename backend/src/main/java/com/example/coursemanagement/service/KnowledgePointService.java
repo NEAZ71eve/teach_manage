@@ -58,4 +58,14 @@ public interface KnowledgePointService {
      * 查询知识点总数
      */
     int count();
+    
+    /**
+     * 根据课程ID查询知识点树结构
+     */
+    List<KnowledgePoint> getKnowledgePointTree(Integer courseId);
+    
+    /**
+     * 查询所有知识点树结构
+     */
+    List<KnowledgePoint> getAllKnowledgePointTree();
 }

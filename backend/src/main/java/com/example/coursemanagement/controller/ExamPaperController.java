@@ -15,7 +15,7 @@ import java.util.Map;
  * 试卷Controller
  */
 @RestController
-@RequestMapping("/exam-papers")
+@RequestMapping("/exam-paper")
 public class ExamPaperController {
 
     @Autowired
