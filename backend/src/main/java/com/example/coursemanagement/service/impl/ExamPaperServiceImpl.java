@@ -38,12 +38,12 @@ public class ExamPaperServiceImpl implements ExamPaperService {
 
     @Override
     public ExamPaper getById(String id) {
-        return examPaperRepository.findById(id).orElse(null);
+        return examPaperRepository.findById(Integer.parseInt(id)).orElse(null);
     }
 
     @Override
     public List<ExamPaper> listByCourseId(String courseId) {
-        return examPaperRepository.findByCourseId(courseId);
+        return examPaperRepository.findByCourseId(Integer.parseInt(courseId));
     }
 
     @Override
@@ -60,7 +60,7 @@ public class ExamPaperServiceImpl implements ExamPaperService {
     public boolean removeById(String id) {
         // 先删除试卷题目关联
         examPaperQuestionRepository.deleteByPaperId(id);
-        return examPaperRepository.deleteById(id) > 0;
+        return examPaperRepository.deleteById(Integer.parseInt(id)) > 0;
     }
 
     @Override
@@ -69,7 +69,9 @@ public class ExamPaperServiceImpl implements ExamPaperService {
         for (String id : ids) {
             examPaperQuestionRepository.deleteByPaperId(id);
         }
-        return examPaperRepository.deleteBatch(ids) > 0;
+        // 转换为Integer列表
+        List<Integer> integerIds = ids.stream().map(Integer::parseInt).collect(Collectors.toList());
+        return examPaperRepository.deleteBatch(integerIds) > 0;
     }
 
     @Override
@@ -114,9 +116,9 @@ public class ExamPaperServiceImpl implements ExamPaperService {
         // 2. 创建试卷
         ExamPaper paper = new ExamPaper();
         paper.setPaperName("自动组卷 - " + courseId);
-        paper.setProgramId(courseId);
+        paper.setCourseId(Integer.parseInt(courseId));
         paper.setTotalScore(totalScore);
-        paper.setCreateTeacher("1"); // 示例教师ID
+        paper.setPaperType("自动组卷");
         examPaperRepository.save(paper);
 
         // 3. 为每个知识点分配题目
@@ -162,7 +164,7 @@ public class ExamPaperServiceImpl implements ExamPaperService {
 
                     // 添加题目到试卷
                     ExamPaperQuestion examPaperQuestion = new ExamPaperQuestion();
-                    examPaperQuestion.setPaperId(paper.getPaperId());
+                    examPaperQuestion.setPaperId(paper.getPaperId().toString());
                     examPaperQuestion.setQuestionId(question.getQuestionId().toString());
                     examPaperQuestion.setQuestionOrder(questionOrder++);
                     examPaperQuestion.setScore(actualScore);
@@ -175,6 +177,6 @@ public class ExamPaperServiceImpl implements ExamPaperService {
             }
         }
 
-        return paper.getPaperId();
+        return paper.getPaperId().toString();
     }
 }

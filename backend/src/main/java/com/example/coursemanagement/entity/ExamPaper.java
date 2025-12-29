@@ -10,10 +10,11 @@ import java.time.LocalDateTime;
 @Data
 public class ExamPaper {
 
-    private String paperId;
+    private Integer paperId;
     private String paperName;
-    private String programId;
+    private Integer courseId;
     private Double totalScore;
-    private String createTeacher;
+    private String paperType;
     private LocalDateTime createTime;
+    private LocalDateTime updateTime;
 }

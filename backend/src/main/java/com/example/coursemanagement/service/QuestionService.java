@@ -62,10 +62,10 @@ public interface QuestionService {
     /**
      * 分页查询题目
      */
-    List<Question> listPage(Integer page, Integer limit);
+    List<Question> listPage(Integer page, Integer limit, String questionType, String difficulty);
 
     /**
      * 查询题目总数
      */
-    int count();
+    int count(String questionType, String difficulty);
 }

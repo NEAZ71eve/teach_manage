@@ -32,9 +32,12 @@ public class QuestionController {
      * 分页查询题目
      */
     @GetMapping("/page")
-    public ResponseEntity<Map<String, Object>> getQuestionPage(@RequestParam(defaultValue = "1") Integer page, @RequestParam(defaultValue = "10") Integer limit) {
-        List<Question> questions = questionService.listPage(page, limit);
-        int total = questionService.count();
+    public ResponseEntity<Map<String, Object>> getQuestionPage(@RequestParam(defaultValue = "1") Integer page, 
+                                                               @RequestParam(defaultValue = "10") Integer limit,
+                                                               @RequestParam(required = false) String questionType,
+                                                               @RequestParam(required = false) String difficulty) {
+        List<Question> questions = questionService.listPage(page, limit, questionType, difficulty);
+        int total = questionService.count(questionType, difficulty);
         Map<String, Object> result = new HashMap<>();
         result.put("records", questions);
         result.put("total", total);

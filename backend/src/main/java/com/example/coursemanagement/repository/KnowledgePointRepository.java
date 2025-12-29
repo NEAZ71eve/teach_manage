@@ -21,14 +21,13 @@ public class KnowledgePointRepository {
      * 查询所有知识点
      */
     public List<KnowledgePoint> findAll() {
-        String sql = "SELECT kp_id, kp_name, course_no, program_id, parent_kp_id, kp_desc, kp_difficulty, create_time, update_time FROM knowledge_point";
+        String sql = "SELECT kp_id, kp_name, course_id, parent_kp_id, kp_desc, kp_difficulty, create_time, update_time FROM knowledge_point";
         return jdbcTemplate.query(sql, (rs, rowNum) -> {
             KnowledgePoint point = new KnowledgePoint();
-            point.setPointId(rs.getString("kp_id"));
+            point.setPointId(rs.getInt("kp_id"));
             point.setPointName(rs.getString("kp_name"));
-            point.setCourseId(rs.getString("course_no"));
-            point.setProgramId(rs.getString("program_id"));
-            point.setParentId(rs.getString("parent_kp_id"));
+            point.setCourseId(rs.getInt("course_id"));
+            point.setParentId(rs.getInt("parent_kp_id"));
             point.setDescription(rs.getString("kp_desc"));
             point.setDifficulty(rs.getString("kp_difficulty"));
             point.setCreateTime(rs.getTimestamp("create_time").toLocalDateTime());
@@ -40,15 +39,14 @@ public class KnowledgePointRepository {
     /**
      * 根据ID查询知识点
      */
-    public Optional<KnowledgePoint> findById(String id) {
-        String sql = "SELECT kp_id, kp_name, course_no, program_id, parent_kp_id, kp_desc, kp_difficulty, create_time, update_time FROM knowledge_point WHERE kp_id = ?";
+    public Optional<KnowledgePoint> findById(Integer id) {
+        String sql = "SELECT kp_id, kp_name, course_id, parent_kp_id, kp_desc, kp_difficulty, create_time, update_time FROM knowledge_point WHERE kp_id = ?";
         List<KnowledgePoint> points = jdbcTemplate.query(sql, (rs, rowNum) -> {
             KnowledgePoint point = new KnowledgePoint();
-            point.setPointId(rs.getString("kp_id"));
+            point.setPointId(rs.getInt("kp_id"));
             point.setPointName(rs.getString("kp_name"));
-            point.setCourseId(rs.getString("course_no"));
-            point.setProgramId(rs.getString("program_id"));
-            point.setParentId(rs.getString("parent_kp_id"));
+            point.setCourseId(rs.getInt("course_id"));
+            point.setParentId(rs.getInt("parent_kp_id"));
             point.setDescription(rs.getString("kp_desc"));
             point.setDifficulty(rs.getString("kp_difficulty"));
             point.setCreateTime(rs.getTimestamp("create_time").toLocalDateTime());
@@ -61,15 +59,14 @@ public class KnowledgePointRepository {
     /**
      * 根据课程ID查询知识点
      */
-    public List<KnowledgePoint> findByCourseId(String courseId) {
-        String sql = "SELECT kp_id, kp_name, course_no, program_id, parent_kp_id, kp_desc, kp_difficulty, create_time, update_time FROM knowledge_point WHERE course_no = ?";
+    public List<KnowledgePoint> findByCourseId(Integer courseId) {
+        String sql = "SELECT kp_id, kp_name, course_id, parent_kp_id, kp_desc, kp_difficulty, create_time, update_time FROM knowledge_point WHERE course_id = ?";
         return jdbcTemplate.query(sql, (rs, rowNum) -> {
             KnowledgePoint point = new KnowledgePoint();
-            point.setPointId(rs.getString("kp_id"));
+            point.setPointId(rs.getInt("kp_id"));
             point.setPointName(rs.getString("kp_name"));
-            point.setCourseId(rs.getString("course_no"));
-            point.setProgramId(rs.getString("program_id"));
-            point.setParentId(rs.getString("parent_kp_id"));
+            point.setCourseId(rs.getInt("course_id"));
+            point.setParentId(rs.getInt("parent_kp_id"));
             point.setDescription(rs.getString("kp_desc"));
             point.setDifficulty(rs.getString("kp_difficulty"));
             point.setCreateTime(rs.getTimestamp("create_time").toLocalDateTime());
@@ -81,15 +78,14 @@ public class KnowledgePointRepository {
     /**
      * 根据父ID查询子知识点
      */
-    public List<KnowledgePoint> findByParentId(String parentId) {
-        String sql = "SELECT kp_id, kp_name, course_no, program_id, parent_kp_id, kp_desc, kp_difficulty, create_time, update_time FROM knowledge_point WHERE parent_kp_id = ?";
+    public List<KnowledgePoint> findByParentId(Integer parentId) {
+        String sql = "SELECT kp_id, kp_name, course_id, parent_kp_id, kp_desc, kp_difficulty, create_time, update_time FROM knowledge_point WHERE parent_kp_id = ?";
         return jdbcTemplate.query(sql, (rs, rowNum) -> {
             KnowledgePoint point = new KnowledgePoint();
-            point.setPointId(rs.getString("kp_id"));
+            point.setPointId(rs.getInt("kp_id"));
             point.setPointName(rs.getString("kp_name"));
-            point.setCourseId(rs.getString("course_no"));
-            point.setProgramId(rs.getString("program_id"));
-            point.setParentId(rs.getString("parent_kp_id"));
+            point.setCourseId(rs.getInt("course_id"));
+            point.setParentId(rs.getInt("parent_kp_id"));
             point.setDescription(rs.getString("kp_desc"));
             point.setDifficulty(rs.getString("kp_difficulty"));
             point.setCreateTime(rs.getTimestamp("create_time").toLocalDateTime());
@@ -102,11 +98,10 @@ public class KnowledgePointRepository {
      * 新增知识点
      */
     public int save(KnowledgePoint point) {
-        String sql = "INSERT INTO knowledge_point (kp_name, course_no, program_id, parent_kp_id, kp_desc, kp_difficulty, create_time, update_time) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())";
+        String sql = "INSERT INTO knowledge_point (kp_name, course_id, parent_kp_id, kp_desc, kp_difficulty, create_time, update_time) VALUES (?, ?, ?, ?, ?, NOW(), NOW())";
         return jdbcTemplate.update(sql, 
                 point.getPointName(), 
                 point.getCourseId(), 
-                point.getProgramId(),
                 point.getParentId(), 
                 point.getDescription(),
                 point.getDifficulty());
@@ -116,11 +111,10 @@ public class KnowledgePointRepository {
      * 更新知识点
      */
     public int update(KnowledgePoint point) {
-        String sql = "UPDATE knowledge_point SET kp_name = ?, course_no = ?, program_id = ?, parent_kp_id = ?, kp_desc = ?, kp_difficulty = ?, update_time = NOW() WHERE kp_id = ?";
+        String sql = "UPDATE knowledge_point SET kp_name = ?, course_id = ?, parent_kp_id = ?, kp_desc = ?, kp_difficulty = ?, update_time = NOW() WHERE kp_id = ?";
         return jdbcTemplate.update(sql, 
                 point.getPointName(), 
                 point.getCourseId(), 
-                point.getProgramId(),
                 point.getParentId(), 
                 point.getDescription(),
                 point.getDifficulty(),
@@ -130,7 +124,7 @@ public class KnowledgePointRepository {
     /**
      * 删除知识点
      */
-    public int deleteById(String id) {
+    public int deleteById(Integer id) {
         String sql = "DELETE FROM knowledge_point WHERE kp_id = ?";
         return jdbcTemplate.update(sql, id);
     }
@@ -138,7 +132,7 @@ public class KnowledgePointRepository {
     /**
      * 批量删除知识点
      */
-    public int deleteBatch(List<String> ids) {
+    public int deleteBatch(List<Integer> ids) {
         String sql = "DELETE FROM knowledge_point WHERE kp_id IN (" + ids.stream().map(id -> "?").reduce((a, b) -> a + "," + b).orElse("") + ")";
         return jdbcTemplate.update(sql, ids.toArray());
     }
@@ -148,14 +142,13 @@ public class KnowledgePointRepository {
      */
     public List<KnowledgePoint> findByPage(int page, int limit) {
         int offset = (page - 1) * limit;
-        String sql = "SELECT kp_id, kp_name, course_no, program_id, parent_kp_id, kp_desc, kp_difficulty, create_time, update_time FROM knowledge_point LIMIT ? OFFSET ?";
+        String sql = "SELECT kp_id, kp_name, course_id, parent_kp_id, kp_desc, kp_difficulty, create_time, update_time FROM knowledge_point LIMIT ? OFFSET ?";
         return jdbcTemplate.query(sql, (rs, rowNum) -> {
             KnowledgePoint point = new KnowledgePoint();
-            point.setPointId(rs.getString("kp_id"));
+            point.setPointId(rs.getInt("kp_id"));
             point.setPointName(rs.getString("kp_name"));
-            point.setCourseId(rs.getString("course_no"));
-            point.setProgramId(rs.getString("program_id"));
-            point.setParentId(rs.getString("parent_kp_id"));
+            point.setCourseId(rs.getInt("course_id"));
+            point.setParentId(rs.getInt("parent_kp_id"));
             point.setDescription(rs.getString("kp_desc"));
             point.setDifficulty(rs.getString("kp_difficulty"));
             point.setCreateTime(rs.getTimestamp("create_time").toLocalDateTime());

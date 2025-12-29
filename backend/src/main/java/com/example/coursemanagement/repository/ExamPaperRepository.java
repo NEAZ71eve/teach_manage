@@ -29,7 +29,7 @@ public class ExamPaperRepository {
     /**
      * 根据ID查询试卷
      */
-    public Optional<ExamPaper> findById(String id) {
+    public Optional<ExamPaper> findById(Integer id) {
         String sql = "SELECT * FROM exam_paper WHERE paper_id = ?";
         List<ExamPaper> papers = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(ExamPaper.class), id);
         return papers.isEmpty() ? Optional.empty() : Optional.of(papers.get(0));
@@ -38,8 +38,8 @@ public class ExamPaperRepository {
     /**
      * 根据课程ID查询试卷
      */
-    public List<ExamPaper> findByCourseId(String courseId) {
-        String sql = "SELECT * FROM exam_paper WHERE program_id = ?";
+    public List<ExamPaper> findByCourseId(Integer courseId) {
+        String sql = "SELECT * FROM exam_paper WHERE course_id = ?";
         return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(ExamPaper.class), courseId);
     }
 
@@ -47,34 +47,31 @@ public class ExamPaperRepository {
      * 新增试卷
      */
     public int save(ExamPaper paper) {
-        String sql = "INSERT INTO exam_paper (paper_id, paper_name, program_id, total_score, create_teacher, create_time) VALUES (?, ?, ?, ?, ?, NOW())";
-        // 生成唯一的试卷ID
-        String paperId = "PAPER_" + System.currentTimeMillis();
-        paper.setPaperId(paperId);
+        String sql = "INSERT INTO exam_paper (paper_name, course_id, total_score, paper_type) VALUES (?, ?, ?, ?)";
         return jdbcTemplate.update(sql, 
-                paperId,
                 paper.getPaperName(), 
-                paper.getProgramId(), 
+                paper.getCourseId(), 
                 paper.getTotalScore(), 
-                paper.getCreateTeacher());
+                paper.getPaperType());
     }
 
     /**
      * 更新试卷
      */
     public int update(ExamPaper paper) {
-        String sql = "UPDATE exam_paper SET paper_name = ?, program_id = ?, total_score = ? WHERE paper_id = ?";
+        String sql = "UPDATE exam_paper SET paper_name = ?, course_id = ?, total_score = ?, paper_type = ? WHERE paper_id = ?";
         return jdbcTemplate.update(sql, 
                 paper.getPaperName(), 
-                paper.getProgramId(), 
+                paper.getCourseId(), 
                 paper.getTotalScore(), 
+                paper.getPaperType(),
                 paper.getPaperId());
     }
 
     /**
      * 删除试卷
      */
-    public int deleteById(String id) {
+    public int deleteById(Integer id) {
         String sql = "DELETE FROM exam_paper WHERE paper_id = ?";
         return jdbcTemplate.update(sql, id);
     }
@@ -82,7 +79,7 @@ public class ExamPaperRepository {
     /**
      * 批量删除试卷
      */
-    public int deleteBatch(List<String> ids) {
+    public int deleteBatch(List<Integer> ids) {
         String sql = "DELETE FROM exam_paper WHERE paper_id IN (" + ids.stream().map(id -> "?").reduce((a, b) -> a + "," + b).orElse("") + ")";
         return jdbcTemplate.update(sql, ids.toArray());
     }

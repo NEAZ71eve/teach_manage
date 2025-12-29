@@ -1,17 +1,18 @@
-import request from './request'
+import request from "./request";
 
 /**
  * 获取题目列表（带分页）
  * @param {number} page - 当前页码
  * @param {number} pageSize - 每页大小
+ * @param {object} searchParams - 搜索参数
  * @returns {Promise}
  */
-export const getQuestions = (page, pageSize) => {
+export const getQuestions = (page, pageSize, searchParams) => {
   return request({
-    url: `/question/page?page=${page}&limit=${pageSize}`,
-    method: 'GET'
-  })
-}
+    url: `/question/page?page=${page}&limit=${pageSize}&questionType=${searchParams.questionType}&difficulty=${searchParams.difficulty}`,
+    method: "GET",
+  });
+};
 
 /**
  * 获取所有题目
@@ -19,10 +20,10 @@ export const getQuestions = (page, pageSize) => {
  */
 export const getAllQuestions = () => {
   return request({
-    url: '/question',
-    method: 'GET'
-  })
-}
+    url: "/question",
+    method: "GET",
+  });
+};
 
 /**
  * 获取题目详情
@@ -32,9 +33,9 @@ export const getAllQuestions = () => {
 export const getQuestionById = (questionId) => {
   return request({
     url: `/question/${questionId}`,
-    method: 'GET'
-  })
-}
+    method: "GET",
+  });
+};
 
 /**
  * 根据课程ID获取题目
@@ -44,9 +45,9 @@ export const getQuestionById = (questionId) => {
 export const getQuestionsByCourseId = (courseId) => {
   return request({
     url: `/question/course/${courseId}`,
-    method: 'GET'
-  })
-}
+    method: "GET",
+  });
+};
 
 /**
  * 根据知识点ID获取题目
@@ -56,9 +57,9 @@ export const getQuestionsByCourseId = (courseId) => {
 export const getQuestionsByPointId = (pointId) => {
   return request({
     url: `/question/point/${pointId}`,
-    method: 'GET'
-  })
-}
+    method: "GET",
+  });
+};
 
 /**
  * 根据题型获取题目
@@ -68,9 +69,9 @@ export const getQuestionsByPointId = (pointId) => {
 export const getQuestionsByType = (questionType) => {
   return request({
     url: `/question/type/${questionType}`,
-    method: 'GET'
-  })
-}
+    method: "GET",
+  });
+};
 
 /**
  * 根据难度获取题目
@@ -80,9 +81,9 @@ export const getQuestionsByType = (questionType) => {
 export const getQuestionsByDifficulty = (difficulty) => {
   return request({
     url: `/question/difficulty/${difficulty}`,
-    method: 'GET'
-  })
-}
+    method: "GET",
+  });
+};
 
 /**
  * 添加题目
@@ -91,11 +92,11 @@ export const getQuestionsByDifficulty = (difficulty) => {
  */
 export const addQuestion = (question) => {
   return request({
-    url: '/question',
-    method: 'POST',
-    data: question
-  })
-}
+    url: "/question",
+    method: "POST",
+    data: question,
+  });
+};
 
 /**
  * 更新题目
@@ -106,10 +107,10 @@ export const addQuestion = (question) => {
 export const updateQuestion = (questionId, question) => {
   return request({
     url: `/question/${questionId}`,
-    method: 'PUT',
-    data: question
-  })
-}
+    method: "PUT",
+    data: question,
+  });
+};
 
 /**
  * 删除题目
@@ -119,9 +120,9 @@ export const updateQuestion = (questionId, question) => {
 export const deleteQuestion = (questionId) => {
   return request({
     url: `/question/${questionId}`,
-    method: 'DELETE'
-  })
-}
+    method: "DELETE",
+  });
+};
 
 /**
  * 批量删除题目
@@ -130,8 +131,8 @@ export const deleteQuestion = (questionId) => {
  */
 export const deleteQuestionBatch = (ids) => {
   return request({
-    url: '/question/batch',
-    method: 'DELETE',
-    data: ids
-  })
-}
+    url: "/question/batch",
+    method: "DELETE",
+    data: ids,
+  });
+};

@@ -84,12 +84,12 @@ public class QuestionServiceImpl implements QuestionService {
     }
 
     @Override
-    public List<Question> listPage(Integer page, Integer limit) {
-        return questionRepository.findByPage(page, limit);
+    public List<Question> listPage(Integer page, Integer limit, String questionType, String difficulty) {
+        return questionRepository.findByPage(page, limit, questionType, difficulty);
     }
 
     @Override
-    public int count() {
-        return questionRepository.count();
+    public int count(String questionType, String difficulty) {
+        return questionRepository.count(questionType, difficulty);
     }
 }

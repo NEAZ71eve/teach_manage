@@ -22,4 +22,6 @@ public class Question {
     private Integer teacherId;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
+    private String courseName;
+    private String pointName;
 }

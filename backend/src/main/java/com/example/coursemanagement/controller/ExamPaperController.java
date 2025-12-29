@@ -15,7 +15,7 @@ import java.util.Map;
  * 试卷Controller
  */
 @RestController
-@RequestMapping("/exam-paper")
+@RequestMapping("/exam-papers")
 public class ExamPaperController {
 
     @Autowired
@@ -73,7 +73,7 @@ public class ExamPaperController {
      */
     @PutMapping("/{id}")
     public ResponseEntity<Boolean> updateExamPaper(@PathVariable String id, @RequestBody ExamPaper paper) {
-        paper.setPaperId(id);
+        paper.setPaperId(Integer.parseInt(id));
         return ResponseEntity.ok(examPaperService.updateById(paper));
     }
 

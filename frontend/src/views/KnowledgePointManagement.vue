@@ -118,6 +118,7 @@ import { Plus, Edit, Delete } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getAllCourses } from '../api/course'
 import { 
+  getKnowledgePoints,
   getAllKnowledgePoints, 
   addKnowledgePoint, 
   updateKnowledgePoint, 
@@ -166,15 +167,21 @@ const fetchCourses = async () => {
 // 获取知识点列表
 const fetchKnowledgePoints = async () => {
   try {
-    const response = await getAllKnowledgePoints()
-    allKnowledgePoints.value = response
+    // 获取所有知识点用于下拉选择
+    const allPoints = await getAllKnowledgePoints()
+    allKnowledgePoints.value = allPoints
+    
     // 过滤课程
+    let filteredPoints = allPoints
     if (selectedCourse.value && selectedCourse.value !== '0') {
-      knowledgePoints.value = response.filter(point => point.courseId === selectedCourse.value)
-    } else {
-      knowledgePoints.value = response
+      filteredPoints = allPoints.filter(point => point.courseId === selectedCourse.value)
     }
-    total.value = knowledgePoints.value.length
+    
+    // 手动实现分页
+    const startIndex = (currentPage.value - 1) * pageSize.value
+    const endIndex = startIndex + pageSize.value
+    knowledgePoints.value = filteredPoints.slice(startIndex, endIndex)
+    total.value = filteredPoints.length
   } catch (error) {
     ElMessage.error('获取知识点列表失败')
     console.error('获取知识点列表失败:', error)

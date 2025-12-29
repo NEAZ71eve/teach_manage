@@ -9,11 +9,10 @@ import java.time.LocalDateTime;
  */
 @Data
 public class KnowledgePoint {
-    private String pointId;
+    private Integer pointId;
     private String pointName;
-    private String courseId;
-    private String programId;
-    private String parentId;
+    private Integer courseId;
+    private Integer parentId;
     private String description;
     private String difficulty;
     private LocalDateTime createTime;

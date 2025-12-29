@@ -17,17 +17,17 @@ public interface KnowledgePointService {
     /**
      * 根据ID查询知识点
      */
-    KnowledgePoint getById(String id);
+    KnowledgePoint getById(Integer id);
 
     /**
      * 根据课程ID查询知识点
      */
-    List<KnowledgePoint> listByCourseId(String courseId);
+    List<KnowledgePoint> listByCourseId(Integer courseId);
 
     /**
      * 根据父ID查询子知识点
      */
-    List<KnowledgePoint> listByParentId(String parentId);
+    List<KnowledgePoint> listByParentId(Integer parentId);
 
     /**
      * 新增知识点
@@ -42,12 +42,12 @@ public interface KnowledgePointService {
     /**
      * 删除知识点
      */
-    boolean removeById(String id);
+    boolean removeById(Integer id);
 
     /**
      * 批量删除知识点
      */
-    boolean removeByIds(List<String> ids);
+    boolean removeByIds(List<Integer> ids);
 
     /**
      * 分页查询知识点

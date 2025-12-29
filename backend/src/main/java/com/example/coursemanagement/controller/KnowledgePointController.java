@@ -47,7 +47,7 @@ public class KnowledgePointController {
      * 根据ID查询知识点
      */
     @GetMapping("/{id}")
-    public ResponseEntity<KnowledgePoint> getKnowledgePointById(@PathVariable String id) {
+    public ResponseEntity<KnowledgePoint> getKnowledgePointById(@PathVariable Integer id) {
         return ResponseEntity.ok(knowledgePointService.getById(id));
     }
 
@@ -55,7 +55,7 @@ public class KnowledgePointController {
      * 根据课程ID查询知识点
      */
     @GetMapping("/course/{courseId}")
-    public ResponseEntity<List<KnowledgePoint>> getKnowledgePointsByCourseId(@PathVariable String courseId) {
+    public ResponseEntity<List<KnowledgePoint>> getKnowledgePointsByCourseId(@PathVariable Integer courseId) {
         return ResponseEntity.ok(knowledgePointService.listByCourseId(courseId));
     }
 
@@ -63,7 +63,7 @@ public class KnowledgePointController {
      * 根据父ID查询知识点
      */
     @GetMapping("/parent/{parentId}")
-    public ResponseEntity<List<KnowledgePoint>> getKnowledgePointsByParentId(@PathVariable String parentId) {
+    public ResponseEntity<List<KnowledgePoint>> getKnowledgePointsByParentId(@PathVariable Integer parentId) {
         return ResponseEntity.ok(knowledgePointService.listByParentId(parentId));
     }
 
@@ -79,7 +79,7 @@ public class KnowledgePointController {
      * 更新知识点
      */
     @PutMapping("/{id}")
-    public ResponseEntity<Boolean> updateKnowledgePoint(@PathVariable String id, @RequestBody KnowledgePoint point) {
+    public ResponseEntity<Boolean> updateKnowledgePoint(@PathVariable Integer id, @RequestBody KnowledgePoint point) {
         point.setPointId(id);
         return ResponseEntity.ok(knowledgePointService.updateById(point));
     }
@@ -88,7 +88,7 @@ public class KnowledgePointController {
      * 删除知识点
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Boolean> deleteKnowledgePoint(@PathVariable String id) {
+    public ResponseEntity<Boolean> deleteKnowledgePoint(@PathVariable Integer id) {
         return ResponseEntity.ok(knowledgePointService.removeById(id));
     }
 
@@ -96,7 +96,7 @@ public class KnowledgePointController {
      * 批量删除知识点
      */
     @DeleteMapping("/batch")
-    public ResponseEntity<Boolean> deleteBatch(@RequestBody List<String> ids) {
+    public ResponseEntity<Boolean> deleteBatch(@RequestBody List<Integer> ids) {
         return ResponseEntity.ok(knowledgePointService.removeByIds(ids));
     }
 }
