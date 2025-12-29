@@ -1,0 +1,95 @@
+package com.example.coursemanagement.repository;
+
+import com.example.coursemanagement.entity.TrainingProgram;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * 培养方案数据访问层，使用Spring JDBC Template实现
+ */
+@Repository
+public class TrainingProgramRepository {
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    /**
+     * 查询所有培养方案
+     */
+    public List<TrainingProgram> findAll() {
+        String sql = "SELECT * FROM training_program";
+        return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(TrainingProgram.class));
+    }
+
+    /**
+     * 根据ID查询培养方案
+     */
+    public Optional<TrainingProgram> findById(Integer id) {
+        String sql = "SELECT * FROM training_program WHERE program_id = ?";
+        List<TrainingProgram> programs = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(TrainingProgram.class), id);
+        return programs.isEmpty() ? Optional.empty() : Optional.of(programs.get(0));
+    }
+
+    /**
+     * 新增培养方案
+     */
+    public int save(TrainingProgram program) {
+        String sql = "INSERT INTO training_program (major_name, duration, total_credit, effective_year, create_time, update_time) VALUES (?, ?, ?, ?, NOW(), NOW())";
+        return jdbcTemplate.update(sql, 
+                program.getMajorName(), 
+                program.getDuration(), 
+                program.getTotalCredit(), 
+                program.getEffectiveYear());
+    }
+
+    /**
+     * 更新培养方案
+     */
+    public int update(TrainingProgram program) {
+        String sql = "UPDATE training_program SET major_name = ?, duration = ?, total_credit = ?, effective_year = ?, update_time = NOW() WHERE program_id = ?";
+        return jdbcTemplate.update(sql, 
+                program.getMajorName(), 
+                program.getDuration(), 
+                program.getTotalCredit(), 
+                program.getEffectiveYear(), 
+                program.getProgramId());
+    }
+
+    /**
+     * 删除培养方案
+     */
+    public int deleteById(Integer id) {
+        String sql = "DELETE FROM training_program WHERE program_id = ?";
+        return jdbcTemplate.update(sql, id);
+    }
+
+    /**
+     * 批量删除培养方案
+     */
+    public int deleteBatch(List<Integer> ids) {
+        String sql = "DELETE FROM training_program WHERE program_id IN (" + ids.stream().map(id -> "?").reduce((a, b) -> a + "," + b).orElse("") + ")";
+        return jdbcTemplate.update(sql, ids.toArray());
+    }
+
+    /**
+     * 分页查询培养方案
+     */
+    public List<TrainingProgram> findByPage(int page, int limit) {
+        int offset = (page - 1) * limit;
+        String sql = "SELECT * FROM training_program LIMIT ? OFFSET ?";
+        return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(TrainingProgram.class), limit, offset);
+    }
+
+    /**
+     * 查询培养方案总数
+     */
+    public int count() {
+        String sql = "SELECT COUNT(*) FROM training_program";
+        return jdbcTemplate.queryForObject(sql, Integer.class);
+    }
+}
