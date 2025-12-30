@@ -6,43 +6,79 @@
           <span>系统统计与报表</span>
         </div>
       </template>
-      
+
       <div class="statistics-dashboard">
         <!-- 统计卡片 -->
         <div class="statistics-cards">
           <el-card class="stat-card">
-            <el-statistic title="课程总数" :value="courseStatistics.totalCourses" :precision="0">
+            <el-statistic
+              title="课程总数"
+              :value="courseStatistics.totalCourses"
+              :precision="0"
+            >
               <template #prefix>
                 <el-icon class="el-icon--success"><Cpu /></el-icon>
               </template>
             </el-statistic>
           </el-card>
-          
+
           <el-card class="stat-card">
-            <el-statistic title="知识点总数" :value="knowledgePointStatistics.totalKnowledgePoints" :precision="0">
+            <el-statistic
+              title="知识点总数"
+              :value="knowledgePointStatistics.totalKnowledgePoints"
+              :precision="0"
+            >
               <template #prefix>
                 <el-icon class="el-icon--warning"><Document /></el-icon>
               </template>
             </el-statistic>
           </el-card>
-          
+
           <el-card class="stat-card">
-            <el-statistic title="题目总数" :value="questionBankStatistics.totalQuestions" :precision="0">
+            <el-statistic
+              title="题目总数"
+              :value="questionBankStatistics.totalQuestions"
+              :precision="0"
+            >
               <template #prefix>
                 <el-icon class="el-icon--primary"><EditPen /></el-icon>
               </template>
             </el-statistic>
           </el-card>
-          
+
           <el-card class="stat-card">
-            <el-statistic title="试卷总数" :value="examPaperStatistics.totalPapers" :precision="0">
+            <el-statistic
+              title="试卷总数"
+              :value="examPaperStatistics.totalPapers"
+              :precision="0"
+            >
               <template #prefix>
                 <el-icon class="el-icon--danger"><DocumentRemove /></el-icon>
               </template>
             </el-statistic>
           </el-card>
         </div>
-        
+
+        <!-- 题型分布表格 -->
+        <el-card class="mb-4">
+          <template #header>
+            <div class="card-header">
+              <span>题型分布</span>
+            </div>
+          </template>
+          <el-table :data="questionTypeDist" style="width: 100%">
+            <el-table-column
+              prop="type"
+              label="题型"
+              width="120"
+              :formatter="formatQuestionType"
+            >
+            </el-table-column>
+            <el-table-column prop="count" label="数量" width="100">
+            </el-table-column>
+          </el-table>
+        </el-card>
+
         <!-- 统计图表 -->
         <div class="statistics-charts">
           <el-card class="chart-card">
@@ -55,7 +91,7 @@
               <el-empty description="图表功能开发中..." />
             </div>
           </el-card>
-          
+
           <el-card class="chart-card">
             <template #header>
               <div class="chart-header">
@@ -66,7 +102,7 @@
               <el-empty description="图表功能开发中..." />
             </div>
           </el-card>
-          
+
           <el-card class="chart-card">
             <template #header>
               <div class="chart-header">
@@ -77,7 +113,7 @@
               <el-empty description="图表功能开发中..." />
             </div>
           </el-card>
-          
+
           <el-card class="chart-card">
             <template #header>
               <div class="chart-header">
@@ -95,83 +131,93 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { Cpu, Document, EditPen, DocumentRemove } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
-import request from '../api/request'
+import { ref, onMounted } from "vue";
+import {
+  Cpu,
+  Document,
+  EditPen,
+  DocumentRemove,
+} from "@element-plus/icons-vue";
+import { ElMessage } from "element-plus";
+import request from "../api/request";
 
 // 统计数据
 const courseStatistics = ref({
-  totalCourses: 0
-})
+  totalCourses: 0,
+});
 
 const knowledgePointStatistics = ref({
-  totalKnowledgePoints: 0
-})
+  totalKnowledgePoints: 0,
+});
 
 const questionBankStatistics = ref({
-  totalQuestions: 0
-})
+  totalQuestions: 0,
+  questionTypeDistribution: [],
+});
 
 const examPaperStatistics = ref({
-  totalPapers: 0
-})
+  totalPapers: 0,
+});
+
+const questionTypeDist = ref([]); // 用于表格数据
 
 // 获取课程统计数据
 const fetchCourseStatistics = async () => {
   try {
     const response = await request({
-      url: '/statistics/course',
-      method: 'GET'
-    })
-    courseStatistics.value = response
+      url: "/statistics/course",
+      method: "GET",
+    });
+    courseStatistics.value = response;
   } catch (error) {
-    ElMessage.error('获取课程统计数据失败')
-    console.error('获取课程统计数据失败:', error)
+    ElMessage.error("获取课程统计数据失败");
+    console.error("获取课程统计数据失败:", error);
   }
-}
+};
 
 // 获取知识点统计数据
 const fetchKnowledgePointStatistics = async () => {
   try {
     const response = await request({
-      url: '/statistics/knowledge-point',
-      method: 'GET'
-    })
-    knowledgePointStatistics.value = response
+      url: "/statistics/knowledge-point",
+      method: "GET",
+    });
+    knowledgePointStatistics.value = response;
   } catch (error) {
-    ElMessage.error('获取知识点统计数据失败')
-    console.error('获取知识点统计数据失败:', error)
+    ElMessage.error("获取知识点统计数据失败");
+    console.error("获取知识点统计数据失败:", error);
   }
-}
+};
 
 // 获取题库统计数据
 const fetchQuestionBankStatistics = async () => {
   try {
     const response = await request({
-      url: '/statistics/question-bank',
-      method: 'GET'
-    })
-    questionBankStatistics.value = response
+      url: "/statistics/question-bank",
+      method: "GET",
+    });
+    questionBankStatistics.value = response;
+    // 提取题型分布数据用于表格
+    questionTypeDist.value = response.questionTypeDistribution || [];
   } catch (error) {
-    ElMessage.error('获取题库统计数据失败')
-    console.error('获取题库统计数据失败:', error)
+    ElMessage.error("获取题库统计数据失败");
+    console.error("获取题库统计数据失败:", error);
   }
-}
+};
 
 // 获取试卷统计数据
 const fetchExamPaperStatistics = async () => {
   try {
     const response = await request({
-      url: '/statistics/exam-paper',
-      method: 'GET'
-    })
-    examPaperStatistics.value = response
+      url: "/statistics/exam-paper",
+      method: "GET",
+    });
+    examPaperStatistics.value = response;
   } catch (error) {
-    ElMessage.error('获取试卷统计数据失败')
-    console.error('获取试卷统计数据失败:', error)
+    ElMessage.error("获取试卷统计数据失败");
+    console.error("获取试卷统计数据失败:", error);
   }
-}
+};
 
 // 获取所有统计数据
 const fetchAllStatistics = async () => {
@@ -179,14 +225,26 @@ const fetchAllStatistics = async () => {
     fetchCourseStatistics(),
     fetchKnowledgePointStatistics(),
     fetchQuestionBankStatistics(),
-    fetchExamPaperStatistics()
-  ])
-}
+    fetchExamPaperStatistics(),
+  ]);
+};
+
+// 将题型编号转换为名称
+const formatQuestionType = (row, column, cellValue) => {
+  const typeMap = {
+    1: "单选题",
+    2: "多选题",
+    3: "判断题",
+    4: "填空题",
+    5: "简答题",
+  };
+  return typeMap[cellValue] || "其他";
+};
 
 // 页面挂载时获取数据
 onMounted(async () => {
-  await fetchAllStatistics()
-})
+  await fetchAllStatistics();
+});
 </script>
 
 <style scoped>

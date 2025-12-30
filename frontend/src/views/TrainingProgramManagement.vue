@@ -550,18 +550,28 @@ const handleEditProgram = (row) => {
 // 保存培养方案
 const handleSaveProgram = async () => {
   try {
-    if (programForm.programId) {
+    console.log("保存培养方案数据:", programForm);
+    // 移除空的description字段，避免后端处理问题
+    const formData = { ...programForm };
+    if (!formData.description) {
+      delete formData.description;
+    }
+    if (formData.programId) {
       // 更新培养方案
-      await updateTrainingProgram(programForm.programId, programForm);
+      await updateTrainingProgram(formData.programId, formData);
       ElMessage.success("培养方案更新成功");
     } else {
       // 添加培养方案
-      await addTrainingProgram(programForm);
+      const response = await addTrainingProgram(formData);
+      console.log("添加培养方案响应:", response);
       ElMessage.success("培养方案添加成功");
     }
     dialogVisible.value = false;
     fetchPrograms();
   } catch (error) {
+    console.error("保存培养方案失败详细信息:", error);
+    console.error("错误状态:", error.response?.status);
+    console.error("错误数据:", error.response?.data);
     ElMessage.error(
       programForm.programId ? "培养方案更新失败" : "培养方案添加失败"
     );

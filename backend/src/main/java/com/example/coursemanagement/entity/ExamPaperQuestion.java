@@ -11,9 +11,7 @@ public class ExamPaperQuestion {
     private Integer detailId;
     private String paperId;
     private String questionId;
-    private Integer kpId;
     private Integer questionOrder;
-    private Double questionScore;
     
     // 关联的完整题目信息
     private Question question;

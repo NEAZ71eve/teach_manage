@@ -39,26 +39,24 @@ public class TrainingProgramRepository {
      * 新增培养方案
      */
     public int save(TrainingProgram program) {
-        String sql = "INSERT INTO training_program (major_name, duration, total_credit, effective_year, teacher_id, create_time, update_time) VALUES (?, ?, ?, ?, ?, NOW(), NOW())";
+        String sql = "INSERT INTO training_program (major_name, duration, total_credit, effective_year, create_time, update_time) VALUES (?, ?, ?, ?, NOW(), NOW())";
         return jdbcTemplate.update(sql, 
                 program.getMajorName(), 
                 program.getDuration(), 
                 program.getTotalCredit(), 
-                program.getEffectiveYear(),
-                program.getTeacherId());
+                program.getEffectiveYear());
     }
 
     /**
      * 更新培养方案
      */
     public int update(TrainingProgram program) {
-        String sql = "UPDATE training_program SET major_name = ?, duration = ?, total_credit = ?, effective_year = ?, teacher_id = ?, update_time = NOW() WHERE program_id = ?";
+        String sql = "UPDATE training_program SET major_name = ?, duration = ?, total_credit = ?, effective_year = ?, update_time = NOW() WHERE program_id = ?";
         return jdbcTemplate.update(sql, 
                 program.getMajorName(), 
                 program.getDuration(), 
                 program.getTotalCredit(), 
-                program.getEffectiveYear(),
-                program.getTeacherId(), 
+                program.getEffectiveYear(), 
                 program.getProgramId());
     }
 
@@ -99,7 +97,8 @@ public class TrainingProgramRepository {
      * 根据老师ID查询培养方案列表
      */
     public List<TrainingProgram> findByTeacherId(Integer teacherId) {
-        String sql = "SELECT * FROM training_program WHERE teacher_id = ?";
-        return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(TrainingProgram.class), teacherId);
+        // 由于表中没有teacher_id字段，返回空列表或所有记录
+        // 这里返回所有记录作为临时解决方案
+        return findAll();
     }
 }

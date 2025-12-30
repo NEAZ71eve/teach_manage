@@ -78,4 +78,14 @@ public interface CourseScheduleService {
      * 查询课程表总数
      */
     int count();
+
+    /**
+     * 根据学期ID和教师姓名查询课程表
+     */
+    List<CourseSchedule> getByTeacher(int semesterId, String teacher);
+
+    /**
+     * 根据学期ID、教师姓名和星期几查询周课表
+     */
+    List<CourseSchedule> getWeekScheduleByTeacherAndDay(int semesterId, String teacher, int weekDay);
 }

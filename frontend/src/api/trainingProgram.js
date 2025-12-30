@@ -42,6 +42,7 @@ export const getTrainingProgramById = (programId) => {
  * @returns {Promise}
  */
 export const addTrainingProgram = (program) => {
+  console.log('发送添加培养方案请求:', program);
   return request({
     url: '/training-program',
     method: 'POST',

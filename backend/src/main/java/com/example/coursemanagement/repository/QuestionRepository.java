@@ -79,7 +79,7 @@ public class QuestionRepository {
      */
     @Transactional
     public int save(Question question) {
-        String sql = "INSERT INTO question (question_type, question_content, kp_id, difficulty, score, correct_answer, analysis, create_time, update_time) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
+        String sql = "INSERT INTO question (question_type, question_content, kp_id, difficulty, score, correct_answer, analysis, category_id, status, creator_id, create_time, update_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
         jdbcTemplate.update(sql, 
                 question.getQuestionType(), 
                 question.getQuestionContent(), 
@@ -87,7 +87,10 @@ public class QuestionRepository {
                 question.getDifficulty(), 
                 question.getScore(),
                 question.getCorrectAnswer(),
-                question.getAnalysis());
+                question.getAnalysis(),
+                question.getCategoryId(),
+                question.getStatus(),
+                question.getCreatorId());
         
         // 获取新插入的题目ID
         Integer questionId = jdbcTemplate.queryForObject("SELECT LAST_INSERT_ID()", Integer.class);
@@ -114,7 +117,7 @@ public class QuestionRepository {
      */
     @Transactional
     public int update(Question question) {
-        String sql = "UPDATE question SET question_type = ?, question_content = ?, kp_id = ?, difficulty = ?, score = ?, correct_answer = ?, analysis = ?, update_time = NOW() WHERE question_id = ?";
+        String sql = "UPDATE question SET question_type = ?, question_content = ?, kp_id = ?, difficulty = ?, score = ?, correct_answer = ?, analysis = ?, category_id = ?, status = ?, update_time = NOW() WHERE question_id = ?";
         int result = jdbcTemplate.update(sql, 
                 question.getQuestionType(), 
                 question.getQuestionContent(), 
@@ -123,6 +126,8 @@ public class QuestionRepository {
                 question.getScore(),
                 question.getCorrectAnswer(),
                 question.getAnalysis(),
+                question.getCategoryId(),
+                question.getStatus(),
                 question.getQuestionId());
         
         // 更新题目选项

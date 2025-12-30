@@ -6,9 +6,11 @@ import com.example.coursemanagement.repository.KnowledgePointRepository;
 import com.example.coursemanagement.repository.QuestionRepository;
 import com.example.coursemanagement.service.StatisticsService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -28,6 +30,9 @@ public class StatisticsServiceImpl implements StatisticsService {
 
     @Autowired
     private ExamPaperRepository examPaperRepository;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     @Override
     public Map<String, Object> getCourseStatistics() {
@@ -55,7 +60,12 @@ public class StatisticsServiceImpl implements StatisticsService {
         // 获取题目总数
         int totalQuestions = questionRepository.count();
         statistics.put("totalQuestions", totalQuestions);
-        // 这里可以添加更多题库统计信息，如题型分布、难度分布等
+
+        // 计算题型分布：按question_type分组计数
+        String sql = "SELECT question_type AS type, COUNT(*) AS count FROM question GROUP BY question_type";
+        List<Map<String, Object>> typeDistribution = jdbcTemplate.queryForList(sql);
+        statistics.put("questionTypeDistribution", typeDistribution);
+
         return statistics;
     }
 

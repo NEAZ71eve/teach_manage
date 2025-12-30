@@ -56,7 +56,20 @@ public class TrainingProgramController {
      */
     @PostMapping
     public ResponseEntity<Boolean> addTrainingProgram(@RequestBody TrainingProgram program) {
-        return ResponseEntity.ok(trainingProgramService.save(program));
+        try {
+            System.out.println("收到新增培养方案请求: " + program);
+            System.out.println("majorName: " + program.getMajorName());
+            System.out.println("duration: " + program.getDuration());
+            System.out.println("totalCredit: " + program.getTotalCredit());
+            System.out.println("effectiveYear: " + program.getEffectiveYear());
+            boolean result = trainingProgramService.save(program);
+            System.out.println("新增培养方案结果: " + result);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            System.out.println("新增培养方案异常: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(false);
+        }
     }
 
     /**

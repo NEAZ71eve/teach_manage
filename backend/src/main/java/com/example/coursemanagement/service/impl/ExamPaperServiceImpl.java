@@ -98,14 +98,6 @@ public class ExamPaperServiceImpl implements ExamPaperService {
 
     @Override
     public boolean addQuestionToPaper(ExamPaperQuestion examPaperQuestion) {
-        // 获取题目信息，自动填充知识点ID
-        if (examPaperQuestion.getKpId() == null) {
-            Integer questionId = Integer.parseInt(examPaperQuestion.getQuestionId());
-            Question question = questionRepository.findById(questionId).orElse(null);
-            if (question != null) {
-                examPaperQuestion.setKpId(question.getKpId());
-            }
-        }
         return examPaperQuestionRepository.save(examPaperQuestion) > 0;
     }
 
@@ -358,23 +350,25 @@ public class ExamPaperServiceImpl implements ExamPaperService {
                                 System.out.println("5.8.7 处理题目: ID=" + question.getQuestionId() + ", 难度=" + question.getDifficulty() + ", 分数=" + question.getScore());
                                 // 计算实际分配的分数
                                 Double actualScore = Math.min(question.getScore(), diffRemainingScore);
-                                diffRemainingScore -= actualScore;
-                                remainingScore -= actualScore;
-                                totalQuestionsAdded++;
-                                System.out.println("5.8.8 分配分数: " + actualScore + ", 剩余分数: " + diffRemainingScore);
-
+                                
                                 // 添加题目到试卷
                                 System.out.println("5.8.9 添加题目到试卷");
                                 ExamPaperQuestion examPaperQuestion = new ExamPaperQuestion();
                                 examPaperQuestion.setPaperId(paper.getPaperId().toString());
                                 examPaperQuestion.setQuestionId(question.getQuestionId().toString());
-                                examPaperQuestion.setKpId(pointId);
                                 examPaperQuestion.setQuestionOrder(questionOrder++);
-                                examPaperQuestion.setQuestionScore(actualScore);
                                 
                                 System.out.println("5.8.10 保存试卷题目关联");
-                                examPaperQuestionRepository.save(examPaperQuestion);
-                                System.out.println("5.8.11 保存成功");
+                                int questionSaveResult = examPaperQuestionRepository.save(examPaperQuestion);
+                                if (questionSaveResult > 0) {
+                                    // 只有保存成功后才更新分数和计数器
+                                    diffRemainingScore -= actualScore;
+                                    remainingScore -= actualScore;
+                                    totalQuestionsAdded++;
+                                    System.out.println("5.8.11 保存成功，分配分数: " + actualScore + ", 剩余分数: " + diffRemainingScore);
+                                } else {
+                                    System.out.println("5.8.11 保存失败");
+                                }
                             } catch (Exception e) {
                                 System.out.println("5.8.12 处理题目失败，错误信息: " + e.getMessage());
                                 e.printStackTrace();
@@ -398,19 +392,22 @@ public class ExamPaperServiceImpl implements ExamPaperService {
                             try {
                                 System.out.println("5.9.2 处理填充题目: ID=" + question.getQuestionId() + ", 分数=" + question.getScore());
                                 Double actualScore = Math.min(question.getScore(), remainingScore);
-                                remainingScore -= actualScore;
-                                totalQuestionsAdded++;
                                 
                                 ExamPaperQuestion examPaperQuestion = new ExamPaperQuestion();
                                 examPaperQuestion.setPaperId(paper.getPaperId().toString());
                                 examPaperQuestion.setQuestionId(question.getQuestionId().toString());
-                                examPaperQuestion.setKpId(pointId);
                                 examPaperQuestion.setQuestionOrder(questionOrder++);
-                                examPaperQuestion.setQuestionScore(actualScore);
                                 
                                 System.out.println("5.9.3 保存填充题目关联");
-                                examPaperQuestionRepository.save(examPaperQuestion);
-                                System.out.println("5.9.4 保存成功");
+                                int fillSaveResult = examPaperQuestionRepository.save(examPaperQuestion);
+                                if (fillSaveResult > 0) {
+                                    // 只有保存成功后才更新分数和计数器
+                                    remainingScore -= actualScore;
+                                    totalQuestionsAdded++;
+                                    System.out.println("5.9.4 保存成功");
+                                } else {
+                                    System.out.println("5.9.4 保存失败");
+                                }
                             } catch (Exception e) {
                                 System.out.println("5.9.5 处理填充题目失败，错误信息: " + e.getMessage());
                                 e.printStackTrace();

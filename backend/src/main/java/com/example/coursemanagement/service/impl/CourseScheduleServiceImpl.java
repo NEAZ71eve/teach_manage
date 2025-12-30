@@ -86,4 +86,14 @@ public class CourseScheduleServiceImpl implements CourseScheduleService {
     public int count() {
         return courseScheduleRepository.count();
     }
+
+    @Override
+    public List<CourseSchedule> getByTeacher(int semesterId, String teacher) {
+        return courseScheduleRepository.findByTeacherInSemester(semesterId, teacher);
+    }
+
+    @Override
+    public List<CourseSchedule> getWeekScheduleByTeacherAndDay(int semesterId, String teacher, int weekDay) {
+        return courseScheduleRepository.findWeekScheduleByTeacher(semesterId, teacher, weekDay);
+    }
 }

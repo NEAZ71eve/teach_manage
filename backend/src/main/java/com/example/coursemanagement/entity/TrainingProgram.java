@@ -15,7 +15,7 @@ public class TrainingProgram {
     private Integer duration;
     private Double totalCredit;
     private Integer effectiveYear;
-    private Integer teacherId;
+    private String description;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 }

@@ -63,17 +63,27 @@ public class CourseController {
      * 新增课程
      */
     @PostMapping
-    public ResponseEntity<Boolean> addCourse(@RequestBody Course course) {
-        return ResponseEntity.ok(courseService.save(course));
+    public ResponseEntity<?> addCourse(@RequestBody Course course) {
+        try {
+            boolean result = courseService.save(course);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("添加课程失败: " + e.getMessage());
+        }
     }
 
     /**
      * 更新课程
      */
     @PutMapping("/{id}")
-    public ResponseEntity<Boolean> updateCourse(@PathVariable Integer id, @RequestBody Course course) {
-        course.setCourseId(id);
-        return ResponseEntity.ok(courseService.updateById(course));
+    public ResponseEntity<?> updateCourse(@PathVariable Integer id, @RequestBody Course course) {
+        try {
+            course.setCourseId(id);
+            boolean result = courseService.updateById(course);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("更新课程失败: " + e.getMessage());
+        }
     }
 
     /**

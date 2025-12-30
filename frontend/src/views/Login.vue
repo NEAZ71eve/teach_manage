@@ -46,9 +46,11 @@ const handleLogin = async () => {
       try {
         const response = await login(loginForm)
         if (response.success) {
-          // 保存token和用户信息到localStorage
+          // 保存token、用户信息、角色和权限到localStorage
           localStorage.setItem('token', response.token)
           localStorage.setItem('user', JSON.stringify(response.user))
+          localStorage.setItem('roles', JSON.stringify(response.roles || []))
+          localStorage.setItem('permissions', JSON.stringify(response.permissions || []))
           ElMessage.success('登录成功')
           router.push('/courses')
         } else {

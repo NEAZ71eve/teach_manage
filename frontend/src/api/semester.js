@@ -126,6 +126,24 @@ export const getWeekScheduleByClass = (semesterId, className) => {
 }
 
 /**
+ * 根据教师获取周课表
+ * @param {number} semesterId - 学期ID
+ * @param {string} teacher - 教师姓名
+ * @param {number} [weekDay] - 星期几（可选）
+ * @returns {Promise}
+ */
+export const getWeekScheduleByTeacher = (semesterId, teacher, weekDay) => {
+  let url = `/course-schedule/week-schedule/teacher?semesterId=${semesterId}&teacher=${encodeURIComponent(teacher)}`
+  if (weekDay) {
+    url += `&weekDay=${weekDay}`
+  }
+  return request({
+    url: url,
+    method: 'GET'
+  })
+}
+
+/**
  * 获取课程表列表
  * @param {number} semesterId - 学期ID
  * @returns {Promise}

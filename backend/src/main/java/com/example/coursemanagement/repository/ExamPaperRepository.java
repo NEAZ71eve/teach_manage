@@ -55,7 +55,7 @@ public class ExamPaperRepository {
         System.out.println("=== ExamPaperRepository.save() 开始执行 ===");
         System.out.println("试卷信息: " + paper);
         
-        String sql = "INSERT INTO exam_paper (paper_name, course_id, total_score, paper_type, create_teacher, create_time, update_time) VALUES (?, ?, ?, ?, ?, NOW(), NOW())";
+        String sql = "INSERT INTO exam_paper (paper_name, course_id, total_score, paper_type, create_time, update_time) VALUES (?, ?, ?, ?, NOW(), NOW())";
         System.out.println("SQL语句: " + sql);
         
         // 使用GeneratedKeyHolder获取自动生成的主键
@@ -79,9 +79,6 @@ public class ExamPaperRepository {
                             
                             System.out.println("设置参数4 (paperType): " + paper.getPaperType());
                             ps.setString(4, paper.getPaperType());
-                            
-                            System.out.println("设置参数5 (createTeacher): " + paper.getCreateTeacher());
-                            ps.setString(5, paper.getCreateTeacher());
                             
                             System.out.println("PreparedStatement创建成功，准备执行SQL");
                             return ps;

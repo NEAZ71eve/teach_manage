@@ -150,4 +150,20 @@ public class CourseScheduleRepository {
         String sql = "SELECT cs.*, c.course_name FROM course_schedule cs JOIN course c ON cs.course_id = c.course_id WHERE cs.semester_id = ? AND cs.class_name = ? ORDER BY cs.week_day, cs.class_section";
         return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(CourseSchedule.class), semesterId, className);
     }
+
+    /**
+     * 查询指定学期和教师的课程安排
+     */
+    public List<CourseSchedule> findByTeacherInSemester(Integer semesterId, String teacher) {
+        String sql = "SELECT cs.*, c.course_name FROM course_schedule cs JOIN course c ON cs.course_id = c.course_id WHERE cs.semester_id = ? AND cs.teacher = ? ORDER BY cs.week_day, cs.class_section";
+        return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(CourseSchedule.class), semesterId, teacher);
+    }
+
+    /**
+     * 查询指定学期、星期几和教师的周课表
+     */
+    public List<CourseSchedule> findWeekScheduleByTeacher(Integer semesterId, String teacher, Integer weekDay) {
+        String sql = "SELECT cs.*, c.course_name FROM course_schedule cs JOIN course c ON cs.course_id = c.course_id WHERE cs.semester_id = ? AND cs.week_day = ? AND cs.teacher = ? ORDER BY cs.class_section";
+        return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(CourseSchedule.class), semesterId, weekDay, teacher);
+    }
 }

@@ -388,7 +388,10 @@ import { ref, onMounted, reactive, watch } from "vue";
 import { Plus, Edit, Delete, View } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { getAllCourses } from "../api/course";
-import { getAllKnowledgePoints } from "../api/knowledgePoint";
+import {
+  getAllKnowledgePoints,
+  getKnowledgePointsByCourseId,
+} from "../api/knowledgePoint";
 import {
   getQuestions,
   addQuestion,
@@ -553,6 +556,30 @@ watch(
       questionForm.correctAnswer = "1";
     } else {
       questionForm.correctAnswer = "";
+    }
+  }
+);
+
+// 课程变化时重新加载知识点
+watch(
+  () => questionForm.courseId,
+  async (newCourseId) => {
+    if (newCourseId) {
+      try {
+        const response = await getKnowledgePointsByCourseId(newCourseId);
+        knowledgePoints.value = response;
+        if (response.length > 0) {
+          questionForm.kpId = response[0].kpId;
+        } else {
+          questionForm.kpId = null;
+        }
+      } catch (error) {
+        ElMessage.error("获取知识点列表失败");
+        console.error("获取知识点列表失败:", error);
+      }
+    } else {
+      knowledgePoints.value = [];
+      questionForm.kpId = null;
     }
   }
 );

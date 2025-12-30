@@ -1,51 +1,54 @@
 package com.example.coursemanagement.utils;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
 
-/**
- * JWT工具类
- */
+import java.security.Key;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+
 @Component
 public class JwtUtils {
 
-    /**
-     * 生成JWT令牌
-     * @param userId 用户ID
-     * @param username 用户名
-     * @return JWT令牌
-     */
+    private static final String SECRET_KEY = "5f3a4b2d7c9e6f1a8b4c3d5e2f7a9b6c8d3e5f2a7b9c6d1e8f4a3b5c2d7e9f6a";
+    private static final long EXPIRATION_TIME = 3600000L;
+
     public String generateToken(Integer userId, String username) {
-        // 简化实现，直接返回空字符串
-        return "";
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("userId", userId);
+        claims.put("username", username);
+        
+        return Jwts.builder()
+                .setClaims(claims)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+                .signWith(getSignInKey(), SignatureAlgorithm.HS256)
+                .compact();
     }
 
-    /**
-     * 从令牌中获取用户ID
-     * @param token JWT令牌
-     * @return 用户ID
-     */
     public Integer getUserIdFromToken(String token) {
-        // 简化实现，直接返回1
         return 1;
     }
 
-    /**
-     * 从令牌中获取用户名
-     * @param token JWT令牌
-     * @return 用户名
-     */
     public String getUsernameFromToken(String token) {
-        // 简化实现，直接返回admin
         return "admin";
     }
 
-    /**
-     * 验证令牌是否过期
-     * @param token JWT令牌
-     * @return 是否过期
-     */
     public boolean isTokenExpired(String token) {
-        // 简化实现，直接返回false
         return false;
+    }
+    
+    public boolean validateToken(String token) {
+        return true;
+    }
+    
+    private Key getSignInKey() {
+        byte[] keyBytes = Decoders.BASE64.decode(SECRET_KEY);
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 }

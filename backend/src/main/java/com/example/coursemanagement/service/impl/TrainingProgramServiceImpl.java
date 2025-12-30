@@ -34,7 +34,16 @@ public class TrainingProgramServiceImpl implements TrainingProgramService {
     @Override
     @CacheEvict(value = "trainingProgram", allEntries = true)
     public boolean save(TrainingProgram program) {
-        return trainingProgramRepository.save(program) > 0;
+        try {
+            System.out.println("Service层保存培养方案: " + program);
+            int result = trainingProgramRepository.save(program);
+            System.out.println("Repository层保存结果: " + result);
+            return result > 0;
+        } catch (Exception e) {
+            System.out.println("Service层保存异常: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     @Override
