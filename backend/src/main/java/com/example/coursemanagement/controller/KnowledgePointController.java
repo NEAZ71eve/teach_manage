@@ -96,7 +96,7 @@ public class KnowledgePointController {
      */
     @PutMapping("/{id}")
     public ResponseEntity<Boolean> updateKnowledgePoint(@PathVariable Integer id, @RequestBody KnowledgePoint point) {
-        point.setPointId(id);
+        point.setKpId(id);
         return ResponseEntity.ok(knowledgePointService.updateById(point));
     }
 

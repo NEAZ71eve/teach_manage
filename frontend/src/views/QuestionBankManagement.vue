@@ -572,6 +572,7 @@ watch(
           questionForm.kpId = response[0].kpId;
         } else {
           questionForm.kpId = null;
+          ElMessage.warning("该课程暂无知识点，请选择其他课程或先添加知识点");
         }
       } catch (error) {
         ElMessage.error("获取知识点列表失败");
@@ -653,7 +654,12 @@ const handleSaveQuestion = async () => {
 
     // 处理选项
     if ([1, 2].includes(questionForm.questionType)) {
-      questionData.options = options.value.filter((opt) => opt.optionText);
+      questionData.options = options.value
+        .filter((opt) => opt.optionText)
+        .map((opt) => ({
+          ...opt,
+          isCorrect: opt.isCorrect ? 1 : 0 // 将布尔值转换为整数
+        }));
     }
 
     // 处理标签

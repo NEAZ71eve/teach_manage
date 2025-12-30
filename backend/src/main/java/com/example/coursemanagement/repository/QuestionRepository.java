@@ -79,7 +79,7 @@ public class QuestionRepository {
      */
     @Transactional
     public int save(Question question) {
-        String sql = "INSERT INTO question (question_type, question_content, kp_id, difficulty, score, correct_answer, analysis, category_id, status, creator_id, create_time, update_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
+        String sql = "INSERT INTO question (question_type, question_content, kp_id, difficulty, score, correct_answer, analysis, category_id, status, creator_id, is_used, create_time, update_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
         jdbcTemplate.update(sql, 
                 question.getQuestionType(), 
                 question.getQuestionContent(), 
@@ -90,7 +90,8 @@ public class QuestionRepository {
                 question.getAnalysis(),
                 question.getCategoryId(),
                 question.getStatus(),
-                question.getCreatorId());
+                question.getCreatorId(),
+                0); // 设置is_used的默认值为0
         
         // 获取新插入的题目ID
         Integer questionId = jdbcTemplate.queryForObject("SELECT LAST_INSERT_ID()", Integer.class);
