@@ -130,44 +130,67 @@ public class ExamPaperController {
      */
     @PostMapping("/auto-generate")
     @SuppressWarnings("unchecked")
-    public ResponseEntity<String> autoGeneratePaper(@RequestBody Map<String, Object> params) {
-        String courseId = String.valueOf(params.get("courseId"));
-        String paperName = String.valueOf(params.get("paperName"));
-        Double totalScore = params.get("totalScore") instanceof Double ? (Double) params.get("totalScore") : Double.valueOf(params.get("totalScore").toString());
-        
-        // 处理知识点权重，确保所有值都是Double类型
-        Map<String, Object> rawKnowledgePointWeights = (Map<String, Object>) params.get("knowledgePointWeights");
-        Map<String, Double> knowledgePointWeights = new java.util.HashMap<>();
-        for (Map.Entry<String, Object> entry : rawKnowledgePointWeights.entrySet()) {
-            Object value = entry.getValue();
-            Double doubleValue;
-            if (value instanceof Double) {
-                doubleValue = (Double) value;
-            } else if (value instanceof Integer) {
-                doubleValue = ((Integer) value).doubleValue();
-            } else {
-                doubleValue = Double.parseDouble(value.toString());
+    public ResponseEntity<Map<String, Object>> autoGeneratePaper(@RequestBody Map<String, Object> params) {
+        try {
+            System.out.println("收到自动组卷请求，参数: " + params);
+            
+            String courseId = String.valueOf(params.get("courseId"));
+            String paperName = String.valueOf(params.get("paperName"));
+            Double totalScore = params.get("totalScore") instanceof Double ? (Double) params.get("totalScore") : Double.valueOf(params.get("totalScore").toString());
+            
+            // 处理知识点权重，确保所有值都是Double类型
+            Map<String, Object> rawKnowledgePointWeights = (Map<String, Object>) params.get("knowledgePointWeights");
+            Map<String, Double> knowledgePointWeights = new java.util.HashMap<>();
+            for (Map.Entry<String, Object> entry : rawKnowledgePointWeights.entrySet()) {
+                Object value = entry.getValue();
+                Double doubleValue;
+                if (value instanceof Double) {
+                    doubleValue = (Double) value;
+                } else if (value instanceof Integer) {
+                    doubleValue = ((Integer) value).doubleValue();
+                } else {
+                    doubleValue = Double.parseDouble(value.toString());
+                }
+                knowledgePointWeights.put(entry.getKey(), doubleValue);
             }
-            knowledgePointWeights.put(entry.getKey(), doubleValue);
-        }
-        
-        // 处理难度分布，确保所有值都是Double类型
-        Map<String, Object> rawDifficultyDistribution = (Map<String, Object>) params.get("difficultyDistribution");
-        Map<String, Double> difficultyDistribution = new java.util.HashMap<>();
-        for (Map.Entry<String, Object> entry : rawDifficultyDistribution.entrySet()) {
-            Object value = entry.getValue();
-            Double doubleValue;
-            if (value instanceof Double) {
-                doubleValue = (Double) value;
-            } else if (value instanceof Integer) {
-                doubleValue = ((Integer) value).doubleValue();
-            } else {
-                doubleValue = Double.parseDouble(value.toString());
+            
+            // 处理难度分布，确保所有值都是Double类型
+            Map<String, Object> rawDifficultyDistribution = (Map<String, Object>) params.get("difficultyDistribution");
+            Map<String, Double> difficultyDistribution = new java.util.HashMap<>();
+            for (Map.Entry<String, Object> entry : rawDifficultyDistribution.entrySet()) {
+                Object value = entry.getValue();
+                Double doubleValue;
+                if (value instanceof Double) {
+                    doubleValue = (Double) value;
+                } else if (value instanceof Integer) {
+                    doubleValue = ((Integer) value).doubleValue();
+                } else {
+                    doubleValue = Double.parseDouble(value.toString());
+                }
+                difficultyDistribution.put(entry.getKey(), doubleValue);
             }
-            difficultyDistribution.put(entry.getKey(), doubleValue);
+            
+            System.out.println("调用自动组卷服务");
+            String paperId = examPaperService.autoGeneratePaper(courseId, paperName, totalScore, knowledgePointWeights, difficultyDistribution);
+            System.out.println("自动组卷成功，试卷ID: " + paperId);
+            
+            Map<String, Object> response = new java.util.HashMap<>();
+            response.put("success", true);
+            response.put("paperId", paperId);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            System.out.println("自动组卷失败，详细错误信息:");
+            System.out.println("错误类型: " + e.getClass().getName());
+            System.out.println("错误信息: " + e.getMessage());
+            System.out.println("完整堆栈:");
+            e.printStackTrace();
+            
+            Map<String, Object> errorResponse = new java.util.HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("error", e.getMessage());
+            errorResponse.put("errorType", e.getClass().getName());
+            errorResponse.put("stackTrace", e.getStackTrace());
+            return ResponseEntity.status(500).body(errorResponse);
         }
-        
-        String paperId = examPaperService.autoGeneratePaper(courseId, paperName, totalScore, knowledgePointWeights, difficultyDistribution);
-        return ResponseEntity.ok(paperId);
     }
 }

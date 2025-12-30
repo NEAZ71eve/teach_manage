@@ -243,12 +243,45 @@
       </div>
 
       <el-table :data="paperQuestions" border stripe style="margin-top: 20px">
-        <el-table-column prop="questionId" label="题目ID" width="100" />
         <el-table-column prop="questionOrder" label="题目顺序" width="100" />
-        <el-table-column prop="score" label="分数" width="100">
+        <el-table-column
+          prop="question.questionType"
+          label="题目类型"
+          width="100"
+        >
+          <template #default="scope">
+            {{
+              scope.row.question?.questionType === 1
+                ? "单选题"
+                : scope.row.question?.questionType === 2
+                ? "多选题"
+                : scope.row.question?.questionType === 3
+                ? "判断题"
+                : scope.row.question?.questionType === 4
+                ? "填空题"
+                : scope.row.question?.questionType === 5
+                ? "简答题"
+                : "未知"
+            }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="question.questionContent"
+          label="题目内容"
+          min-width="300"
+        >
+          <template #default="scope">
+            <div
+              v-if="scope.row.question"
+              v-html="scope.row.question.questionContent"
+            ></div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="question.difficulty" label="难度" width="100" />
+        <el-table-column prop="questionScore" label="分数" width="100">
           <template #default="scope">
             <el-input-number
-              v-model="scope.row.score"
+              v-model="scope.row.questionScore"
               :min="0"
               :step="0.5"
               style="width: 100%"
@@ -260,7 +293,7 @@
             <el-button
               type="danger"
               size="small"
-              @click="handleRemoveQuestion(scope.row.id)"
+              @click="handleRemoveQuestion(scope.row.detailId)"
             >
               <el-icon><Delete /></el-icon>
               删除
@@ -692,7 +725,7 @@ const handleConfirmAddQuestion = async () => {
           paperQuestions.value.length +
           1 +
           selectedQuestions.value.indexOf(question),
-        score: question.score || 10, // 默认分数
+        questionScore: question.score || 10, // 默认分数
       });
     });
 

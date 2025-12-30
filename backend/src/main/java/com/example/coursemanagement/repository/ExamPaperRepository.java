@@ -52,26 +52,77 @@ public class ExamPaperRepository {
      * 新增试卷
      */
     public int save(ExamPaper paper) {
+        System.out.println("=== ExamPaperRepository.save() 开始执行 ===");
+        System.out.println("试卷信息: " + paper);
+        
         String sql = "INSERT INTO exam_paper (paper_name, course_id, total_score, paper_type, create_teacher, create_time, update_time) VALUES (?, ?, ?, ?, ?, NOW(), NOW())";
+        System.out.println("SQL语句: " + sql);
         
         // 使用GeneratedKeyHolder获取自动生成的主键
         KeyHolder keyHolder = new GeneratedKeyHolder();
-        int result = jdbcTemplate.update(
-                connection -> {
-                    PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-                    ps.setString(1, paper.getPaperName());
-                    ps.setInt(2, paper.getCourseId());
-                    ps.setDouble(3, paper.getTotalScore());
-                    ps.setString(4, paper.getPaperType());
-                    ps.setString(5, paper.getCreateTeacher() != null ? paper.getCreateTeacher() : "admin");
-                    return ps;
-                },
-                keyHolder
-        );
         
-        // 设置生成的主键到实体对象
-        paper.setPaperId(keyHolder.getKey().intValue());
-        return result; // 返回实际影响的行数
+        try {
+            int result = jdbcTemplate.update(
+                    connection -> {
+                        System.out.println("准备创建PreparedStatement");
+                        PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+                        
+                        try {
+                            System.out.println("设置参数1 (paperName): " + paper.getPaperName());
+                            ps.setString(1, paper.getPaperName());
+                            
+                            System.out.println("设置参数2 (courseId): " + paper.getCourseId());
+                            ps.setInt(2, paper.getCourseId());
+                            
+                            System.out.println("设置参数3 (totalScore): " + paper.getTotalScore());
+                            ps.setDouble(3, paper.getTotalScore());
+                            
+                            System.out.println("设置参数4 (paperType): " + paper.getPaperType());
+                            ps.setString(4, paper.getPaperType());
+                            
+                            System.out.println("设置参数5 (createTeacher): " + paper.getCreateTeacher());
+                            ps.setString(5, paper.getCreateTeacher());
+                            
+                            System.out.println("PreparedStatement创建成功，准备执行SQL");
+                            return ps;
+                        } catch (Exception e) {
+                            System.out.println("设置PreparedStatement参数失败，错误信息: " + e.getMessage());
+                            e.printStackTrace();
+                            throw e;
+                        }
+                    },
+                    keyHolder
+            );
+            
+            System.out.println("SQL执行成功，影响行数: " + result);
+            
+            // 设置生成的主键到实体对象
+            try {
+                System.out.println("尝试获取自动生成的主键");
+                Number generatedKey = keyHolder.getKey();
+                System.out.println("获取到的主键: " + generatedKey);
+                if (generatedKey != null) {
+                    paper.setPaperId(generatedKey.intValue());
+                    System.out.println("设置主键成功: " + paper.getPaperId());
+                } else {
+                    System.out.println("获取到的主键为null");
+                }
+            } catch (Exception e) {
+                System.out.println("设置主键失败，错误信息: " + e.getMessage());
+                e.printStackTrace();
+                throw e;
+            }
+            
+            System.out.println("=== ExamPaperRepository.save() 执行成功 ===");
+            return result; // 返回实际影响的行数
+        } catch (Exception e) {
+            System.out.println("=== ExamPaperRepository.save() 执行失败 ===");
+            System.out.println("错误类型: " + e.getClass().getName());
+            System.out.println("错误信息: " + e.getMessage());
+            System.out.println("完整堆栈:");
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     /**

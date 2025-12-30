@@ -15,7 +15,7 @@ public class CourseManagementApplication {
         SpringApplication.run(CourseManagementApplication.class, args);
         System.out.println("\n==================================");
         System.out.println("本科专业管理系统后端已启动");
-        System.out.println("访问地址: http://localhost:8080/api");
+        System.out.println("访问地址: http://localhost:8081/api");
         System.out.println("==================================\n");
     }
 
