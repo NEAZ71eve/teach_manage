@@ -2,7 +2,7 @@
   <div class="role-management">
     <h2>角色管理</h2>
     <div class="operation-bar">
-      <el-button type="primary" @click="openAddDialog">新增角色</el-button>
+      <!-- 隐藏新增角色按钮，角色是固定的 -->
     </div>
     <el-table :data="roles" style="width: 100%">
       <el-table-column prop="roleId" label="角色ID" width="80" />
@@ -10,18 +10,15 @@
       <el-table-column prop="roleDesc" label="角色描述" />
       <el-table-column label="操作" width="200" fixed="right">
         <template #default="scope">
+          <!-- 只允许编辑教师角色 -->
           <el-button
+            v-if="scope.row.roleName === '教师'"
             type="primary"
             size="small"
             @click="openEditDialog(scope.row)"
             >编辑</el-button
           >
-          <el-button
-            type="danger"
-            size="small"
-            @click="deleteRole(scope.row.roleId)"
-            >删除</el-button
-          >
+          <!-- 隐藏删除角色按钮，角色是固定的 -->
         </template>
       </el-table-column>
     </el-table>
@@ -29,20 +26,21 @@
     <!-- 新增/编辑对话框 -->
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="500px">
       <el-form :model="formData" label-width="80px">
+        <!-- 角色名称只读，不允许修改 -->
         <el-form-item label="角色名称" required>
-          <el-input
-            v-model="formData.roleName"
-            placeholder="请输入角色名称（如：计算机教师、数学教师）"
-          />
+          <el-input v-model="formData.roleName" readonly disabled />
         </el-form-item>
+        <!-- 角色描述只读，不允许修改 -->
         <el-form-item label="角色描述">
           <el-input
             v-model="formData.roleDesc"
-            placeholder="请输入角色描述（如：负责计算机专业课程管理）"
+            readonly
+            disabled
             type="textarea"
             rows="3"
           />
         </el-form-item>
+        <!-- 只有教师角色才显示专业选择 -->
         <el-form-item label="负责专业" v-if="isTeacherRole">
           <div class="help-text" style="margin-bottom: 10px; color: #606266">
             提示：可多选，为该角色分配可管理的专业。已绑定的专业会显示绑定角色名称。
@@ -90,22 +88,19 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from "vue";
-import { ElMessage, ElNotification } from "element-plus";
+import { ref, onMounted, computed } from "vue";
+import { ElMessage } from "element-plus";
 import {
   getRoles,
-  addRole,
   updateRole,
-  deleteRole as deleteRoleApi,
   assignPrograms,
   getRolePrograms,
-  getAllRolePrograms,
 } from "../api/role";
 import { getAllTrainingPrograms } from "../api/trainingProgram";
 
 const roles = ref([]);
 const dialogVisible = ref(false);
-const dialogTitle = ref("新增角色");
+const dialogTitle = ref("编辑角色");
 const formData = ref({
   roleId: null,
   roleName: "",
@@ -118,7 +113,7 @@ const rolePrograms = ref([]);
 
 // 判断是否为教师角色
 const isTeacherRole = computed(() => {
-  return formData.value.roleName && formData.value.roleName.includes("教师");
+  return formData.value.roleName === "教师";
 });
 
 // 获取角色列表
@@ -143,13 +138,13 @@ const loadPrograms = async () => {
   }
 };
 
-// 获取所有角色-专业关联
-const loadAllRolePrograms = async () => {
+// 获取角色关联的专业
+const loadRolePrograms = async (roleId) => {
   try {
-    const response = await getAllRolePrograms();
+    const response = await getRolePrograms(roleId);
     rolePrograms.value = response;
   } catch (error) {
-    console.error("获取角色-专业关联失败:", error);
+    console.error("获取角色关联的专业失败:", error);
   }
 };
 
@@ -179,19 +174,6 @@ const isProgramDisabled = (programId) => {
   return bound && bound.roleId !== formData.value.roleId;
 };
 
-// 打开新增对话框
-const openAddDialog = () => {
-  dialogTitle.value = "新增角色";
-  formData.value = {
-    roleId: null,
-    roleName: "",
-    roleDesc: "",
-    programIds: [],
-  };
-  dialogVisible.value = true;
-  loadAllRolePrograms();
-};
-
 // 打开编辑对话框
 const openEditDialog = async (role) => {
   dialogTitle.value = "编辑角色";
@@ -201,13 +183,12 @@ const openEditDialog = async (role) => {
   };
   dialogVisible.value = true;
 
-  // 获取所有角色-专业关联
-  loadAllRolePrograms();
-
   // 获取角色关联的专业
   try {
     const rolePrograms = await getRolePrograms(role.roleId);
     formData.value.programIds = rolePrograms.map((rp) => rp.programId);
+    // 更新全局rolePrograms，用于判断专业绑定状态
+    loadRolePrograms(role.roleId);
   } catch (error) {
     console.error("获取角色关联的专业失败:", error);
   }
@@ -216,32 +197,15 @@ const openEditDialog = async (role) => {
 // 保存角色
 const saveRole = async () => {
   try {
-    let roleId;
-    if (formData.value.roleId) {
-      // 更新角色
-      await updateRole(formData.value.roleId, {
-        roleName: formData.value.roleName,
-        roleDesc: formData.value.roleDesc,
-      });
-      roleId = formData.value.roleId;
-    } else {
-      // 新增角色
-      const result = await addRole({
-        roleName: formData.value.roleName,
-        roleDesc: formData.value.roleDesc,
-      });
-      roleId = result;
-    }
+    // 只执行分配专业操作，因为角色基本信息是只读的
+    await assignPrograms(formData.value.roleId, formData.value.programIds);
 
-    // 分配专业
-    await assignPrograms(roleId, formData.value.programIds);
-
-    ElMessage.success(formData.value.roleId ? "更新角色成功" : "新增角色成功");
+    ElMessage.success("更新角色成功");
     dialogVisible.value = false;
     loadRoles();
-    loadAllRolePrograms();
+    loadRolePrograms(formData.value.roleId);
   } catch (error) {
-    let errorMsg = formData.value.roleId ? "更新角色失败" : "新增角色失败";
+    let errorMsg = "更新角色失败";
     if (error.response && error.response.data) {
       errorMsg = error.response.data.message || errorMsg;
     } else if (error.message) {
@@ -252,28 +216,10 @@ const saveRole = async () => {
   }
 };
 
-// 删除角色
-const deleteRole = async (roleId) => {
-  try {
-    const response = await deleteRoleApi(roleId);
-    if (response > 0) {
-      ElMessage.success("删除角色成功");
-      loadRoles();
-      loadAllRolePrograms();
-    } else {
-      ElMessage.error("删除角色失败");
-    }
-  } catch (error) {
-    ElMessage.error("删除角色失败");
-    console.error("删除角色失败:", error);
-  }
-};
-
 // 页面加载时获取角色列表和专业列表
 onMounted(() => {
   loadRoles();
   loadPrograms();
-  loadAllRolePrograms();
 });
 </script>
 

@@ -62,11 +62,19 @@ public class RoleProgramRepository {
     /**
      * 批量添加角色专业关联
      */
-    public int[] batchSave(List<RoleProgram> rolePrograms) {
+    public int batchSave(List<RoleProgram> rolePrograms) {
         String sql = "INSERT INTO role_program (role_id, program_id) VALUES (?, ?)";
-        return jdbcTemplate.batchUpdate(sql, rolePrograms, rolePrograms.size(), (ps, rp) -> {
+        int[][] results = jdbcTemplate.batchUpdate(sql, rolePrograms, rolePrograms.size(), (ps, rp) -> {
             ps.setInt(1, rp.getRoleId());
             ps.setInt(2, rp.getProgramId());
         });
+        // 计算成功插入的总数
+        int total = 0;
+        for (int[] result : results) {
+            for (int count : result) {
+                total += count;
+            }
+        }
+        return total;
     }
 }

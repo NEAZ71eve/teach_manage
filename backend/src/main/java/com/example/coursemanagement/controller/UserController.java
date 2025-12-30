@@ -51,8 +51,13 @@ public class UserController {
      */
     @PostMapping
     public ResponseEntity<Integer> createUser(@RequestBody User user) {
-        int result = userService.save(user);
-        return ResponseEntity.ok(result);
+        try {
+            int result = userService.save(user);
+            return ResponseEntity.ok(result);
+        } catch (org.springframework.dao.DuplicateKeyException e) {
+            // 捕获用户名重复异常
+            throw new RuntimeException("用户名已存在，请使用其他用户名");
+        }
     }
 
     /**

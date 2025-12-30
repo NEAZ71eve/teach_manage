@@ -49,7 +49,7 @@ public class RoleProgramServiceImpl implements RoleProgramService {
             rolePrograms.add(rp);
         }
         
-        int[] results = roleProgramRepository.batchSave(rolePrograms);
-        return results.length;
+        int result = roleProgramRepository.batchSave(rolePrograms);
+        return result;
     }
 }

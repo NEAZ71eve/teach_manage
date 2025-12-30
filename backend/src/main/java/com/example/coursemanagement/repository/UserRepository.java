@@ -65,10 +65,8 @@ public class UserRepository {
     public int update(User user) {
         String sql;
         if (user.getPassword() != null && !user.getPassword().isEmpty()) {
-            sql = "UPDATE user SET username = ?, password = ?, real_name = ?, email = ?, phone = ?, status = ?, program_id = ?, update_time = NOW() WHERE user_id = ?";
+            sql = "UPDATE user SET real_name = ?, email = ?, phone = ?, status = ?, program_id = ?, update_time = NOW() WHERE user_id = ?";
             return jdbcTemplate.update(sql, 
-                    user.getUsername(), 
-                    user.getPassword(), 
                     user.getRealName(), 
                     user.getEmail(), 
                     user.getPhone(), 
@@ -76,9 +74,8 @@ public class UserRepository {
                     user.getProgramId(),
                     user.getUserId());
         } else {
-            sql = "UPDATE user SET username = ?, real_name = ?, email = ?, phone = ?, status = ?, program_id = ?, update_time = NOW() WHERE user_id = ?";
+            sql = "UPDATE user SET real_name = ?, email = ?, phone = ?, status = ?, program_id = ?, update_time = NOW() WHERE user_id = ?";
             return jdbcTemplate.update(sql, 
-                    user.getUsername(), 
                     user.getRealName(), 
                     user.getEmail(), 
                     user.getPhone(), 

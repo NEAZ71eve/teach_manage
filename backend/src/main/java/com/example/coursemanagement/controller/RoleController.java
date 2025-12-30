@@ -53,30 +53,13 @@ public class RoleController {
     }
 
     /**
-     * 新增角色
-     */
-    @PostMapping
-    public ResponseEntity<Integer> createRole(@RequestBody Role role) {
-        int result = roleService.save(role);
-        return ResponseEntity.ok(result);
-    }
-
-    /**
-     * 更新角色
+     * 更新角色 - 只能更新教师角色的描述和专业绑定
      */
     @PutMapping("/{id}")
     public ResponseEntity<Integer> updateRole(@PathVariable Integer id, @RequestBody Role role) {
+        // 只能更新现有角色，不能创建新角色
         role.setRoleId(id);
         int result = roleService.update(role);
-        return ResponseEntity.ok(result);
-    }
-
-    /**
-     * 删除角色
-     */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Integer> deleteRole(@PathVariable Integer id) {
-        int result = roleService.deleteById(id);
         return ResponseEntity.ok(result);
     }
     
