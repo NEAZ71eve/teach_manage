@@ -185,7 +185,13 @@ onMounted(() => {
   }
 
   if (permissionsStr) {
-    permissions.value = JSON.parse(permissionsStr);
+    try {
+      permissions.value = JSON.parse(permissionsStr) || [];
+    } catch (e) {
+      permissions.value = [];
+    }
+  } else {
+    permissions.value = [];
   }
 });
 

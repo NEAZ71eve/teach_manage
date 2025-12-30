@@ -84,9 +84,6 @@ public class LoginController {
                 }
                 
                 if (passwordValid) {
-                    // 生成JWT令牌
-                    String token = jwtUtils.generateToken(user.getUserId(), user.getUsername());
-                    
                     // 获取用户的角色列表
                     List<Integer> roleIds = userRoleService.findByUserId(user.getUserId()).stream()
                             .map(role -> role.getRoleId())
@@ -236,6 +233,19 @@ public class LoginController {
                             permissionOptional.ifPresent(permissions::add);
                         }
                     }
+                    
+                    // 提取角色名称列表
+                    List<String> roleNames = roles.stream()
+                            .map(role -> role.getRoleName())
+                            .collect(Collectors.toList());
+                    
+                    // 提取权限代码列表
+                    List<String> permissionCodes = permissions.stream()
+                            .map(permission -> permission.getPermissionCode())
+                            .collect(Collectors.toList());
+                    
+                    // 生成JWT令牌，包含角色和权限信息
+                    String token = jwtUtils.generateToken(user.getUserId(), user.getUsername(), roleNames, permissionCodes);
                     
                     // 设置响应信息
                     response.setSuccess(true);
