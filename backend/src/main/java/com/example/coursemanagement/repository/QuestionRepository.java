@@ -262,7 +262,16 @@ public class QuestionRepository {
      * 根据分类ID查询题目
      */
     public List<Question> findByCategoryId(Integer categoryId) {
-        return new ArrayList<>();
+        String sql = "SELECT q.question_id, q.question_type, q.question_content, q.kp_id, q.difficulty, q.score, q.correct_answer, q.analysis, q.is_used, q.create_time, q.update_time, kp.kp_name, kp.course_id, c.course_name " +
+                "FROM question q " +
+                "JOIN knowledge_point kp ON q.kp_id = kp.kp_id " +
+                "JOIN course c ON kp.course_id = c.course_id " +
+                "WHERE q.category_id = ?";
+        List<Question> questions = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Question.class), categoryId);
+        questions.forEach(this::loadQuestionOptions);
+        questions.forEach(this::loadQuestionTags);
+        questions.forEach(this::loadQuestionStatistics);
+        return questions;
     }
     
     /**
@@ -294,10 +303,9 @@ public class QuestionRepository {
             params.add(difficulty);
         }
         
-        // 分类ID查询暂时不支持，因为question表中没有category_id字段
         if (categoryId != null) {
-            // 直接返回空列表，因为没有对应的分类字段
-            return new ArrayList<>();
+            sql.append(" AND q.category_id = ?");
+            params.add(categoryId);
         }
         
         sql.append(" LIMIT ? OFFSET ?");
@@ -328,9 +336,9 @@ public class QuestionRepository {
             params.add(difficulty);
         }
         
-        // category_id字段在question表中不存在，暂时不支持按分类计数
         if (categoryId != null) {
-            return 0;
+            sql.append(" AND q.category_id = ?");
+            params.add(categoryId);
         }
         
         return jdbcTemplate.queryForObject(sql.toString(), Integer.class, params.toArray());

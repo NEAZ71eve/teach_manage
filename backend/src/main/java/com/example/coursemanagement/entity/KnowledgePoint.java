@@ -10,8 +10,8 @@ import java.util.List;
  */
 @Data
 public class KnowledgePoint {
-    private Integer pointId;
-    private String pointName;
+    private Integer kpId;
+    private String kpName;
     private Integer courseId;
     private Integer parentId;
     private String description;

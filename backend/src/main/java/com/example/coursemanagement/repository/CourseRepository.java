@@ -39,44 +39,84 @@ public class CourseRepository {
      * 新增课程
      */
     public int save(Course course) {
-        String sql = "INSERT INTO course (course_name, course_code, major_id, program_id, credit, total_hours, theoretical_hours, practical_hours, course_type, course_nature, exam_mark, course_category, description, teacher_ids, create_time, update_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
+        // 使用正确的列名，基于实际数据库模式
+        String sql = "INSERT INTO course (course_name, course_code, major_id, credit, total_hours, theory_hours, experiment_hours, design_hours, course_type_id, course_nature, course_category, exam_mark, program_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        
+        System.out.println("执行SQL: " + sql);
+        
+        // 计算理论学时、实验学时和设计学时的默认值
+        int theoryHours = course.getTheoreticalHours() != null ? course.getTheoreticalHours() : 0;
+        int experimentHours = course.getPracticalHours() != null ? course.getPracticalHours() : 0;
+        int designHours = 0; // 默认设计学时为0
+        
+        // 获取courseType的值，优先使用courseTypeId，如果没有则使用courseType转换
+        Integer courseTypeId = course.getCourseTypeId();
+        if (courseTypeId == null && course.getCourseType() != null) {
+            try {
+                courseTypeId = Integer.parseInt(course.getCourseType());
+            } catch (NumberFormatException e) {
+                courseTypeId = 1; // 默认值
+            }
+        } else if (courseTypeId == null) {
+            courseTypeId = 1; // 默认值
+        }
+        
         return jdbcTemplate.update(sql, 
                 course.getCourseName(), 
                 course.getCourseCode(), 
                 course.getMajorId(), 
-                course.getProgramId(), 
                 course.getCredit(), 
                 course.getTotalHours(), 
-                course.getTheoreticalHours(), 
-                course.getPracticalHours(), 
-                course.getCourseType(), 
-                course.getCourseNature(), 
-                course.getExamMark(), 
-                course.getCourseCategory(), 
-                course.getDescription(),
-                course.getTeacherIds());
+                theoryHours, 
+                experimentHours, 
+                designHours, 
+                courseTypeId, 
+                course.getCourseNature(),
+                course.getCourseCategory(),
+                course.getExamMark(),
+                course.getProgramId());
     }
 
     /**
      * 更新课程
      */
     public int update(Course course) {
-        String sql = "UPDATE course SET course_name = ?, course_code = ?, major_id = ?, program_id = ?, credit = ?, total_hours = ?, theoretical_hours = ?, practical_hours = ?, course_type = ?, course_nature = ?, exam_mark = ?, course_category = ?, description = ?, teacher_ids = ?, update_time = NOW() WHERE course_id = ?";
+        // 使用正确的列名，基于实际数据库模式
+        String sql = "UPDATE course SET course_name = ?, course_code = ?, major_id = ?, credit = ?, total_hours = ?, theory_hours = ?, experiment_hours = ?, design_hours = ?, course_type_id = ?, course_nature = ?, course_category = ?, exam_mark = ?, program_id = ? WHERE course_id = ?";
+        
+        System.out.println("执行SQL: " + sql);
+        
+        // 计算理论学时、实验学时和设计学时
+        int theoryHours = course.getTheoreticalHours() != null ? course.getTheoreticalHours() : 0;
+        int experimentHours = course.getPracticalHours() != null ? course.getPracticalHours() : 0;
+        int designHours = 0; // 默认设计学时为0
+        
+        // 获取courseType的值，优先使用courseTypeId，如果没有则使用courseType转换
+        Integer courseTypeId = course.getCourseTypeId();
+        if (courseTypeId == null && course.getCourseType() != null) {
+            try {
+                courseTypeId = Integer.parseInt(course.getCourseType());
+            } catch (NumberFormatException e) {
+                courseTypeId = 1; // 默认值
+            }
+        } else if (courseTypeId == null) {
+            courseTypeId = 1; // 默认值
+        }
+        
         return jdbcTemplate.update(sql, 
                 course.getCourseName(), 
                 course.getCourseCode(), 
                 course.getMajorId(), 
-                course.getProgramId(), 
                 course.getCredit(), 
                 course.getTotalHours(), 
-                course.getTheoreticalHours(), 
-                course.getPracticalHours(), 
-                course.getCourseType(), 
-                course.getCourseNature(), 
-                course.getExamMark(), 
-                course.getCourseCategory(), 
-                course.getDescription(),
-                course.getTeacherIds(), 
+                theoryHours, 
+                experimentHours, 
+                designHours, 
+                courseTypeId, 
+                course.getCourseNature(),
+                course.getCourseCategory(),
+                course.getExamMark(),
+                course.getProgramId(),
                 course.getCourseId());
     }
 

@@ -113,7 +113,7 @@ public class KnowledgePointServiceImpl implements KnowledgePointService {
         // 第一步：将所有知识点放入map中，并初始化children列表
         for (KnowledgePoint point : points) {
             point.setChildren(new ArrayList<>());
-            pointMap.put(point.getPointId(), point);
+            pointMap.put(point.getKpId(), point);
         }
 
         // 第二步：构建树形结构

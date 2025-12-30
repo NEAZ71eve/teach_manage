@@ -146,12 +146,12 @@ public class CourseServiceImpl implements CourseService {
         
         // 计算理论学时
         Integer totalTheoreticalHours = courses.stream()
-                .mapToInt(Course::getTheoreticalHours)
+                .mapToInt(course -> course.getTheoreticalHours() != null ? course.getTheoreticalHours() : 0)
                 .sum();
         
         // 计算实践学时
         Integer totalPracticalHours = courses.stream()
-                .mapToInt(Course::getPracticalHours)
+                .mapToInt(course -> course.getPracticalHours() != null ? course.getPracticalHours() : 0)
                 .sum();
         
         // 按课程类型统计

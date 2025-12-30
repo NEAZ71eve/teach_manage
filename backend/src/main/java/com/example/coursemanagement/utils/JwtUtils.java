@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Component
@@ -60,7 +61,7 @@ public class JwtUtils {
     
     public boolean validateToken(String token) {
         try {
-            Jwts.parserBuilder().setSigningKey(getSignInKey()).build().parseClaimsJws(token);
+            Jwts.parser().setSigningKey(getSignInKey()).build().parseClaimsJws(token);
             return !isTokenExpired(token);
         } catch (Exception e) {
             return false;
@@ -68,7 +69,7 @@ public class JwtUtils {
     }
     
     private Claims extractAllClaims(String token) {
-        return Jwts.parserBuilder()
+        return Jwts.parser()
                 .setSigningKey(getSignInKey())
                 .build()
                 .parseClaimsJws(token)

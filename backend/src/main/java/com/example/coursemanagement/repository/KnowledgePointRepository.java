@@ -24,8 +24,8 @@ public class KnowledgePointRepository {
         String sql = "SELECT kp_id, kp_name, course_id, parent_kp_id, description, difficulty, create_time, update_time FROM knowledge_point";
         return jdbcTemplate.query(sql, (rs, rowNum) -> {
             KnowledgePoint point = new KnowledgePoint();
-            point.setPointId(rs.getInt("kp_id"));
-            point.setPointName(rs.getString("kp_name"));
+            point.setKpId(rs.getInt("kp_id"));
+            point.setKpName(rs.getString("kp_name"));
             point.setCourseId(rs.getObject("course_id", Integer.class));
             point.setParentId(rs.getObject("parent_kp_id", Integer.class));
             point.setDescription(rs.getString("description"));
@@ -43,8 +43,8 @@ public class KnowledgePointRepository {
         String sql = "SELECT kp_id, kp_name, course_id, parent_kp_id, description, difficulty, create_time, update_time FROM knowledge_point WHERE kp_id = ?";
         List<KnowledgePoint> points = jdbcTemplate.query(sql, (rs, rowNum) -> {
             KnowledgePoint point = new KnowledgePoint();
-            point.setPointId(rs.getInt("kp_id"));
-            point.setPointName(rs.getString("kp_name"));
+            point.setKpId(rs.getInt("kp_id"));
+            point.setKpName(rs.getString("kp_name"));
             point.setCourseId(rs.getObject("course_id", Integer.class));
             point.setParentId(rs.getObject("parent_kp_id", Integer.class));
             point.setDescription(rs.getString("description"));
@@ -63,8 +63,8 @@ public class KnowledgePointRepository {
         String sql = "SELECT kp_id, kp_name, course_id, parent_kp_id, description, difficulty, create_time, update_time FROM knowledge_point WHERE course_id = ?";
         return jdbcTemplate.query(sql, (rs, rowNum) -> {
             KnowledgePoint point = new KnowledgePoint();
-            point.setPointId(rs.getInt("kp_id"));
-            point.setPointName(rs.getString("kp_name"));
+            point.setKpId(rs.getInt("kp_id"));
+            point.setKpName(rs.getString("kp_name"));
             point.setCourseId(rs.getObject("course_id", Integer.class));
             point.setParentId(rs.getObject("parent_kp_id", Integer.class));
             point.setDescription(rs.getString("description"));
@@ -82,8 +82,8 @@ public class KnowledgePointRepository {
         String sql = "SELECT kp_id, kp_name, course_id, parent_kp_id, description, difficulty, create_time, update_time FROM knowledge_point WHERE parent_kp_id = ?";
         return jdbcTemplate.query(sql, (rs, rowNum) -> {
             KnowledgePoint point = new KnowledgePoint();
-            point.setPointId(rs.getInt("kp_id"));
-            point.setPointName(rs.getString("kp_name"));
+            point.setKpId(rs.getInt("kp_id"));
+            point.setKpName(rs.getString("kp_name"));
             point.setCourseId(rs.getObject("course_id", Integer.class));
             point.setParentId(rs.getObject("parent_kp_id", Integer.class));
             point.setDescription(rs.getString("description"));
@@ -100,7 +100,7 @@ public class KnowledgePointRepository {
     public int save(KnowledgePoint point) {
         String sql = "INSERT INTO knowledge_point (kp_name, course_id, parent_kp_id, description, difficulty, create_time, update_time) VALUES (?, ?, ?, ?, ?, NOW(), NOW())";
         return jdbcTemplate.update(sql, 
-                point.getPointName(), 
+                point.getKpName(), 
                 point.getCourseId(), 
                 point.getParentId(), 
                 point.getDescription(),
@@ -113,12 +113,12 @@ public class KnowledgePointRepository {
     public int update(KnowledgePoint point) {
         String sql = "UPDATE knowledge_point SET kp_name = ?, course_id = ?, parent_kp_id = ?, description = ?, difficulty = ?, update_time = NOW() WHERE kp_id = ?";
         return jdbcTemplate.update(sql, 
-                point.getPointName(), 
+                point.getKpName(), 
                 point.getCourseId(), 
                 point.getParentId(), 
                 point.getDescription(),
                 point.getDifficulty(),
-                point.getPointId());
+                point.getKpId());
     }
 
     /**
@@ -145,8 +145,8 @@ public class KnowledgePointRepository {
         String sql = "SELECT kp_id, kp_name, course_id, parent_kp_id, description, difficulty, create_time, update_time FROM knowledge_point ORDER BY kp_id LIMIT ? OFFSET ?";
         return jdbcTemplate.query(sql, (rs, rowNum) -> {
             KnowledgePoint point = new KnowledgePoint();
-            point.setPointId(rs.getInt("kp_id"));
-            point.setPointName(rs.getString("kp_name"));
+            point.setKpId(rs.getInt("kp_id"));
+            point.setKpName(rs.getString("kp_name"));
             point.setCourseId(rs.getObject("course_id", Integer.class));
             point.setParentId(rs.getObject("parent_kp_id", Integer.class));
             point.setDescription(rs.getString("description"));

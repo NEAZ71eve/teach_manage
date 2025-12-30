@@ -24,12 +24,12 @@ public class Course {
     private Integer totalHours;
     private Integer theoreticalHours;
     private Integer practicalHours;
+    private Integer courseTypeId;
     private String courseType;
     private String courseNature;
     private String examMark;
     private String courseCategory;
     private String description;
-    private String teacherIds;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
     // 关联的学期列表

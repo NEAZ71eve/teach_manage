@@ -225,12 +225,171 @@ public class LoginController {
                         statsPerm.setPermissionCode("statistics:view");
                         defaultPermissions.add(statsPerm);
                         
+                        // 添加实践项目管理权限
+                        Permission practiceListPerm = new Permission();
+                        practiceListPerm.setPermissionId(16);
+                        practiceListPerm.setPermissionName("查看实践项目列表");
+                        practiceListPerm.setPermissionCode("practice-project:list");
+                        defaultPermissions.add(practiceListPerm);
+                        
+                        Permission practiceAddPerm = new Permission();
+                        practiceAddPerm.setPermissionId(17);
+                        practiceAddPerm.setPermissionName("新增实践项目");
+                        practiceAddPerm.setPermissionCode("practice-project:add");
+                        defaultPermissions.add(practiceAddPerm);
+                        
+                        Permission practiceEditPerm = new Permission();
+                        practiceEditPerm.setPermissionId(18);
+                        practiceEditPerm.setPermissionName("编辑实践项目");
+                        practiceEditPerm.setPermissionCode("practice-project:edit");
+                        defaultPermissions.add(practiceEditPerm);
+                        
+                        Permission practiceDeletePerm = new Permission();
+                        practiceDeletePerm.setPermissionId(19);
+                        practiceDeletePerm.setPermissionName("删除实践项目");
+                        practiceDeletePerm.setPermissionCode("practice-project:delete");
+                        defaultPermissions.add(practiceDeletePerm);
+                        
+                        // 添加学期管理权限
+                        Permission semesterListPerm = new Permission();
+                        semesterListPerm.setPermissionId(20);
+                        semesterListPerm.setPermissionName("查看学期列表");
+                        semesterListPerm.setPermissionCode("semester:list");
+                        defaultPermissions.add(semesterListPerm);
+                        
+                        Permission semesterAddPerm = new Permission();
+                        semesterAddPerm.setPermissionId(21);
+                        semesterAddPerm.setPermissionName("新增学期");
+                        semesterAddPerm.setPermissionCode("semester:add");
+                        defaultPermissions.add(semesterAddPerm);
+                        
+                        Permission semesterEditPerm = new Permission();
+                        semesterEditPerm.setPermissionId(22);
+                        semesterEditPerm.setPermissionName("编辑学期");
+                        semesterEditPerm.setPermissionCode("semester:edit");
+                        defaultPermissions.add(semesterEditPerm);
+                        
+                        Permission semesterDeletePerm = new Permission();
+                        semesterDeletePerm.setPermissionId(23);
+                        semesterDeletePerm.setPermissionName("删除学期");
+                        semesterDeletePerm.setPermissionCode("semester:delete");
+                        defaultPermissions.add(semesterDeletePerm);
+                        
+                        // 添加学期课表权限
+                        Permission semesterSchedulePerm = new Permission();
+                        semesterSchedulePerm.setPermissionId(24);
+                        semesterSchedulePerm.setPermissionName("查看学期课表");
+                        semesterSchedulePerm.setPermissionCode("semester-schedule:view");
+                        defaultPermissions.add(semesterSchedulePerm);
+                        
+                        // 添加完整的角色管理权限
+                        Permission roleAddPerm = new Permission();
+                        roleAddPerm.setPermissionId(25);
+                        roleAddPerm.setPermissionName("新增角色");
+                        roleAddPerm.setPermissionCode("role:add");
+                        defaultPermissions.add(roleAddPerm);
+                        
+                        Permission roleEditPerm = new Permission();
+                        roleEditPerm.setPermissionId(26);
+                        roleEditPerm.setPermissionName("编辑角色");
+                        roleEditPerm.setPermissionCode("role:edit");
+                        defaultPermissions.add(roleEditPerm);
+                        
+                        Permission roleDeletePerm = new Permission();
+                        roleDeletePerm.setPermissionId(27);
+                        roleDeletePerm.setPermissionName("删除角色");
+                        roleDeletePerm.setPermissionCode("role:delete");
+                        defaultPermissions.add(roleDeletePerm);
+                        
+                        // 添加完整的权限管理权限
+                        Permission permAddPerm = new Permission();
+                        permAddPerm.setPermissionId(28);
+                        permAddPerm.setPermissionName("新增权限");
+                        permAddPerm.setPermissionCode("permission:add");
+                        defaultPermissions.add(permAddPerm);
+                        
+                        Permission permEditPerm = new Permission();
+                        permEditPerm.setPermissionId(29);
+                        permEditPerm.setPermissionName("编辑权限");
+                        permEditPerm.setPermissionCode("permission:edit");
+                        defaultPermissions.add(permEditPerm);
+                        
+                        Permission permDeletePerm = new Permission();
+                        permDeletePerm.setPermissionId(30);
+                        permDeletePerm.setPermissionName("删除权限");
+                        permDeletePerm.setPermissionCode("permission:delete");
+                        defaultPermissions.add(permDeletePerm);
+                        
                         permissions = defaultPermissions;
                     } else {
                         // 获取权限信息
                         for (Integer permissionId : permissionIdSet) {
                             Optional<Permission> permissionOptional = permissionService.findById(permissionId);
                             permissionOptional.ifPresent(permissions::add);
+                        }
+                        
+                        // 确保所有用户至少有基本的查看权限
+                        if (permissions.isEmpty()) {
+                            // 添加基本的查看权限
+                            List<Permission> basicPermissions = new ArrayList<>();
+                            
+                            // 添加课程查看权限
+                            Permission courseListPerm = new Permission();
+                            courseListPerm.setPermissionId(1);
+                            courseListPerm.setPermissionName("查看课程列表");
+                            courseListPerm.setPermissionCode("course:list");
+                            basicPermissions.add(courseListPerm);
+                            
+                            // 添加培养方案查看权限
+                            Permission programListPerm = new Permission();
+                            programListPerm.setPermissionId(11);
+                            programListPerm.setPermissionName("查看培养方案列表");
+                            programListPerm.setPermissionCode("training-program:list");
+                            basicPermissions.add(programListPerm);
+                            
+                            // 添加知识点查看权限
+                            Permission kpListPerm = new Permission();
+                            kpListPerm.setPermissionId(12);
+                            kpListPerm.setPermissionName("查看知识点列表");
+                            kpListPerm.setPermissionCode("knowledge-point:list");
+                            basicPermissions.add(kpListPerm);
+                            
+                            // 添加题库查看权限
+                            Permission questionListPerm = new Permission();
+                            questionListPerm.setPermissionId(13);
+                            questionListPerm.setPermissionName("查看题库列表");
+                            questionListPerm.setPermissionCode("question:list");
+                            basicPermissions.add(questionListPerm);
+                            
+                            // 添加试卷查看权限
+                            Permission paperListPerm = new Permission();
+                            paperListPerm.setPermissionId(14);
+                            paperListPerm.setPermissionName("查看试卷列表");
+                            paperListPerm.setPermissionCode("exam-paper:list");
+                            basicPermissions.add(paperListPerm);
+                            
+                            // 添加实践项目查看权限
+                            Permission practiceListPerm = new Permission();
+                            practiceListPerm.setPermissionId(16);
+                            practiceListPerm.setPermissionName("查看实践项目列表");
+                            practiceListPerm.setPermissionCode("practice-project:list");
+                            basicPermissions.add(practiceListPerm);
+                            
+                            // 添加学期查看权限
+                            Permission semesterListPerm = new Permission();
+                            semesterListPerm.setPermissionId(20);
+                            semesterListPerm.setPermissionName("查看学期列表");
+                            semesterListPerm.setPermissionCode("semester:list");
+                            basicPermissions.add(semesterListPerm);
+                            
+                            // 添加学期课表查看权限
+                            Permission semesterSchedulePerm = new Permission();
+                            semesterSchedulePerm.setPermissionId(24);
+                            semesterSchedulePerm.setPermissionName("查看学期课表");
+                            semesterSchedulePerm.setPermissionCode("semester-schedule:view");
+                            basicPermissions.add(semesterSchedulePerm);
+                            
+                            permissions = basicPermissions;
                         }
                     }
                     

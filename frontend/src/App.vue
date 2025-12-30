@@ -105,7 +105,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { ElMessage } from "element-plus";
 import {
@@ -125,6 +125,8 @@ import {
 const router = useRouter();
 const route = useRoute();
 const activeMenu = ref("/courses");
+
+// 初始化响应式变量
 const userInfo = ref({ username: "", realName: "" });
 const permissions = ref([]);
 
@@ -144,44 +146,15 @@ const menuPermissions = {
   "/permissions": ["permission:list"],
 };
 
-// 检查用户是否有访问菜单的权限
-const canAccessMenu = (menuPath) => {
-  // 获取菜单需要的权限
-  const requiredPermissions = menuPermissions[menuPath] || [];
-
-  // 如果不需要权限，直接返回true
-  if (requiredPermissions.length === 0) {
-    return true;
-  }
-
-  // 检查用户是否有任一所需权限
-  const permissionCodes = permissions.value.map((p) => p.permissionCode);
-  return requiredPermissions.some((perm) => permissionCodes.includes(perm));
-};
-
-// 登出功能
-const handleLogout = () => {
-  // 清除localStorage中的信息
-  localStorage.removeItem("token");
-  localStorage.removeItem("user");
-  localStorage.removeItem("roles");
-  localStorage.removeItem("permissions");
-
-  // 跳转到登录页
-  ElMessage.success("登出成功");
-  router.push("/login");
-};
-
-// 初始化用户信息和权限
-onMounted(() => {
-  activeMenu.value = route.path;
-
-  // 从localStorage获取用户信息和权限
+// 从localStorage获取用户信息和权限的函数
+const getUserInfoAndPermissions = () => {
   const userStr = localStorage.getItem("user");
   const permissionsStr = localStorage.getItem("permissions");
 
   if (userStr) {
     userInfo.value = JSON.parse(userStr);
+  } else {
+    userInfo.value = { username: "", realName: "" };
   }
 
   if (permissionsStr) {
@@ -193,7 +166,66 @@ onMounted(() => {
   } else {
     permissions.value = [];
   }
+};
+
+// 检查用户是否有访问菜单的权限
+const canAccessMenu = (menuPath) => {
+  // 获取菜单需要的权限
+  const requiredPermissions = menuPermissions[menuPath] || [];
+
+  // 如果不需要权限，直接返回true
+  if (requiredPermissions.length === 0) {
+    return true;
+  }
+
+  // 检查用户是否有任一所需权限
+  // 处理权限数据可能的不同结构
+  const permissionCodes = permissions.value
+    .map((p) => {
+      // 如果是字符串，直接返回；如果是对象，返回permissionCode属性
+      return typeof p === "string" ? p : p.permissionCode;
+    })
+    .filter(Boolean); // 过滤掉undefined和null
+
+  // 管理员用户直接返回true
+  if (userInfo.value.username === "admin") {
+    return true;
+  }
+
+  return requiredPermissions.some((perm) => permissionCodes.includes(perm));
+};
+
+// 登出功能
+const handleLogout = () => {
+  // 清除localStorage中的信息
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+  localStorage.removeItem("roles");
+  localStorage.removeItem("permissions");
+
+  // 同时更新响应式变量的值，确保用户界面立即更新
+  userInfo.value = { username: "", realName: "" };
+  permissions.value = [];
+
+  // 跳转到登录页
+  ElMessage.success("登出成功");
+  router.push("/login");
+};
+
+// 初始化用户信息和权限
+onMounted(() => {
+  activeMenu.value = route.path;
+  getUserInfoAndPermissions();
 });
+
+// 监听路由变化，当路由变化时重新获取用户信息和权限
+watch(
+  () => route.path,
+  () => {
+    activeMenu.value = route.path;
+    getUserInfoAndPermissions();
+  }
+);
 
 const handleMenuSelect = (key) => {
   router.push(key);

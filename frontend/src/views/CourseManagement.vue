@@ -19,6 +19,7 @@
               </template>
             </el-input>
             <el-button
+              v-if="hasPermission('course:delete')"
               type="danger"
               @click="handleBatchDelete"
               :disabled="selectedCourseIds.length === 0"
@@ -26,7 +27,11 @@
               <el-icon><Delete /></el-icon>
               批量删除
             </el-button>
-            <el-button type="primary" @click="handleAddCourse">
+            <el-button
+              v-if="hasPermission('course:add')"
+              type="primary"
+              @click="handleAddCourse"
+            >
               <el-icon><Plus /></el-icon>
               添加课程
             </el-button>
@@ -56,6 +61,7 @@
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="scope">
             <el-button
+              v-if="hasPermission('course:edit')"
               type="primary"
               size="small"
               @click="handleEditCourse(scope.row)"
@@ -64,6 +70,7 @@
               编辑
             </el-button>
             <el-button
+              v-if="hasPermission('course:delete')"
               type="danger"
               size="small"
               @click="handleDeleteCourse(scope.row.courseId)"
@@ -111,11 +118,17 @@
           />
         </el-form-item>
         <el-form-item label="培养方案ID">
-          <el-input
-            v-model.number="courseForm.programId"
-            placeholder="请输入培养方案ID"
-            type="number"
-          />
+          <el-select
+            v-model="courseForm.programId"
+            placeholder="请选择培养方案"
+          >
+            <el-option
+              v-for="program in trainingPrograms"
+              :key="program.programId"
+              :label="`${program.majorName}(${program.effectiveYear})`"
+              :value="program.programId"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="学分" required>
           <el-input
@@ -175,10 +188,16 @@
           />
         </el-form-item>
         <el-form-item label="课程分类">
-          <el-input
+          <el-select
             v-model="courseForm.courseCategory"
-            placeholder="请输入课程分类"
-          />
+            placeholder="请选择课程分类"
+          >
+            <el-option label="公共基础课" value="公共基础课" />
+            <el-option label="专业基础课" value="专业基础课" />
+            <el-option label="专业课" value="专业课" />
+            <el-option label="选修课" value="选修课" />
+            <el-option label="实践课" value="实践课" />
+          </el-select>
         </el-form-item>
         <el-form-item label="课程描述">
           <el-input
@@ -230,6 +249,17 @@ import {
   getCourseSemesters,
   saveCourseSemester,
 } from "../api/course";
+import { getAllTrainingPrograms } from "../api/trainingProgram";
+
+// 获取用户权限
+const userPermissions = ref([]);
+
+// 检查用户是否有特定权限
+const hasPermission = (permissionCode) => {
+  const permissions = JSON.parse(localStorage.getItem("permissions") || "[]");
+  const permissionCodes = permissions.map((p) => p.permissionCode);
+  return permissionCodes.includes(permissionCode);
+};
 
 // 表格数据
 const courses = ref([]);
@@ -242,6 +272,9 @@ const selectedCourseIds = ref([]);
 // 学期数据
 const semesters = ref([]);
 const selectedSemesterIds = ref([]);
+
+// 培养方案数据
+const trainingPrograms = ref([]);
 
 // 对话框
 const dialogVisible = ref(false);
@@ -282,6 +315,17 @@ const fetchSemesters = async () => {
   } catch (error) {
     ElMessage.error("获取学期列表失败");
     console.error("获取学期列表失败:", error);
+  }
+};
+
+// 获取所有培养方案
+const fetchTrainingPrograms = async () => {
+  try {
+    const response = await getAllTrainingPrograms();
+    trainingPrograms.value = response;
+  } catch (error) {
+    ElMessage.error("获取培养方案列表失败");
+    console.error("获取培养方案列表失败:", error);
   }
 };
 
@@ -439,6 +483,7 @@ const handleSaveCourse = async () => {
   } catch (error) {
     ElMessage.error(courseForm.courseId ? "课程更新失败" : "课程添加失败");
     console.error("保存课程失败:", error);
+    console.error("错误详情:", error.response?.data || error.message);
   }
 };
 
@@ -462,9 +507,13 @@ const handleDeleteCourse = async (courseId) => {
   }
 };
 
-// 页面挂载时获取课程列表和学期列表
+// 页面挂载时获取课程列表、学期列表和培养方案列表
 onMounted(async () => {
-  await Promise.all([fetchCourses(), fetchSemesters()]);
+  await Promise.all([
+    fetchCourses(),
+    fetchSemesters(),
+    fetchTrainingPrograms(),
+  ]);
 });
 </script>
 

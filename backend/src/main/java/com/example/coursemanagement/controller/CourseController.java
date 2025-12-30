@@ -70,10 +70,13 @@ public class CourseController {
     @PreAuthorize("hasAuthority('course:add')")
     public ResponseEntity<?> addCourse(@RequestBody Course course) {
         try {
+            System.out.println("接收到的课程数据: " + course);
             boolean result = courseService.save(course);
+            System.out.println("课程添加结果: " + result);
             return ResponseEntity.ok(result);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("添加课程失败: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body("添加课程失败: " + e.getMessage() + ", 详细错误: " + e.getCause() + ", 堆栈跟踪: " + e);
         }
     }
 
