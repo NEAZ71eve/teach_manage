@@ -161,8 +161,12 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="题目分类" required>
-          <el-select v-model="questionForm.categoryId" placeholder="请选择分类">
+        <el-form-item label="题目分类" v-if="categories.length > 0">
+          <el-select
+            v-model="questionForm.categoryId"
+            placeholder="请选择分类"
+            clearable
+          >
             <el-option
               v-for="category in categories"
               :key="category.categoryId"
@@ -269,8 +273,13 @@
           />
         </el-form-item>
 
-        <el-form-item label="标签">
-          <el-select v-model="selectedTags" multiple placeholder="请选择标签">
+        <el-form-item label="标签" v-if="tags.length > 0">
+          <el-select
+            v-model="selectedTags"
+            multiple
+            placeholder="请选择标签"
+            clearable
+          >
             <el-option
               v-for="tag in tags"
               :key="tag.tagId"

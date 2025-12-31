@@ -30,28 +30,30 @@ public class JwtUtils {
                 .setClaims(claims)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
-                .signWith(getSignInKey(), SignatureAlgorithm.HS256)
+                .signWith(getSignInKey())
                 .compact();
     }
 
     public Integer getUserIdFromToken(String token) {
         Claims claims = extractAllClaims(token);
-        return (Integer) claims.get("userId");
+        return claims.get("userId", Integer.class);
     }
 
     public String getUsernameFromToken(String token) {
         Claims claims = extractAllClaims(token);
-        return (String) claims.get("username");
+        return claims.get("username", String.class);
     }
 
+    @SuppressWarnings("unchecked")
     public List<String> getRolesFromToken(String token) {
         Claims claims = extractAllClaims(token);
-        return (List<String>) claims.get("roles");
+        return claims.get("roles", List.class);
     }
 
+    @SuppressWarnings("unchecked")
     public List<String> getPermissionsFromToken(String token) {
         Claims claims = extractAllClaims(token);
-        return (List<String>) claims.get("permissions");
+        return claims.get("permissions", List.class);
     }
 
     public boolean isTokenExpired(String token) {

@@ -79,7 +79,9 @@ public class QuestionRepository {
      */
     @Transactional
     public int save(Question question) {
-        String sql = "INSERT INTO question (question_type, question_content, category_id, kp_id, difficulty, score, correct_answer, analysis, status, creator_id, is_used, create_time, update_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
+        System.out.println("保存题目时的kpId值: " + question.getKpId());
+        System.out.println("保存题目时的categoryId值: " + question.getCategoryId());
+        String sql = "INSERT INTO question (question_type, question_content, kp_id, category_id, difficulty, score, correct_answer, analysis, is_used, create_time, update_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
         
         // 使用GeneratedKeyHolder获取新插入的ID
         org.springframework.jdbc.support.GeneratedKeyHolder keyHolder = new org.springframework.jdbc.support.GeneratedKeyHolder();
@@ -89,19 +91,21 @@ public class QuestionRepository {
                 java.sql.PreparedStatement ps = connection.prepareStatement(sql, new String[] { "question_id" });
                 ps.setInt(1, question.getQuestionType());
                 ps.setString(2, question.getQuestionContent());
+                ps.setInt(3, question.getKpId()); // 使用question对象中的kpId值
                 if (question.getCategoryId() != null) {
-                    ps.setInt(3, question.getCategoryId());
+                    ps.setInt(4, question.getCategoryId()); // 使用question对象中的categoryId值
                 } else {
-                    ps.setNull(3, java.sql.Types.INTEGER);
+                    ps.setNull(4, java.sql.Types.INTEGER); // 如果categoryId为null，设置为SQL NULL
                 }
-                ps.setInt(4, question.getKpId());
                 ps.setString(5, question.getDifficulty());
                 ps.setDouble(6, question.getScore());
                 ps.setString(7, question.getCorrectAnswer());
-                ps.setString(8, question.getAnalysis());
-                ps.setString(9, question.getStatus());
-                ps.setInt(10, question.getCreatorId());
-                ps.setInt(11, 0); // 设置is_used的默认值为0
+                if (question.getAnalysis() != null) {
+                    ps.setString(8, question.getAnalysis());
+                } else {
+                    ps.setNull(8, java.sql.Types.VARCHAR); // 如果analysis为null，设置为SQL NULL
+                }
+                ps.setInt(9, 0); // 设置is_used的默认值为0
                 return ps;
             }
         }, keyHolder);
@@ -131,18 +135,17 @@ public class QuestionRepository {
      */
     @Transactional
     public int update(Question question) {
-        String sql = "UPDATE question SET question_type = ?, question_content = ?, category_id = ?, kp_id = ?, difficulty = ?, score = ?, correct_answer = ?, analysis = ?, status = ?, update_time = NOW() WHERE question_id = ?";
+        String sql = "UPDATE question SET question_type = ?, question_content = ?, kp_id = ?, category_id = ?, difficulty = ?, score = ?, correct_answer = ?, analysis = ?, update_time = NOW() WHERE question_id = ?";
         int result = jdbcTemplate.update(
                 sql, 
                 question.getQuestionType(), 
                 question.getQuestionContent(), 
-                question.getCategoryId() != null ? question.getCategoryId() : null,
                 question.getKpId(), 
+                question.getCategoryId() != null ? question.getCategoryId() : null,
                 question.getDifficulty(), 
                 question.getScore(),
                 question.getCorrectAnswer(),
-                question.getAnalysis(),
-                question.getStatus(),
+                question.getAnalysis() != null ? question.getAnalysis() : null,
                 question.getQuestionId());
         
         // 更新题目选项
