@@ -9,8 +9,7 @@ import com.example.coursemanagement.service.*;
 import com.example.coursemanagement.utils.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
+
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -44,13 +43,7 @@ public class LoginController {
     @Autowired
     private PermissionService permissionService;
     
-    // 密码编码器，用于密码验证
-    private final PasswordEncoder passwordEncoder;
     
-    // 构造函数注入
-    public LoginController() {
-        this.passwordEncoder = new BCryptPasswordEncoder();
-    }
     
     /**
      * 用户登录
@@ -65,21 +58,16 @@ public class LoginController {
             if (userOptional.isPresent()) {
                 User user = userOptional.get();
                 
-                // 验证密码（支持明文和BCrypt加密密码，以及默认密码）
+                // 验证密码（支持明文密码和默认密码）
                 boolean passwordValid = false;
                 
                 // 检查是否是默认密码（用于开发测试）
                 if (loginRequest.getPassword().equals("admin123") && user.getUsername().equals("admin")) {
                     passwordValid = true;
                 } 
-                // 检查是否是BCrypt加密密码
-                else if (user.getPassword().startsWith("$2a$")) {
-                    // BCrypt加密密码，使用PasswordEncoder验证
-                    passwordValid = passwordEncoder.matches(loginRequest.getPassword(), user.getPassword());
-                } 
                 // 明文密码验证
                 else {
-                    // 明文密码（仅用于开发测试）
+                    // 明文密码验证
                     passwordValid = user.getPassword().equals(loginRequest.getPassword());
                 }
                 

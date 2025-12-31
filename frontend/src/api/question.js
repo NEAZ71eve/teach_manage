@@ -20,6 +20,10 @@ export const getQuestions = (page, pageSize, searchParams) => {
     params.append("difficulty", searchParams.difficulty);
   if (searchParams.categoryId)
     params.append("categoryId", searchParams.categoryId);
+  if (searchParams.kpId)
+    params.append("kpId", searchParams.kpId);
+  if (searchParams.keyword)
+    params.append("keyword", searchParams.keyword);
 
   return request({
     url: `/question/page?${params.toString()}`,

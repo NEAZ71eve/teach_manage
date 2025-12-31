@@ -7,7 +7,7 @@ import com.example.coursemanagement.service.UserRoleService;
 import com.example.coursemanagement.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -32,7 +32,6 @@ public class UserController {
      * 查询所有用户
      */
     @GetMapping
-    @PreAuthorize("hasAuthority('user:list')")
     public ResponseEntity<List<User>> getAllUsers() {
         List<User> users = userService.findAll();
         return ResponseEntity.ok(users);
@@ -42,7 +41,6 @@ public class UserController {
      * 根据ID查询用户
      */
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('user:list')")
     public ResponseEntity<User> getUserById(@PathVariable Integer id) {
         return userService.findById(id)
                 .map(ResponseEntity::ok)
@@ -53,7 +51,6 @@ public class UserController {
      * 新增用户
      */
     @PostMapping
-    @PreAuthorize("hasAuthority('user:add')")
     public ResponseEntity<Integer> createUser(@RequestBody User user) {
         try {
             int result = userService.save(user);
@@ -68,7 +65,6 @@ public class UserController {
      * 更新用户
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('user:edit')")
     public ResponseEntity<Integer> updateUser(@PathVariable Integer id, @RequestBody User user) {
         user.setUserId(id);
         int result = userService.update(user);
@@ -79,7 +75,6 @@ public class UserController {
      * 删除用户
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('user:delete')")
     public ResponseEntity<Integer> deleteUser(@PathVariable Integer id) {
         int result = userService.deleteById(id);
         return ResponseEntity.ok(result);
@@ -89,7 +84,6 @@ public class UserController {
      * 根据用户ID查询角色列表
      */
     @GetMapping("/{id}/roles")
-    @PreAuthorize("hasAuthority('user:list')")
     public ResponseEntity<List<UserRole>> getUserRoles(@PathVariable Integer id) {
         List<UserRole> userRoles = userRoleService.findByUserId(id);
         return ResponseEntity.ok(userRoles);
@@ -99,7 +93,6 @@ public class UserController {
      * 为用户分配角色
      */
     @PostMapping("/{id}/roles")
-    @PreAuthorize("hasAuthority('user:edit')")
     public ResponseEntity<Integer> assignRoles(@PathVariable Integer id, @RequestBody List<Integer> roleIds) {
         int result = userRoleService.assignRoles(id, roleIds);
         return ResponseEntity.ok(result);

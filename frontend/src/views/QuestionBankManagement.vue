@@ -40,6 +40,26 @@
                 :value="category.categoryId"
               />
             </el-select>
+            <el-select
+              v-model="searchParams.kpId"
+              placeholder="选择知识点"
+              style="width: 180px; margin-right: 10px"
+              clearable
+            >
+              <el-option label="全部知识点" value="" />
+              <el-option
+                v-for="kp in knowledgePoints"
+                :key="kp.kpId"
+                :label="kp.kpName"
+                :value="kp.kpId"
+              />
+            </el-select>
+            <el-input
+              v-model="searchParams.keyword"
+              placeholder="关键词搜索"
+              style="width: 200px; margin-right: 10px"
+              clearable
+            />
             <el-button
               type="danger"
               @click="handleBatchDelete"
@@ -423,6 +443,8 @@ const searchParams = reactive({
   questionType: "",
   difficulty: "",
   categoryId: "",
+  kpId: "",
+  keyword: "",
 });
 
 // 对话框
@@ -801,11 +823,15 @@ onMounted(async () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .header-actions {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .mb-4 {

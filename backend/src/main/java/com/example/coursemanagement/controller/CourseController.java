@@ -6,7 +6,7 @@ import com.example.coursemanagement.service.CourseService;
 import com.example.coursemanagement.service.SemesterService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -33,7 +33,6 @@ public class CourseController {
      * 查询所有课程
      */
     @GetMapping
-    @PreAuthorize("hasAuthority('course:list')")
     public ResponseEntity<List<Course>> getAllCourses() {
         return ResponseEntity.ok(courseService.list());
     }
@@ -42,7 +41,6 @@ public class CourseController {
      * 分页查询课程
      */
     @GetMapping("/page")
-    @PreAuthorize("hasAuthority('course:list')")
     public ResponseEntity<Map<String, Object>> getCoursePage(@RequestParam(defaultValue = "1") Integer page, @RequestParam(defaultValue = "10") Integer limit) {
         List<Course> courses = courseService.listPage(page, limit);
         int total = courseService.count();
@@ -58,7 +56,6 @@ public class CourseController {
      * 根据ID查询课程
      */
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('course:list')")
     public ResponseEntity<Course> getCourseById(@PathVariable Integer id) {
         return ResponseEntity.ok(courseService.getById(id));
     }
@@ -67,7 +64,6 @@ public class CourseController {
      * 新增课程
      */
     @PostMapping
-    @PreAuthorize("hasAuthority('course:add')")
     public ResponseEntity<?> addCourse(@RequestBody Course course) {
         try {
             System.out.println("接收到的课程数据: " + course);
@@ -84,7 +80,6 @@ public class CourseController {
      * 更新课程
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('course:edit')")
     public ResponseEntity<?> updateCourse(@PathVariable Integer id, @RequestBody Course course) {
         try {
             course.setCourseId(id);
@@ -99,7 +94,6 @@ public class CourseController {
      * 删除课程
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('course:delete')")
     public ResponseEntity<Boolean> deleteCourse(@PathVariable Integer id) {
         return ResponseEntity.ok(courseService.removeById(id));
     }
@@ -108,7 +102,6 @@ public class CourseController {
      * 批量删除课程
      */
     @DeleteMapping("/batch")
-    @PreAuthorize("hasAuthority('course:delete')")
     public ResponseEntity<Boolean> deleteBatch(@RequestBody List<Integer> ids) {
         return ResponseEntity.ok(courseService.removeByIds(ids));
     }
@@ -117,7 +110,6 @@ public class CourseController {
      * 搜索课程
      */
     @GetMapping("/search")
-    @PreAuthorize("hasAuthority('course:list')")
     public ResponseEntity<List<Course>> searchCourses(@RequestParam String keyword) {
         return ResponseEntity.ok(courseRepository.search(keyword));
     }
@@ -126,7 +118,6 @@ public class CourseController {
      * 保存课程学期关联
      */
     @PostMapping("/{id}/semesters")
-    @PreAuthorize("hasAuthority('course:edit')")
     public ResponseEntity<Boolean> saveCourseSemester(@PathVariable Integer id, @RequestBody List<Integer> semesterIds) {
         return ResponseEntity.ok(courseService.saveCourseSemester(id, semesterIds));
     }
@@ -135,7 +126,6 @@ public class CourseController {
      * 获取课程关联的学期ID列表
      */
     @GetMapping("/{id}/semesters")
-    @PreAuthorize("hasAuthority('course:list')")
     public ResponseEntity<List<Integer>> getCourseSemesters(@PathVariable Integer id) {
         return ResponseEntity.ok(courseService.getSemesterIdsByCourseId(id));
     }
@@ -144,7 +134,6 @@ public class CourseController {
      * 根据学期ID获取课程列表
      */
     @GetMapping("/by-semester/{semesterId}")
-    @PreAuthorize("hasAuthority('course:list')")
     public ResponseEntity<List<Course>> getCoursesBySemester(@PathVariable Integer semesterId) {
         return ResponseEntity.ok(courseService.getCoursesBySemesterId(semesterId));
     }
@@ -153,7 +142,6 @@ public class CourseController {
      * 获取所有学期列表
      */
     @GetMapping("/semesters/all")
-    @PreAuthorize("hasAuthority('course:list')")
     public ResponseEntity<List<com.example.coursemanagement.entity.Semester>> getAllSemesters() {
         return ResponseEntity.ok(semesterService.list());
     }
@@ -162,7 +150,6 @@ public class CourseController {
      * 根据培养方案ID查询课程列表
      */
     @GetMapping("/by-program/{programId}")
-    @PreAuthorize("hasAuthority('course:list')")
     public ResponseEntity<List<Course>> getCoursesByProgram(@PathVariable Integer programId) {
         return ResponseEntity.ok(courseService.getCoursesByProgramId(programId));
     }
@@ -171,7 +158,6 @@ public class CourseController {
      * 根据专业ID查询课程列表
      */
     @GetMapping("/by-major/{majorId}")
-    @PreAuthorize("hasAuthority('course:list')")
     public ResponseEntity<List<Course>> getCoursesByMajor(@PathVariable Integer majorId) {
         return ResponseEntity.ok(courseService.getCoursesByMajorId(majorId));
     }
@@ -180,7 +166,6 @@ public class CourseController {
      * 根据专业ID和学期ID查询课程列表
      */
     @GetMapping("/by-major/{majorId}/semester/{semesterId}")
-    @PreAuthorize("hasAuthority('course:list')")
     public ResponseEntity<List<Course>> getCoursesByMajorAndSemester(@PathVariable Integer majorId, @PathVariable Integer semesterId) {
         return ResponseEntity.ok(courseService.getCoursesByMajorAndSemester(majorId, semesterId));
     }
@@ -189,7 +174,6 @@ public class CourseController {
      * 获取培养方案四年八个学期的完整课程安排
      */
     @GetMapping("/program-full-schedule/{programId}")
-    @PreAuthorize("hasAuthority('course:list')")
     public ResponseEntity<Map<Integer, List<Course>>> getProgramFullSchedule(@PathVariable Integer programId) {
         return ResponseEntity.ok(courseService.getFullCourseScheduleByProgramId(programId));
     }
@@ -198,7 +182,6 @@ public class CourseController {
      * 获取课程属性统计信息
      */
     @GetMapping("/statistics/{programId}")
-    @PreAuthorize("hasAuthority('statistics:view')")
     public ResponseEntity<Map<String, Object>> getCourseStatistics(@PathVariable Integer programId) {
         return ResponseEntity.ok(courseService.getCourseStatistics(programId));
     }

@@ -81,10 +81,17 @@ public class QuestionServiceImpl implements QuestionService {
         System.out.println("选项数量: " + (question.getOptions() != null ? question.getOptions().size() : 0));
         System.out.println("标签数量: " + (question.getTags() != null ? question.getTags().size() : 0));
         
-        int result = questionRepository.save(question);
-        System.out.println("保存结果: " + result);
-        System.out.println("=== 保存题目结束 ===");
-        return result > 0;
+        try {
+            int result = questionRepository.save(question);
+            System.out.println("保存结果: " + result);
+            System.out.println("=== 保存题目结束 ===");
+            return result > 0;
+        } catch (Exception e) {
+            System.out.println("保存题目异常: " + e.getMessage());
+            e.printStackTrace();
+            System.out.println("=== 保存题目异常结束 ===");
+            throw e;
+        }
     }
 
     @Override
@@ -115,13 +122,13 @@ public class QuestionServiceImpl implements QuestionService {
     }
 
     @Override
-    public List<Question> listPage(Integer page, Integer limit, Integer questionType, String difficulty, Integer categoryId) {
-        return questionRepository.findByPage(page, limit, questionType, difficulty, categoryId);
+    public List<Question> listPage(Integer page, Integer limit, Integer questionType, String difficulty, Integer categoryId, Integer kpId, String keyword) {
+        return questionRepository.findByPage(page, limit, questionType, difficulty, categoryId, kpId, keyword);
     }
 
     @Override
-    public int count(Integer questionType, String difficulty, Integer categoryId) {
-        return questionRepository.count(questionType, difficulty, categoryId);
+    public int count(Integer questionType, String difficulty, Integer categoryId, Integer kpId, String keyword) {
+        return questionRepository.count(questionType, difficulty, categoryId, kpId, keyword);
     }
     
     @Override

@@ -69,12 +69,12 @@ public interface QuestionService {
     /**
      * 分页查询题目
      */
-    List<Question> listPage(Integer page, Integer limit, Integer questionType, String difficulty, Integer categoryId);
+    List<Question> listPage(Integer page, Integer limit, Integer questionType, String difficulty, Integer categoryId, Integer kpId, String keyword);
 
     /**
      * 查询题目总数
      */
-    int count(Integer questionType, String difficulty, Integer categoryId);
+    int count(Integer questionType, String difficulty, Integer categoryId, Integer kpId, String keyword);
     
     /**
      * 查询所有题目分类
