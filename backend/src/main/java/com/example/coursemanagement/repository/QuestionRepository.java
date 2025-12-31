@@ -79,22 +79,35 @@ public class QuestionRepository {
      */
     @Transactional
     public int save(Question question) {
-        String sql = "INSERT INTO question (question_type, question_content, kp_id, difficulty, score, correct_answer, analysis, category_id, status, creator_id, is_used, create_time, update_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
-        jdbcTemplate.update(sql, 
-                question.getQuestionType(), 
-                question.getQuestionContent(), 
-                question.getKpId(), 
-                question.getDifficulty(), 
-                question.getScore(),
-                question.getCorrectAnswer(),
-                question.getAnalysis(),
-                question.getCategoryId(),
-                question.getStatus(),
-                question.getCreatorId(),
-                0); // 设置is_used的默认值为0
+        String sql = "INSERT INTO question (question_type, question_content, category_id, kp_id, difficulty, score, correct_answer, analysis, status, creator_id, is_used, create_time, update_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
+        
+        // 使用GeneratedKeyHolder获取新插入的ID
+        org.springframework.jdbc.support.GeneratedKeyHolder keyHolder = new org.springframework.jdbc.support.GeneratedKeyHolder();
+        jdbcTemplate.update(new org.springframework.jdbc.core.PreparedStatementCreator() {
+            @Override
+            public java.sql.PreparedStatement createPreparedStatement(java.sql.Connection connection) throws java.sql.SQLException {
+                java.sql.PreparedStatement ps = connection.prepareStatement(sql, new String[] { "question_id" });
+                ps.setInt(1, question.getQuestionType());
+                ps.setString(2, question.getQuestionContent());
+                if (question.getCategoryId() != null) {
+                    ps.setInt(3, question.getCategoryId());
+                } else {
+                    ps.setNull(3, java.sql.Types.INTEGER);
+                }
+                ps.setInt(4, question.getKpId());
+                ps.setString(5, question.getDifficulty());
+                ps.setDouble(6, question.getScore());
+                ps.setString(7, question.getCorrectAnswer());
+                ps.setString(8, question.getAnalysis());
+                ps.setString(9, question.getStatus());
+                ps.setInt(10, question.getCreatorId());
+                ps.setInt(11, 0); // 设置is_used的默认值为0
+                return ps;
+            }
+        }, keyHolder);
         
         // 获取新插入的题目ID
-        Integer questionId = jdbcTemplate.queryForObject("SELECT LAST_INSERT_ID()", Integer.class);
+        Integer questionId = keyHolder.getKey().intValue();
         question.setQuestionId(questionId);
         
         // 保存题目选项
@@ -118,16 +131,17 @@ public class QuestionRepository {
      */
     @Transactional
     public int update(Question question) {
-        String sql = "UPDATE question SET question_type = ?, question_content = ?, kp_id = ?, difficulty = ?, score = ?, correct_answer = ?, analysis = ?, category_id = ?, status = ?, update_time = NOW() WHERE question_id = ?";
-        int result = jdbcTemplate.update(sql, 
+        String sql = "UPDATE question SET question_type = ?, question_content = ?, category_id = ?, kp_id = ?, difficulty = ?, score = ?, correct_answer = ?, analysis = ?, status = ?, update_time = NOW() WHERE question_id = ?";
+        int result = jdbcTemplate.update(
+                sql, 
                 question.getQuestionType(), 
                 question.getQuestionContent(), 
+                question.getCategoryId() != null ? question.getCategoryId() : null,
                 question.getKpId(), 
                 question.getDifficulty(), 
                 question.getScore(),
                 question.getCorrectAnswer(),
                 question.getAnalysis(),
-                question.getCategoryId(),
                 question.getStatus(),
                 question.getQuestionId());
         
@@ -359,8 +373,11 @@ public class QuestionRepository {
      */
     private void saveQuestionOptions(Question question) {
         String sql = "INSERT INTO question_option (question_id, option_text, option_order, is_correct) VALUES (?, ?, ?, ?)";
+        int order = 1;
         for (QuestionOption option : question.getOptions()) {
-            jdbcTemplate.update(sql, question.getQuestionId(), option.getOptionText(), option.getOptionOrder(), option.getIsCorrect());
+            // 如果optionOrder为null，使用默认顺序值
+            Integer optionOrder = option.getOptionOrder() != null ? option.getOptionOrder() : order++;
+            jdbcTemplate.update(sql, question.getQuestionId(), option.getOptionText(), optionOrder, option.getIsCorrect());
         }
     }
     
@@ -378,8 +395,31 @@ public class QuestionRepository {
      */
     private void saveQuestionTags(Question question) {
         String sql = "INSERT INTO question_tag_relation (question_id, tag_id) VALUES (?, ?)";
-        for (QuestionTag tag : question.getTags()) {
-            jdbcTemplate.update(sql, question.getQuestionId(), tag.getTagId());
+        // 遍历题目标签，处理不同类型的标签对象
+        for (Object tag : question.getTags()) {
+            Integer tagId = null;
+            
+            // 如果是QuestionTag对象，直接获取tagId
+            if (tag instanceof QuestionTag) {
+                tagId = ((QuestionTag) tag).getTagId();
+            } 
+            // 否则尝试从对象中提取tagId属性
+            else {
+                try {
+                    // 使用反射获取tagId属性
+                    java.lang.reflect.Field tagIdField = tag.getClass().getDeclaredField("tagId");
+                    tagIdField.setAccessible(true);
+                    tagId = (Integer) tagIdField.get(tag);
+                } catch (Exception e) {
+                    // 如果反射失败，跳过该标签
+                    continue;
+                }
+            }
+            
+            // 如果成功获取到tagId，保存标签关系
+            if (tagId != null) {
+                jdbcTemplate.update(sql, question.getQuestionId(), tagId);
+            }
         }
     }
     

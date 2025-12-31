@@ -68,7 +68,23 @@ public class QuestionServiceImpl implements QuestionService {
 
     @Override
     public boolean save(Question question) {
-        return questionRepository.save(question) > 0;
+        System.out.println("=== 开始保存题目 ===");
+        System.out.println("题目类型: " + question.getQuestionType());
+        System.out.println("题目内容: " + question.getQuestionContent());
+        System.out.println("分类ID: " + question.getCategoryId());
+        System.out.println("知识点ID: " + question.getKpId());
+        System.out.println("难度: " + question.getDifficulty());
+        System.out.println("分值: " + question.getScore());
+        System.out.println("正确答案: " + question.getCorrectAnswer());
+        System.out.println("状态: " + question.getStatus());
+        System.out.println("创建者ID: " + question.getCreatorId());
+        System.out.println("选项数量: " + (question.getOptions() != null ? question.getOptions().size() : 0));
+        System.out.println("标签数量: " + (question.getTags() != null ? question.getTags().size() : 0));
+        
+        int result = questionRepository.save(question);
+        System.out.println("保存结果: " + result);
+        System.out.println("=== 保存题目结束 ===");
+        return result > 0;
     }
 
     @Override

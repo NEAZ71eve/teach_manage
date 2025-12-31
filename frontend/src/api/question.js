@@ -8,8 +8,21 @@ import request from "./request";
  * @returns {Promise}
  */
 export const getQuestions = (page, pageSize, searchParams) => {
+  // 构建查询字符串，只包含有值的参数
+  const params = new URLSearchParams({
+    page,
+    limit: pageSize,
+  });
+
+  if (searchParams.questionType)
+    params.append("questionType", searchParams.questionType);
+  if (searchParams.difficulty)
+    params.append("difficulty", searchParams.difficulty);
+  if (searchParams.categoryId)
+    params.append("categoryId", searchParams.categoryId);
+
   return request({
-    url: `/question/page?page=${page}&limit=${pageSize}&questionType=${searchParams.questionType}&difficulty=${searchParams.difficulty}`,
+    url: `/question/page?${params.toString()}`,
     method: "GET",
   });
 };
@@ -134,5 +147,27 @@ export const deleteQuestionBatch = (ids) => {
     url: "/question/batch",
     method: "DELETE",
     data: ids,
+  });
+};
+
+/**
+ * 获取所有题目分类
+ * @returns {Promise}
+ */
+export const getCategories = () => {
+  return request({
+    url: "/question/categories",
+    method: "GET",
+  });
+};
+
+/**
+ * 获取所有题目标签
+ * @returns {Promise}
+ */
+export const getTags = () => {
+  return request({
+    url: "/question/tags",
+    method: "GET",
   });
 };

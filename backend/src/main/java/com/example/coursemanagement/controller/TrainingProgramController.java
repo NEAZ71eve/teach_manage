@@ -4,6 +4,7 @@ import com.example.coursemanagement.entity.TrainingProgram;
 import com.example.coursemanagement.service.TrainingProgramService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -24,6 +25,7 @@ public class TrainingProgramController {
      * 查询所有培养方案
      */
     @GetMapping
+    @PreAuthorize("hasAuthority('training-program:list')")
     public ResponseEntity<List<TrainingProgram>> getAllTrainingPrograms() {
         return ResponseEntity.ok(trainingProgramService.list());
     }
@@ -32,6 +34,7 @@ public class TrainingProgramController {
      * 分页查询培养方案
      */
     @GetMapping("/page")
+    @PreAuthorize("hasAuthority('training-program:list')")
     public ResponseEntity<Map<String, Object>> getTrainingProgramPage(@RequestParam(defaultValue = "1") Integer page, @RequestParam(defaultValue = "10") Integer limit) {
         List<TrainingProgram> programs = trainingProgramService.listPage(page, limit);
         int total = trainingProgramService.count();
@@ -47,6 +50,7 @@ public class TrainingProgramController {
      * 根据ID查询培养方案
      */
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('training-program:list')")
     public ResponseEntity<TrainingProgram> getTrainingProgramById(@PathVariable Integer id) {
         return ResponseEntity.ok(trainingProgramService.getById(id));
     }
@@ -55,6 +59,7 @@ public class TrainingProgramController {
      * 新增培养方案
      */
     @PostMapping
+    @PreAuthorize("hasAuthority('training-program:add')")
     public ResponseEntity<Boolean> addTrainingProgram(@RequestBody TrainingProgram program) {
         try {
             System.out.println("收到新增培养方案请求: " + program);
@@ -76,6 +81,7 @@ public class TrainingProgramController {
      * 更新培养方案
      */
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('training-program:edit')")
     public ResponseEntity<Boolean> updateTrainingProgram(@PathVariable Integer id, @RequestBody TrainingProgram program) {
         program.setProgramId(id);
         return ResponseEntity.ok(trainingProgramService.updateById(program));
@@ -85,6 +91,7 @@ public class TrainingProgramController {
      * 删除培养方案
      */
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('training-program:delete')")
     public ResponseEntity<Boolean> deleteTrainingProgram(@PathVariable Integer id) {
         return ResponseEntity.ok(trainingProgramService.removeById(id));
     }
@@ -93,6 +100,7 @@ public class TrainingProgramController {
      * 批量删除培养方案
      */
     @DeleteMapping("/batch")
+    @PreAuthorize("hasAuthority('training-program:delete')")
     public ResponseEntity<Boolean> deleteBatch(@RequestBody List<Integer> ids) {
         return ResponseEntity.ok(trainingProgramService.removeByIds(ids));
     }
@@ -101,6 +109,7 @@ public class TrainingProgramController {
      * 根据老师ID查询培养方案列表
      */
     @GetMapping("/by-teacher/{teacherId}")
+    @PreAuthorize("hasAuthority('training-program:list')")
     public ResponseEntity<List<TrainingProgram>> getTrainingProgramsByTeacher(@PathVariable Integer teacherId) {
         return ResponseEntity.ok(trainingProgramService.getByTeacherId(teacherId));
     }

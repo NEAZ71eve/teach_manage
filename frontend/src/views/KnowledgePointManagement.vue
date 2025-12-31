@@ -159,20 +159,38 @@ const fetchCourses = async () => {
 const fetchKnowledgePointTree = async () => {
   try {
     let response
+    let allPoints
     if (selectedCourse.value === 0) {
       // 获取所有课程的知识点树
       response = await getAllKnowledgePoints()
-      // 将扁平数据转换为树形结构
-      knowledgePointTree.value = buildTree(response)
+      allPoints = response
     } else {
       // 获取指定课程的知识点列表（扁平结构）
       response = await getKnowledgePointsByCourseId(selectedCourse.value)
-      // 将扁平数据转换为树形结构
-      knowledgePointTree.value = buildTree(response)
+      allPoints = await getAllKnowledgePoints()
     }
     
+    // 字段名转换：将后端的kpId和kpName转换为前端需要的pointId和pointName
+    const convertPoints = (points) => {
+      return points.map(point => ({
+        pointId: point.kpId,
+        pointName: point.kpName,
+        courseId: point.courseId,
+        parentId: point.parentId,
+        description: point.description,
+        difficulty: point.difficulty,
+        kpOrder: point.kpOrder,
+        isActive: point.isActive,
+        createTime: point.createTime,
+        updateTime: point.updateTime
+      }))
+    }
+    
+    // 转换并构建树形结构
+    knowledgePointTree.value = buildTree(convertPoints(response))
+    
     // 获取所有知识点用于下拉选择（始终获取，确保数据最新）
-    allKnowledgePoints.value = await getAllKnowledgePoints()
+    allKnowledgePoints.value = convertPoints(allPoints)
   } catch (error) {
     ElMessage.error('获取知识点列表失败')
     console.error('获取知识点列表失败:', error)

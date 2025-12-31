@@ -390,6 +390,27 @@ public class LoginController {
                             basicPermissions.add(semesterSchedulePerm);
                             
                             permissions = basicPermissions;
+                        } else {
+                            // 对于普通教师和学生，移除管理权限（如add, edit, delete）
+                            List<String> roleNames = roles.stream()
+                                    .map(Role::getRoleName)
+                                    .collect(Collectors.toList());
+                            
+                            // 检查是否是普通教师或学生角色
+                            boolean isNormalUser = roleNames.stream().anyMatch(roleName -> 
+                                    roleName.contains("教师") || roleName.contains("学生") || roleName.equals("teacher") || roleName.equals("student")
+                            );
+                            
+                            if (isNormalUser) {
+                                // 过滤掉管理权限，只保留查看权限
+                                permissions = permissions.stream()
+                                        .filter(permission -> {
+                                            String permissionCode = permission.getPermissionCode();
+                                            // 只保留查看权限（以:list或:view结尾的权限）
+                                            return permissionCode.endsWith(":list") || permissionCode.endsWith(":view");
+                                        })
+                                        .collect(Collectors.toList());
+                            }
                         }
                     }
                     

@@ -177,7 +177,18 @@ const hasPermission = (to, permissions) => {
   }
 
   // 检查用户是否有路由要求的任一权限
-  const permissionCodes = permissions.map((p) => p.permissionCode);
+  const permissionCodes = permissions.map((p) => {
+    // 处理权限数据可能的不同结构
+    return typeof p === "string" ? p : p.permissionCode;
+  }).filter(Boolean);
+  
+  // 检查是否是管理员用户
+  const userStr = localStorage.getItem("user");
+  const user = userStr ? JSON.parse(userStr) : null;
+  if (user && user.username === "admin") {
+    return true;
+  }
+
   return to.meta.permissions.some((requiredPermission) => {
     return permissionCodes.includes(requiredPermission);
   });

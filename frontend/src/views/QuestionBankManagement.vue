@@ -398,6 +398,8 @@ import {
   updateQuestion,
   deleteQuestion,
   deleteQuestionBatch,
+  getCategories,
+  getTags,
 } from "../api/question";
 
 // 表格数据
@@ -496,13 +498,10 @@ const fetchQuestions = async () => {
 // 获取题目分类
 const fetchCategories = async () => {
   try {
-    const response = await fetch("/api/question/categories");
-    if (response.ok) {
-      const data = await response.json();
-      categories.value = data;
-      if (data.length > 0) {
-        questionForm.categoryId = data[0].categoryId;
-      }
+    const data = await getCategories();
+    categories.value = data;
+    if (data.length > 0) {
+      questionForm.categoryId = data[0].categoryId;
     }
   } catch (error) {
     console.error("获取题目分类失败:", error);
@@ -512,11 +511,8 @@ const fetchCategories = async () => {
 // 获取题目标签
 const fetchTags = async () => {
   try {
-    const response = await fetch("/api/question/tags");
-    if (response.ok) {
-      const data = await response.json();
-      tags.value = data;
-    }
+    const data = await getTags();
+    tags.value = data;
   } catch (error) {
     console.error("获取题目标签失败:", error);
   }
@@ -649,6 +645,20 @@ const handleEditQuestion = (row) => {
 // 保存题目
 const handleSaveQuestion = async () => {
   try {
+    // 表单验证
+    if (!questionForm.kpId) {
+      ElMessage.error("请选择知识点");
+      return;
+    }
+    if (!questionForm.questionContent) {
+      ElMessage.error("请输入题目内容");
+      return;
+    }
+    if (!questionForm.correctAnswer) {
+      ElMessage.error("请输入正确答案");
+      return;
+    }
+
     // 准备题目数据
     const questionData = { ...questionForm };
 
@@ -658,7 +668,7 @@ const handleSaveQuestion = async () => {
         .filter((opt) => opt.optionText)
         .map((opt) => ({
           ...opt,
-          isCorrect: opt.isCorrect ? 1 : 0 // 将布尔值转换为整数
+          isCorrect: opt.isCorrect ? 1 : 0, // 将布尔值转换为整数
         }));
     }
 

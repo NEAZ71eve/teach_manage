@@ -428,16 +428,16 @@ const fetchKnowledgePoints = async () => {
   try {
     const response = await getAllKnowledgePoints();
     console.log("原始知识点数据:", response);
-    // 将下划线命名转换为驼峰命名
+    // 将后端的kpId和kpName转换为前端需要的pointId和pointName
     allKnowledgePoints.value = response.map((point) => ({
-      pointId: point.point_id,
-      pointName: point.point_name,
-      courseId: point.course_id,
-      parentId: point.parent_id,
+      pointId: point.kpId,
+      pointName: point.kpName,
+      courseId: point.courseId,
+      parentId: point.parentId,
       description: point.description,
       difficulty: point.difficulty,
-      createTime: point.create_time,
-      updateTime: point.update_time,
+      createTime: point.createTime,
+      updateTime: point.updateTime,
     }));
     console.log("转换后的知识点数据:", allKnowledgePoints.value);
   } catch (error) {
@@ -496,12 +496,12 @@ const handleCourseChange = async (courseId) => {
       return;
     }
 
-    // 直接使用返回的扁平结构数据，后端已经返回驼峰命名的字段名
+    // 将后端的kpId和kpName转换为前端需要的pointId和pointName
     const courseKnowledgePoints = response
-      .filter((point) => point && point.pointId && point.pointName) // 过滤掉无效数据
+      .filter((point) => point && point.kpId && point.kpName) // 过滤掉无效数据
       .map((point) => ({
-        pointId: point.pointId,
-        pointName: point.pointName,
+        pointId: point.kpId,
+        pointName: point.kpName,
         courseId: point.courseId,
         parentId: point.parentId,
         description: point.description,

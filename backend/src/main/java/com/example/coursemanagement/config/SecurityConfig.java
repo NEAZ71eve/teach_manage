@@ -33,9 +33,12 @@ public class SecurityConfig {
             .httpBasic(basic -> basic.disable())
             // 配置会话管理为无状态，因为我们使用JWT
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            // 允许所有请求通过，由JWT过滤器处理认证
+            // 配置授权规则
             .authorizeHttpRequests(auth -> auth
-                .anyRequest().permitAll()
+                // 允许登录请求匿名访问
+                .requestMatchers("/login").permitAll()
+                // 其他所有请求需要认证
+                .anyRequest().authenticated()
             )
             // 添加JWT过滤器到过滤器链中
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
