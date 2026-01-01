@@ -496,7 +496,7 @@ const fetchCourses = async () => {
   }
 };
 
-// 获取知识点列表
+// 获取知识点列表（所有课程）
 const fetchKnowledgePoints = async () => {
   try {
     const response = await getAllKnowledgePoints();
@@ -648,9 +648,9 @@ const handleBatchDelete = async () => {
 };
 
 // 添加题目
-const handleAddQuestion = () => {
+const handleAddQuestion = async () => {
   dialogTitle.value = "添加题目";
-  resetQuestionForm();
+  await resetQuestionForm();
   dialogVisible.value = true;
 };
 
@@ -744,12 +744,14 @@ const handleDeleteQuestion = async (questionId) => {
 };
 
 // 重置题目表单
-const resetQuestionForm = () => {
+const resetQuestionForm = async () => {
+  const defaultCourseId =
+    courses.value.length > 0 ? courses.value[0].courseId : null;
+
   Object.assign(questionForm, {
     questionId: null,
-    courseId: courses.value.length > 0 ? courses.value[0].courseId : null,
-    kpId:
-      knowledgePoints.value.length > 0 ? knowledgePoints.value[0].kpId : null,
+    courseId: defaultCourseId,
+    kpId: null,
     categoryId:
       categories.value.length > 0 ? categories.value[0].categoryId : null,
     questionType: 1,
@@ -761,6 +763,14 @@ const resetQuestionForm = () => {
     status: "待审核",
     creatorId: 1,
   });
+
+  // 根据默认课程获取知识点
+  if (defaultCourseId) {
+    await fetchKnowledgePointsByCourse();
+  } else {
+    knowledgePoints.value = [];
+  }
+
   options.value = [
     { optionText: "", isCorrect: false },
     { optionText: "", isCorrect: false },
@@ -811,11 +821,32 @@ const formatAnswer = (answer, type) => {
 // 页面挂载时获取数据
 onMounted(async () => {
   await fetchCourses();
-  await fetchKnowledgePoints();
+  // 先获取课程，再根据课程获取知识点，确保知识点列表正确
+  if (questionForm.courseId) {
+    await fetchKnowledgePointsByCourse();
+  } else {
+    await fetchKnowledgePoints();
+  }
   await fetchCategories();
   await fetchTags();
   await fetchQuestions();
 });
+
+// 根据当前课程获取知识点
+const fetchKnowledgePointsByCourse = async () => {
+  try {
+    const response = await getKnowledgePointsByCourseId(questionForm.courseId);
+    knowledgePoints.value = response;
+    if (response.length > 0) {
+      questionForm.kpId = response[0].kpId;
+    } else {
+      questionForm.kpId = null;
+    }
+  } catch (error) {
+    ElMessage.error("获取知识点列表失败");
+    console.error("获取知识点列表失败:", error);
+  }
+};
 </script>
 
 <style scoped>

@@ -379,18 +379,24 @@ public class LoginController {
                             
                             permissions = basicPermissions;
                         } else {
-                            // 对于普通教师和学生，移除管理权限（如add, edit, delete）
+                            // 对于不同角色，应用不同的权限过滤策略
                             List<String> roleNames = roles.stream()
                                     .map(Role::getRoleName)
                                     .collect(Collectors.toList());
                             
+                            // 检查是否包含专业负责教师角色
+                            boolean isProgramTeacher = roleNames.stream().anyMatch(roleName -> 
+                                    roleName.contains("专业负责教师") || roleName.equals("专业负责教师")
+                            );
+                            
                             // 检查是否是普通教师或学生角色
                             boolean isNormalUser = roleNames.stream().anyMatch(roleName -> 
-                                    roleName.contains("教师") || roleName.contains("学生") || roleName.equals("teacher") || roleName.equals("student")
+                                    (roleName.contains("教师") || roleName.equals("teacher")) && !isProgramTeacher || 
+                                    roleName.contains("学生") || roleName.equals("student")
                             );
                             
                             if (isNormalUser) {
-                                // 过滤掉管理权限，只保留查看权限
+                                // 对于普通教师和学生，只保留查看权限
                                 permissions = permissions.stream()
                                         .filter(permission -> {
                                             String permissionCode = permission.getPermissionCode();
@@ -399,6 +405,7 @@ public class LoginController {
                                         })
                                         .collect(Collectors.toList());
                             }
+                            // 专业负责教师角色保持完整权限
                         }
                     }
                     

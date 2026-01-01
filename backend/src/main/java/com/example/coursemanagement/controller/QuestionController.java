@@ -80,25 +80,18 @@ public class QuestionController {
      * 新增题目
      */
     @PostMapping
-    public ResponseEntity<Boolean> addQuestion(HttpServletRequest request) {
-        System.out.println("收到添加题目请求");
+    public ResponseEntity<Boolean> addQuestion(@RequestBody Question question) {
+        System.out.println("收到添加题目请求，题目内容: " + question.getQuestionContent());
+        System.out.println("题目类型: " + question.getQuestionType());
+        System.out.println("知识点ID: " + question.getKpId());
+        System.out.println("难度: " + question.getDifficulty());
+        System.out.println("分值: " + question.getScore());
+        System.out.println("正确答案: " + question.getCorrectAnswer());
         
-        // 读取请求体
-        try {
-            StringBuilder requestBody = new StringBuilder();
-            String line;
-            BufferedReader reader = request.getReader();
-            while ((line = reader.readLine()) != null) {
-                requestBody.append(line);
-            }
-            System.out.println("请求体: " + requestBody.toString());
-        } catch (IOException e) {
-            System.out.println("读取请求体失败: " + e.getMessage());
-            e.printStackTrace();
-        }
-        
-        // 直接返回成功，不实际插入数据库
-        return ResponseEntity.ok(true);
+        // 调用服务层保存题目
+        boolean result = questionService.save(question);
+        System.out.println("保存结果: " + result);
+        return ResponseEntity.ok(result);
     }
 
     /**

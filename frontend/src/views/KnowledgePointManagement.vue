@@ -331,17 +331,25 @@ const handleBatchDelete = async () => {
 // 保存知识点
 const handleSavePoint = async () => {
   try {
-    if (pointForm.parentId === 0) {
-      pointForm.parentId = null
+    // 字段名转换：将前端的pointId和pointName转换为后端需要的kpId和kpName
+    const backendPoint = {
+      kpId: pointForm.pointId,
+      kpName: pointForm.pointName,
+      courseId: pointForm.courseId,
+      parentId: pointForm.parentId === 0 ? null : pointForm.parentId,
+      description: pointForm.description,
+      difficulty: pointForm.difficulty,
+      kpOrder: 0, // 默认排序
+      isActive: 1 // 默认激活
     }
     
-    if (pointForm.pointId) {
+    if (backendPoint.kpId) {
       // 更新知识点
-      await updateKnowledgePoint(pointForm.pointId, pointForm)
+      await updateKnowledgePoint(backendPoint.kpId, backendPoint)
       ElMessage.success('知识点更新成功')
     } else {
       // 添加知识点
-      await addKnowledgePoint(pointForm)
+      await addKnowledgePoint(backendPoint)
       ElMessage.success('知识点添加成功')
     }
     dialogVisible.value = false

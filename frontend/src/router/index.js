@@ -198,11 +198,33 @@ const hasPermission = (to, permissions) => {
 router.beforeEach((to, from, next) => {
   // 检查路由是否需要认证
   if (to.matched.some((record) => record.meta.requiresAuth)) {
-    // 检查是否登录
+    // 检查是否登录 - 必须同时有token和user信息才认为是已登录
     const token = localStorage.getItem("token");
-    const user = localStorage.getItem("user");
-    if (!token && !user) {
+    const userStr = localStorage.getItem("user");
+    
+    // 验证token和user的有效性
+    if (!token || !userStr) {
       // 未登录，跳转到登录页
+      next({
+        path: "/login",
+        query: { redirect: to.fullPath },
+      });
+      return;
+    }
+    
+    try {
+      // 尝试解析用户信息，确保userStr是有效的JSON
+      const user = JSON.parse(userStr);
+      if (!user || !user.username) {
+        // 用户信息无效，跳转到登录页
+        next({
+          path: "/login",
+          query: { redirect: to.fullPath },
+        });
+        return;
+      }
+    } catch (e) {
+      // 解析失败，跳转到登录页
       next({
         path: "/login",
         query: { redirect: to.fullPath },

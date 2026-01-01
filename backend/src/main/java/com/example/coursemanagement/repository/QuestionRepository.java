@@ -84,7 +84,17 @@ public class QuestionRepository {
         System.out.println("保存题目时的categoryId值: " + question.getCategoryId());
         
         try {
-            // 直接执行INSERT语句，不进行知识点和分类的检查
+            // 先查询knowledge_point表，检查kp_id是否存在
+            String checkKpSql = "SELECT COUNT(*) FROM knowledge_point WHERE kp_id = ?";
+            Integer kpCount = jdbcTemplate.queryForObject(checkKpSql, Integer.class, question.getKpId());
+            System.out.println("知识点ID " + question.getKpId() + " 存在吗？ " + (kpCount > 0 ? "是" : "否"));
+            
+            if (kpCount == 0) {
+                System.out.println("知识点ID " + question.getKpId() + " 不存在，无法保存题目");
+                return 0;
+            }
+            
+            // 直接执行INSERT语句，只插入question表中肯定存在的字段
             String sql = "INSERT INTO question (question_type, question_content, kp_id, difficulty, score, correct_answer, create_time, update_time) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())";
             System.out.println("执行的SQL语句: " + sql);
             

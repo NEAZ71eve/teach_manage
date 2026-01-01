@@ -2,7 +2,6 @@ package com.example.coursemanagement.utils;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
@@ -63,7 +62,7 @@ public class JwtUtils {
     
     public boolean validateToken(String token) {
         try {
-            Jwts.parser().setSigningKey(getSignInKey()).build().parseClaimsJws(token);
+            extractAllClaims(token);
             return !isTokenExpired(token);
         } catch (Exception e) {
             return false;

@@ -1,106 +1,113 @@
 <template>
   <div class="app-container">
-    <el-container>
-      <el-header class="app-header">
-        <h1>本科专业管理系统</h1>
-        <div class="user-info" v-if="userInfo.username">
-          <span class="user-name">{{
-            userInfo.realName || userInfo.username
-          }}</span>
-          <el-button type="danger" size="small" @click="handleLogout"
-            >登出</el-button
-          >
-        </div>
-      </el-header>
+    <!-- 只有非登录页面才显示完整布局 -->
+    <template v-if="$route.path !== '/login'">
       <el-container>
-        <el-aside width="200px" class="app-aside">
-          <el-menu
-            :default-active="activeMenu"
-            class="el-menu-vertical-demo"
-            @select="handleMenuSelect"
-          >
-            <el-menu-item index="/courses" v-if="canAccessMenu('/courses')">
-              <el-icon><Document /></el-icon>
-              <span>课程管理</span>
-            </el-menu-item>
-            <el-menu-item
-              index="/knowledge-points"
-              v-if="canAccessMenu('/knowledge-points')"
+        <el-header class="app-header">
+          <h1>本科专业管理系统</h1>
+          <div class="user-info" v-if="isLoggedIn">
+            <span class="user-name">{{
+              userInfo.realName || userInfo.username
+            }}</span>
+            <el-button type="danger" size="small" @click="handleLogout"
+              >登出</el-button
             >
-              <el-icon><Collection /></el-icon>
-              <span>知识点管理</span>
-            </el-menu-item>
-            <el-menu-item
-              index="/question-bank"
-              v-if="canAccessMenu('/question-bank')"
+          </div>
+        </el-header>
+        <el-container>
+          <el-aside width="200px" class="app-aside">
+            <el-menu
+              :default-active="activeMenu"
+              class="el-menu-vertical-demo"
+              @select="handleMenuSelect"
             >
-              <el-icon><EditPen /></el-icon>
-              <span>题库管理</span>
-            </el-menu-item>
-            <el-menu-item
-              index="/exam-papers"
-              v-if="canAccessMenu('/exam-papers')"
-            >
-              <el-icon><Notebook /></el-icon>
-              <span>试卷管理</span>
-            </el-menu-item>
-            <el-menu-item
-              index="/training-programs"
-              v-if="canAccessMenu('/training-programs')"
-            >
-              <el-icon><List /></el-icon>
-              <span>培养方案管理</span>
-            </el-menu-item>
-            <el-menu-item
-              index="/statistics"
-              v-if="canAccessMenu('/statistics')"
-            >
-              <el-icon><DataAnalysis /></el-icon>
-              <span>统计分析</span>
-            </el-menu-item>
-            <el-menu-item
-              index="/practice-projects"
-              v-if="canAccessMenu('/practice-projects')"
-            >
-              <el-icon><Operation /></el-icon>
-              <span>实践项目</span>
-            </el-menu-item>
-            <el-menu-item
-              index="/semester-management"
-              v-if="canAccessMenu('/semester-management')"
-            >
-              <el-icon><Calendar /></el-icon>
-              <span>学期管理</span>
-            </el-menu-item>
-            <el-menu-item
-              index="/semester-schedule"
-              v-if="canAccessMenu('/semester-schedule')"
-            >
-              <el-icon><Notebook /></el-icon>
-              <span>学期课表</span>
-            </el-menu-item>
-            <el-menu-item index="/users" v-if="canAccessMenu('/users')">
-              <el-icon><User /></el-icon>
-              <span>用户管理</span>
-            </el-menu-item>
-            <el-menu-item index="/roles" v-if="canAccessMenu('/roles')">
-              <el-icon><Key /></el-icon>
-              <span>角色管理</span>
-            </el-menu-item>
-            <el-menu-item
-              index="/permissions"
-              v-if="canAccessMenu('/permissions')"
-            >
-              <el-icon><Lock /></el-icon>
-              <span>权限管理</span>
-            </el-menu-item>
-          </el-menu>
-        </el-aside>
-        <el-main class="app-main">
-          <router-view />
-        </el-main>
+              <el-menu-item index="/courses" v-if="canAccessMenu('/courses')">
+                <el-icon><Document /></el-icon>
+                <span>课程管理</span>
+              </el-menu-item>
+              <el-menu-item
+                index="/knowledge-points"
+                v-if="canAccessMenu('/knowledge-points')"
+              >
+                <el-icon><Collection /></el-icon>
+                <span>知识点管理</span>
+              </el-menu-item>
+              <el-menu-item
+                index="/question-bank"
+                v-if="canAccessMenu('/question-bank')"
+              >
+                <el-icon><EditPen /></el-icon>
+                <span>题库管理</span>
+              </el-menu-item>
+              <el-menu-item
+                index="/exam-papers"
+                v-if="canAccessMenu('/exam-papers')"
+              >
+                <el-icon><Notebook /></el-icon>
+                <span>试卷管理</span>
+              </el-menu-item>
+              <el-menu-item
+                index="/training-programs"
+                v-if="canAccessMenu('/training-programs')"
+              >
+                <el-icon><List /></el-icon>
+                <span>培养方案管理</span>
+              </el-menu-item>
+              <el-menu-item
+                index="/statistics"
+                v-if="canAccessMenu('/statistics')"
+              >
+                <el-icon><DataAnalysis /></el-icon>
+                <span>统计分析</span>
+              </el-menu-item>
+              <el-menu-item
+                index="/practice-projects"
+                v-if="canAccessMenu('/practice-projects')"
+              >
+                <el-icon><Operation /></el-icon>
+                <span>实践项目</span>
+              </el-menu-item>
+              <el-menu-item
+                index="/semester-management"
+                v-if="canAccessMenu('/semester-management')"
+              >
+                <el-icon><Calendar /></el-icon>
+                <span>学期管理</span>
+              </el-menu-item>
+              <el-menu-item
+                index="/semester-schedule"
+                v-if="canAccessMenu('/semester-schedule')"
+              >
+                <el-icon><Notebook /></el-icon>
+                <span>学期课表</span>
+              </el-menu-item>
+              <el-menu-item index="/users" v-if="canAccessMenu('/users')">
+                <el-icon><User /></el-icon>
+                <span>用户管理</span>
+              </el-menu-item>
+              <el-menu-item index="/roles" v-if="canAccessMenu('/roles')">
+                <el-icon><Key /></el-icon>
+                <span>角色管理</span>
+              </el-menu-item>
+              <el-menu-item
+                index="/permissions"
+                v-if="canAccessMenu('/permissions')"
+              >
+                <el-icon><Lock /></el-icon>
+                <span>权限管理</span>
+              </el-menu-item>
+            </el-menu>
+          </el-aside>
+          <el-main class="app-main">
+            <router-view />
+          </el-main>
+        </el-container>
       </el-container>
-    </el-container>
+    </template>
+    <!-- 登录页面直接显示路由视图 -->
+    <template v-else>
+      <router-view />
+    </template>
   </div>
 </template>
 
@@ -130,6 +137,9 @@ const activeMenu = ref("/courses");
 const userInfo = ref({ username: "", realName: "" });
 const permissions = ref([]);
 
+// 计算属性：判断是否已登录
+const isLoggedIn = ref(false);
+
 // 权限配置：每个菜单需要的权限
 const menuPermissions = {
   "/courses": ["course:list"],
@@ -148,16 +158,20 @@ const menuPermissions = {
 
 // 从localStorage获取用户信息和权限的函数
 const getUserInfoAndPermissions = () => {
+  const token = localStorage.getItem("token");
   const userStr = localStorage.getItem("user");
   const permissionsStr = localStorage.getItem("permissions");
 
-  if (userStr) {
+  // 判断是否已登录
+  isLoggedIn.value = !!(token && userStr);
+
+  if (userStr && isLoggedIn.value) {
     userInfo.value = JSON.parse(userStr);
   } else {
     userInfo.value = { username: "", realName: "" };
   }
 
-  if (permissionsStr) {
+  if (permissionsStr && isLoggedIn.value) {
     try {
       permissions.value = JSON.parse(permissionsStr) || [];
     } catch (e) {
