@@ -2,7 +2,6 @@ package com.example.coursemanagement.repository;
 
 import com.example.coursemanagement.entity.TrainingProgram;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -18,6 +17,8 @@ public class TrainingProgramRepository {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    private volatile Boolean descriptionColumnAvailable;
 
     /**
      * 查询所有培养方案
@@ -40,51 +41,30 @@ public class TrainingProgramRepository {
      * 新增培养方案
      */
     public int save(TrainingProgram program) {
-        String sql = "INSERT INTO training_program (major_name, duration, total_credit, effective_year, description, create_time, update_time) VALUES (?, ?, ?, ?, ?, NOW(), NOW())";
-<<<<<<< ours
-        return jdbcTemplate.update(sql,
-                program.getMajorName(),
-                program.getDuration(),
-                program.getTotalCredit(),
-                program.getEffectiveYear(),
-                program.getDescription());
-=======
-        try {
+        if (isDescriptionColumnAvailable()) {
+            String sql = "INSERT INTO training_program (major_name, duration, total_credit, effective_year, description, create_time, update_time) VALUES (?, ?, ?, ?, ?, NOW(), NOW())";
             return jdbcTemplate.update(sql,
                     program.getMajorName(),
                     program.getDuration(),
                     program.getTotalCredit(),
                     program.getEffectiveYear(),
                     program.getDescription());
-        } catch (DataAccessException ex) {
-            if (isDescriptionColumnMissing(ex)) {
-                String fallbackSql = "INSERT INTO training_program (major_name, duration, total_credit, effective_year, create_time, update_time) VALUES (?, ?, ?, ?, NOW(), NOW())";
-                return jdbcTemplate.update(fallbackSql,
-                        program.getMajorName(),
-                        program.getDuration(),
-                        program.getTotalCredit(),
-                        program.getEffectiveYear());
-            }
-            throw ex;
         }
->>>>>>> theirs
+
+        String fallbackSql = "INSERT INTO training_program (major_name, duration, total_credit, effective_year, create_time, update_time) VALUES (?, ?, ?, ?, NOW(), NOW())";
+        return jdbcTemplate.update(fallbackSql,
+                program.getMajorName(),
+                program.getDuration(),
+                program.getTotalCredit(),
+                program.getEffectiveYear());
     }
 
     /**
      * 更新培养方案
      */
     public int update(TrainingProgram program) {
-        String sql = "UPDATE training_program SET major_name = ?, duration = ?, total_credit = ?, effective_year = ?, description = ?, update_time = NOW() WHERE program_id = ?";
-<<<<<<< ours
-        return jdbcTemplate.update(sql,
-                program.getMajorName(),
-                program.getDuration(),
-                program.getTotalCredit(),
-                program.getEffectiveYear(),
-                program.getDescription(),
-                program.getProgramId());
-=======
-        try {
+        if (isDescriptionColumnAvailable()) {
+            String sql = "UPDATE training_program SET major_name = ?, duration = ?, total_credit = ?, effective_year = ?, description = ?, update_time = NOW() WHERE program_id = ?";
             return jdbcTemplate.update(sql,
                     program.getMajorName(),
                     program.getDuration(),
@@ -92,24 +72,32 @@ public class TrainingProgramRepository {
                     program.getEffectiveYear(),
                     program.getDescription(),
                     program.getProgramId());
-        } catch (DataAccessException ex) {
-            if (isDescriptionColumnMissing(ex)) {
-                String fallbackSql = "UPDATE training_program SET major_name = ?, duration = ?, total_credit = ?, effective_year = ?, update_time = NOW() WHERE program_id = ?";
-                return jdbcTemplate.update(fallbackSql,
-                        program.getMajorName(),
-                        program.getDuration(),
-                        program.getTotalCredit(),
-                        program.getEffectiveYear(),
-                        program.getProgramId());
-            }
-            throw ex;
         }
+
+        String fallbackSql = "UPDATE training_program SET major_name = ?, duration = ?, total_credit = ?, effective_year = ?, update_time = NOW() WHERE program_id = ?";
+        return jdbcTemplate.update(fallbackSql,
+                program.getMajorName(),
+                program.getDuration(),
+                program.getTotalCredit(),
+                program.getEffectiveYear(),
+                program.getProgramId());
     }
 
-    private boolean isDescriptionColumnMissing(DataAccessException ex) {
-        String message = ex.getMessage();
-        return message != null && message.contains("description") && message.contains("Unknown column");
->>>>>>> theirs
+    private boolean isDescriptionColumnAvailable() {
+        if (descriptionColumnAvailable != null) {
+            return descriptionColumnAvailable;
+        }
+        synchronized (this) {
+            if (descriptionColumnAvailable != null) {
+                return descriptionColumnAvailable;
+            }
+            Integer count = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'training_program' AND column_name = 'description'",
+                    Integer.class
+            );
+            descriptionColumnAvailable = count != null && count > 0;
+            return descriptionColumnAvailable;
+        }
     }
 
     /**
