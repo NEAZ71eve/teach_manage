@@ -39,24 +39,26 @@ public class TrainingProgramRepository {
      * 新增培养方案
      */
     public int save(TrainingProgram program) {
-        String sql = "INSERT INTO training_program (major_name, duration, total_credit, effective_year, create_time, update_time) VALUES (?, ?, ?, ?, NOW(), NOW())";
-        return jdbcTemplate.update(sql, 
-                program.getMajorName(), 
-                program.getDuration(), 
-                program.getTotalCredit(), 
-                program.getEffectiveYear());
+        String sql = "INSERT INTO training_program (major_name, duration, total_credit, effective_year, description, create_time, update_time) VALUES (?, ?, ?, ?, ?, NOW(), NOW())";
+        return jdbcTemplate.update(sql,
+                program.getMajorName(),
+                program.getDuration(),
+                program.getTotalCredit(),
+                program.getEffectiveYear(),
+                program.getDescription());
     }
 
     /**
      * 更新培养方案
      */
     public int update(TrainingProgram program) {
-        String sql = "UPDATE training_program SET major_name = ?, duration = ?, total_credit = ?, effective_year = ?, update_time = NOW() WHERE program_id = ?";
-        return jdbcTemplate.update(sql, 
-                program.getMajorName(), 
-                program.getDuration(), 
-                program.getTotalCredit(), 
-                program.getEffectiveYear(), 
+        String sql = "UPDATE training_program SET major_name = ?, duration = ?, total_credit = ?, effective_year = ?, description = ?, update_time = NOW() WHERE program_id = ?";
+        return jdbcTemplate.update(sql,
+                program.getMajorName(),
+                program.getDuration(),
+                program.getTotalCredit(),
+                program.getEffectiveYear(),
+                program.getDescription(),
                 program.getProgramId());
     }
 

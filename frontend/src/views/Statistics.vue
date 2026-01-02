@@ -57,6 +57,30 @@
               </template>
             </el-statistic>
           </el-card>
+
+          <el-card class="stat-card">
+            <el-statistic
+              title="课程平均学分"
+              :value="courseStatistics.averageCredit"
+              :precision="1"
+            >
+              <template #prefix>
+                <el-icon class="el-icon--success"><Cpu /></el-icon>
+              </template>
+            </el-statistic>
+          </el-card>
+
+          <el-card class="stat-card">
+            <el-statistic
+              title="试卷平均总分"
+              :value="examPaperStatistics.averageTotalScore"
+              :precision="1"
+            >
+              <template #prefix>
+                <el-icon class="el-icon--primary"><DocumentRemove /></el-icon>
+              </template>
+            </el-statistic>
+          </el-card>
         </div>
 
         <!-- 题型分布表格 -->
@@ -79,50 +103,99 @@
           </el-table>
         </el-card>
 
-        <!-- 统计图表 -->
+        <!-- 统计分析报表 -->
         <div class="statistics-charts">
           <el-card class="chart-card">
             <template #header>
               <div class="chart-header">
-                <span>课程分布</span>
+                <span>课程分布（培养方案）</span>
               </div>
             </template>
-            <div class="chart-content">
-              <el-empty description="图表功能开发中..." />
-            </div>
+            <el-table v-if="courseByProgram.length" :data="courseByProgram">
+              <el-table-column prop="programName" label="培养方案" />
+              <el-table-column prop="courseCount" label="课程数量" width="120" />
+            </el-table>
+            <el-empty v-else description="暂无数据" />
           </el-card>
 
           <el-card class="chart-card">
             <template #header>
               <div class="chart-header">
-                <span>知识点覆盖率</span>
+                <span>课程分布（课程性质）</span>
               </div>
             </template>
-            <div class="chart-content">
-              <el-empty description="图表功能开发中..." />
-            </div>
+            <el-table v-if="courseByNature.length" :data="courseByNature">
+              <el-table-column prop="courseNature" label="课程性质" />
+              <el-table-column prop="courseCount" label="数量" width="120" />
+            </el-table>
+            <el-empty v-else description="暂无数据" />
           </el-card>
 
           <el-card class="chart-card">
             <template #header>
               <div class="chart-header">
-                <span>题库题型分布</span>
+                <span>知识点覆盖（课程维度）</span>
               </div>
             </template>
-            <div class="chart-content">
-              <el-empty description="图表功能开发中..." />
-            </div>
+            <el-table v-if="knowledgePointByCourse.length" :data="knowledgePointByCourse">
+              <el-table-column prop="courseName" label="课程" />
+              <el-table-column prop="knowledgePointCount" label="知识点数量" width="120" />
+              <el-table-column prop="questionCount" label="题目数量" width="120" />
+            </el-table>
+            <el-empty v-else description="暂无数据" />
           </el-card>
 
           <el-card class="chart-card">
             <template #header>
               <div class="chart-header">
-                <span>试卷难度分布</span>
+                <span>知识点覆盖（知识点维度）</span>
               </div>
             </template>
-            <div class="chart-content">
-              <el-empty description="图表功能开发中..." />
-            </div>
+            <el-table v-if="knowledgePointCoverage.length" :data="knowledgePointCoverage">
+              <el-table-column prop="kpName" label="知识点" />
+              <el-table-column prop="courseName" label="课程" />
+              <el-table-column prop="questionCount" label="题目数量" width="120" />
+            </el-table>
+            <el-empty v-else description="暂无数据" />
+          </el-card>
+
+          <el-card class="chart-card">
+            <template #header>
+              <div class="chart-header">
+                <span>题目难度分布</span>
+              </div>
+            </template>
+            <el-table v-if="questionDifficultyDist.length" :data="questionDifficultyDist">
+              <el-table-column prop="difficulty" label="难度" />
+              <el-table-column prop="count" label="数量" width="120" />
+            </el-table>
+            <el-empty v-else description="暂无数据" />
+          </el-card>
+
+          <el-card class="chart-card">
+            <template #header>
+              <div class="chart-header">
+                <span>试卷类型分布</span>
+              </div>
+            </template>
+            <el-table v-if="paperTypeDist.length" :data="paperTypeDist">
+              <el-table-column prop="type" label="类型" />
+              <el-table-column prop="count" label="数量" width="120" />
+            </el-table>
+            <el-empty v-else description="暂无数据" />
+          </el-card>
+
+          <el-card class="chart-card">
+            <template #header>
+              <div class="chart-header">
+                <span>试卷课程分布</span>
+              </div>
+            </template>
+            <el-table v-if="papersByCourse.length" :data="papersByCourse">
+              <el-table-column prop="courseName" label="课程" />
+              <el-table-column prop="paperCount" label="试卷数量" width="120" />
+            </el-table>
+            <el-empty v-else description="暂无数据" />
           </el-card>
         </div>
       </div>
@@ -144,22 +217,38 @@ import request from "../api/request";
 // 统计数据
 const courseStatistics = ref({
   totalCourses: 0,
+  averageCredit: 0,
+  courseByProgram: [],
+  courseByNature: [],
 });
 
 const knowledgePointStatistics = ref({
   totalKnowledgePoints: 0,
+  coverageByKnowledgePoint: [],
+  coverageByCourse: [],
 });
 
 const questionBankStatistics = ref({
   totalQuestions: 0,
   questionTypeDistribution: [],
+  questionDifficultyDistribution: [],
 });
 
 const examPaperStatistics = ref({
   totalPapers: 0,
+  averageTotalScore: 0,
+  paperTypeDistribution: [],
+  papersByCourse: [],
 });
 
 const questionTypeDist = ref([]); // 用于表格数据
+const questionDifficultyDist = ref([]);
+const courseByProgram = ref([]);
+const courseByNature = ref([]);
+const knowledgePointCoverage = ref([]);
+const knowledgePointByCourse = ref([]);
+const paperTypeDist = ref([]);
+const papersByCourse = ref([]);
 
 // 获取课程统计数据
 const fetchCourseStatistics = async () => {
@@ -169,6 +258,8 @@ const fetchCourseStatistics = async () => {
       method: "GET",
     });
     courseStatistics.value = response;
+    courseByProgram.value = response.courseByProgram || [];
+    courseByNature.value = response.courseByNature || [];
   } catch (error) {
     ElMessage.error("获取课程统计数据失败");
     console.error("获取课程统计数据失败:", error);
@@ -183,6 +274,8 @@ const fetchKnowledgePointStatistics = async () => {
       method: "GET",
     });
     knowledgePointStatistics.value = response;
+    knowledgePointCoverage.value = response.coverageByKnowledgePoint || [];
+    knowledgePointByCourse.value = response.coverageByCourse || [];
   } catch (error) {
     ElMessage.error("获取知识点统计数据失败");
     console.error("获取知识点统计数据失败:", error);
@@ -199,6 +292,8 @@ const fetchQuestionBankStatistics = async () => {
     questionBankStatistics.value = response;
     // 提取题型分布数据用于表格
     questionTypeDist.value = response.questionTypeDistribution || [];
+    questionDifficultyDist.value =
+      response.questionDifficultyDistribution || [];
   } catch (error) {
     ElMessage.error("获取题库统计数据失败");
     console.error("获取题库统计数据失败:", error);
@@ -213,6 +308,8 @@ const fetchExamPaperStatistics = async () => {
       method: "GET",
     });
     examPaperStatistics.value = response;
+    paperTypeDist.value = response.paperTypeDistribution || [];
+    papersByCourse.value = response.papersByCourse || [];
   } catch (error) {
     ElMessage.error("获取试卷统计数据失败");
     console.error("获取试卷统计数据失败:", error);
@@ -282,7 +379,7 @@ onMounted(async () => {
 }
 
 .chart-card {
-  height: 300px;
+  height: auto;
 }
 
 .chart-header {
@@ -291,10 +388,4 @@ onMounted(async () => {
   align-items: center;
 }
 
-.chart-content {
-  height: 240px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
 </style>

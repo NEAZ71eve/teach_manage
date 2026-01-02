@@ -157,19 +157,7 @@ public class ExamPaperController {
             
             // 处理难度分布，确保所有值都是Double类型
             Map<String, Object> rawDifficultyDistribution = (Map<String, Object>) params.get("difficultyDistribution");
-            Map<String, Double> difficultyDistribution = new java.util.HashMap<>();
-            for (Map.Entry<String, Object> entry : rawDifficultyDistribution.entrySet()) {
-                Object value = entry.getValue();
-                Double doubleValue;
-                if (value instanceof Double) {
-                    doubleValue = (Double) value;
-                } else if (value instanceof Integer) {
-                    doubleValue = ((Integer) value).doubleValue();
-                } else {
-                    doubleValue = Double.parseDouble(value.toString());
-                }
-                difficultyDistribution.put(entry.getKey(), doubleValue);
-            }
+            Map<String, Double> difficultyDistribution = normalizeDifficultyDistribution(rawDifficultyDistribution);
             
             System.out.println("调用自动组卷服务");
             String paperId = examPaperService.autoGeneratePaper(courseId, paperName, totalScore, knowledgePointWeights, difficultyDistribution);
@@ -193,5 +181,34 @@ public class ExamPaperController {
             errorResponse.put("stackTrace", e.getStackTrace());
             return ResponseEntity.status(500).body(errorResponse);
         }
+    }
+
+    private Map<String, Double> normalizeDifficultyDistribution(Map<String, Object> rawDifficultyDistribution) {
+        Map<String, Double> normalized = new java.util.HashMap<>();
+        if (rawDifficultyDistribution == null) {
+            return normalized;
+        }
+        Map<String, String> difficultyAlias = new java.util.HashMap<>();
+        difficultyAlias.put("easy", "简单");
+        difficultyAlias.put("medium", "中等");
+        difficultyAlias.put("hard", "困难");
+        difficultyAlias.put("一般", "中等");
+
+        for (Map.Entry<String, Object> entry : rawDifficultyDistribution.entrySet()) {
+            Object value = entry.getValue();
+            Double doubleValue;
+            if (value instanceof Double) {
+                doubleValue = (Double) value;
+            } else if (value instanceof Integer) {
+                doubleValue = ((Integer) value).doubleValue();
+            } else {
+                doubleValue = Double.parseDouble(value.toString());
+            }
+
+            String key = entry.getKey();
+            String normalizedKey = difficultyAlias.getOrDefault(key, key);
+            normalized.put(normalizedKey, doubleValue);
+        }
+        return normalized;
     }
 }

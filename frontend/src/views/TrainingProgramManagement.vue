@@ -33,6 +33,7 @@
         <el-table-column prop="duration" label="学制" width="80" />
         <el-table-column prop="totalCredit" label="总学分" width="80" />
         <el-table-column prop="effectiveYear" label="生效年份" width="120" />
+        <el-table-column prop="description" label="培养方案描述" min-width="200" />
         <el-table-column prop="createTime" label="创建时间" width="180" />
         <el-table-column label="操作" width="250" fixed="right">
           <template #default="scope">
@@ -111,6 +112,14 @@
             type="number"
             min="2000"
             max="2100"
+          />
+        </el-form-item>
+        <el-form-item label="培养方案描述">
+          <el-input
+            v-model="programForm.description"
+            placeholder="请输入培养方案描述"
+            type="textarea"
+            rows="3"
           />
         </el-form-item>
       </el-form>
@@ -438,6 +447,7 @@ const programForm = reactive({
   duration: 4,
   totalCredit: 160,
   effectiveYear: new Date().getFullYear(),
+  description: "",
 });
 
 // 课程管理相关状态
@@ -537,6 +547,7 @@ const handleAddProgram = () => {
     duration: 4,
     totalCredit: 160,
     effectiveYear: new Date().getFullYear(),
+    description: "",
   });
   dialogVisible.value = true;
 };

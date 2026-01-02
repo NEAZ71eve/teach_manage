@@ -284,7 +284,7 @@ public class ExamPaperServiceImpl implements ExamPaperService {
                     for (Question question : pointQuestions) {
                         String difficulty = question.getDifficulty();
                         if (difficulty == null || difficulty.isEmpty()) {
-                            difficulty = "一般"; // 默认难度
+                            difficulty = "中等"; // 默认难度
                         }
                         questionsByDifficulty.computeIfAbsent(difficulty, k -> new java.util.ArrayList<>()).add(question);
                     }

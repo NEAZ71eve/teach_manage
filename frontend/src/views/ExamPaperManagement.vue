@@ -163,9 +163,9 @@
         </el-form-item>
         <el-form-item label="难度分布" required>
           <div class="difficulty-distribution">
-            <el-form-item label="容易" required>
+            <el-form-item label="简单" required>
               <el-slider
-                v-model="autoGenerateForm.difficultyDistribution.easy"
+                v-model="autoGenerateForm.difficultyDistribution['简单']"
                 :min="0"
                 :max="1"
                 :step="0.1"
@@ -175,7 +175,7 @@
             </el-form-item>
             <el-form-item label="中等" required>
               <el-slider
-                v-model="autoGenerateForm.difficultyDistribution.medium"
+                v-model="autoGenerateForm.difficultyDistribution['中等']"
                 :min="0"
                 :max="1"
                 :step="0.1"
@@ -185,7 +185,7 @@
             </el-form-item>
             <el-form-item label="困难" required>
               <el-slider
-                v-model="autoGenerateForm.difficultyDistribution.hard"
+                v-model="autoGenerateForm.difficultyDistribution['困难']"
                 :min="0"
                 :max="1"
                 :step="0.1"
@@ -400,9 +400,9 @@ const autoGenerateForm = reactive({
   courseId: null,
   totalScore: 100,
   difficultyDistribution: {
-    easy: 0.3,
-    medium: 0.5,
-    hard: 0.2,
+    简单: 0.3,
+    中等: 0.5,
+    困难: 0.2,
   },
   knowledgePointWeights: [],
 });
@@ -837,9 +837,9 @@ const resetAutoGenerateForm = () => {
     courseId: courses.value.length > 0 ? courses.value[0].courseId : null,
     totalScore: 100,
     difficultyDistribution: {
-      easy: 0.3,
-      medium: 0.5,
-      hard: 0.2,
+      简单: 0.3,
+      中等: 0.5,
+      困难: 0.2,
     },
     knowledgePointWeights: [],
   });
