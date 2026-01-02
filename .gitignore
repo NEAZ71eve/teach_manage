@@ -62,4 +62,4 @@ target/
 # Temporary files
 *.tmp
 *.temp
-.cache/
+.cache/*.patch
