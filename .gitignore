@@ -63,3 +63,4 @@ target/
 *.tmp
 *.temp
 .cache/*.patch
+*.patch
