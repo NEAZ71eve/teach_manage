@@ -1,0 +1,188 @@
+package com.example.coursemanagement.controller;
+
+import com.example.coursemanagement.entity.Course;
+import com.example.coursemanagement.repository.CourseRepository;
+import com.example.coursemanagement.service.CourseService;
+import com.example.coursemanagement.service.SemesterService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+
+import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * 课程Controller
+ */
+@RestController
+@RequestMapping("/course")
+public class CourseController {
+
+    @Autowired
+    private CourseService courseService;
+
+    @Autowired
+    private CourseRepository courseRepository;
+    
+    @Autowired
+    private SemesterService semesterService;
+
+    /**
+     * 查询所有课程
+     */
+    @GetMapping
+    public ResponseEntity<List<Course>> getAllCourses() {
+        return ResponseEntity.ok(courseService.list());
+    }
+
+    /**
+     * 分页查询课程
+     */
+    @GetMapping("/page")
+    public ResponseEntity<Map<String, Object>> getCoursePage(@RequestParam(defaultValue = "1") Integer page, @RequestParam(defaultValue = "10") Integer limit) {
+        List<Course> courses = courseService.listPage(page, limit);
+        int total = courseService.count();
+        Map<String, Object> result = new HashMap<>();
+        result.put("records", courses);
+        result.put("total", total);
+        result.put("page", page);
+        result.put("limit", limit);
+        return ResponseEntity.ok(result);
+    }
+
+    /**
+     * 根据ID查询课程
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<Course> getCourseById(@PathVariable Integer id) {
+        return ResponseEntity.ok(courseService.getById(id));
+    }
+
+    /**
+     * 新增课程
+     */
+    @PostMapping
+    public ResponseEntity<?> addCourse(@RequestBody Course course) {
+        try {
+            System.out.println("接收到的课程数据: " + course);
+            boolean result = courseService.save(course);
+            System.out.println("课程添加结果: " + result);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body("添加课程失败: " + e.getMessage() + ", 详细错误: " + e.getCause() + ", 堆栈跟踪: " + e);
+        }
+    }
+
+    /**
+     * 更新课程
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateCourse(@PathVariable Integer id, @RequestBody Course course) {
+        try {
+            course.setCourseId(id);
+            boolean result = courseService.updateById(course);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("更新课程失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 删除课程
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Boolean> deleteCourse(@PathVariable Integer id) {
+        return ResponseEntity.ok(courseService.removeById(id));
+    }
+
+    /**
+     * 批量删除课程
+     */
+    @DeleteMapping("/batch")
+    public ResponseEntity<Boolean> deleteBatch(@RequestBody List<Integer> ids) {
+        return ResponseEntity.ok(courseService.removeByIds(ids));
+    }
+
+    /**
+     * 搜索课程
+     */
+    @GetMapping("/search")
+    public ResponseEntity<List<Course>> searchCourses(@RequestParam String keyword) {
+        return ResponseEntity.ok(courseRepository.search(keyword));
+    }
+    
+    /**
+     * 保存课程学期关联
+     */
+    @PostMapping("/{id}/semesters")
+    public ResponseEntity<Boolean> saveCourseSemester(@PathVariable Integer id, @RequestBody List<Integer> semesterIds) {
+        return ResponseEntity.ok(courseService.saveCourseSemester(id, semesterIds));
+    }
+    
+    /**
+     * 获取课程关联的学期ID列表
+     */
+    @GetMapping("/{id}/semesters")
+    public ResponseEntity<List<Integer>> getCourseSemesters(@PathVariable Integer id) {
+        return ResponseEntity.ok(courseService.getSemesterIdsByCourseId(id));
+    }
+    
+    /**
+     * 根据学期ID获取课程列表
+     */
+    @GetMapping("/by-semester/{semesterId}")
+    public ResponseEntity<List<Course>> getCoursesBySemester(@PathVariable Integer semesterId) {
+        return ResponseEntity.ok(courseService.getCoursesBySemesterId(semesterId));
+    }
+    
+    /**
+     * 获取所有学期列表
+     */
+    @GetMapping("/semesters/all")
+    public ResponseEntity<List<com.example.coursemanagement.entity.Semester>> getAllSemesters() {
+        return ResponseEntity.ok(semesterService.list());
+    }
+    
+    /**
+     * 根据培养方案ID查询课程列表
+     */
+    @GetMapping("/by-program/{programId}")
+    public ResponseEntity<List<Course>> getCoursesByProgram(@PathVariable Integer programId) {
+        return ResponseEntity.ok(courseService.getCoursesByProgramId(programId));
+    }
+    
+    /**
+     * 根据专业ID查询课程列表
+     */
+    @GetMapping("/by-major/{majorId}")
+    public ResponseEntity<List<Course>> getCoursesByMajor(@PathVariable Integer majorId) {
+        return ResponseEntity.ok(courseService.getCoursesByMajorId(majorId));
+    }
+    
+    /**
+     * 根据专业ID和学期ID查询课程列表
+     */
+    @GetMapping("/by-major/{majorId}/semester/{semesterId}")
+    public ResponseEntity<List<Course>> getCoursesByMajorAndSemester(@PathVariable Integer majorId, @PathVariable Integer semesterId) {
+        return ResponseEntity.ok(courseService.getCoursesByMajorAndSemester(majorId, semesterId));
+    }
+    
+    /**
+     * 获取培养方案四年八个学期的完整课程安排
+     */
+    @GetMapping("/program-full-schedule/{programId}")
+    public ResponseEntity<Map<Integer, List<Course>>> getProgramFullSchedule(@PathVariable Integer programId) {
+        return ResponseEntity.ok(courseService.getFullCourseScheduleByProgramId(programId));
+    }
+    
+    /**
+     * 获取课程属性统计信息
+     */
+    @GetMapping("/statistics/{programId}")
+    public ResponseEntity<Map<String, Object>> getCourseStatistics(@PathVariable Integer programId) {
+        return ResponseEntity.ok(courseService.getCourseStatistics(programId));
+    }
+}

@@ -1,0 +1,46 @@
+server:
+  port: 8081
+  servlet:
+    context-path: /api
+
+spring:
+  security:
+    enabled: false
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/teach_manage?useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=Asia/Shanghai&characterSetResults=utf8
+    username: root
+    password: 54088Cnm,
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+    deserialization:
+      adjust-dates-to-context-time-zone: true
+      fail-on-unknown-properties: false
+    serialization:
+      write-dates-as-timestamps: false
+    mapper:
+      accept-case-insensitive-properties: true
+    modules:
+      - com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+  http:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=1000,expireAfterWrite=300s
+
+logging:
+  level:
+    root: debug
+    com.example.coursemanagement: debug
+    org.springframework.jdbc.core: debug
+    org.springframework.transaction: debug
+    com.zaxxer.hikari: debug

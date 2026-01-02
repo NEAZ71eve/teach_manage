@@ -1,0 +1,10 @@
+CREATE TABLE IF NOT EXISTS training_program (
+    program_id INT PRIMARY KEY AUTO_INCREMENT,
+    major_name VARCHAR(100) NOT NULL,
+    duration INT NOT NULL,
+    total_credit DECIMAL(4,1) NOT NULL,
+    effective_year INT NOT NULL,
+    description TEXT,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
