@@ -111,10 +111,22 @@
                 <span>课程分布（培养方案）</span>
               </div>
             </template>
+<<<<<<< ours
             <el-table v-if="courseByProgram.length" :data="courseByProgram">
               <el-table-column prop="programName" label="培养方案" />
               <el-table-column prop="courseCount" label="课程数量" width="120" />
             </el-table>
+=======
+            <el-table v-if="courseByProgram.length" :data="visibleCourseByProgram">
+              <el-table-column prop="programName" label="培养方案" />
+              <el-table-column prop="courseCount" label="课程数量" width="120" />
+            </el-table>
+            <div v-if="courseByProgram.length > 5" class="table-actions">
+              <el-button type="primary" link @click="toggleCourseByProgram">
+                {{ showAllCourseByProgram ? "收起" : "查看更多" }}
+              </el-button>
+            </div>
+>>>>>>> theirs
             <el-empty v-else description="暂无数据" />
           </el-card>
 
@@ -124,10 +136,22 @@
                 <span>课程分布（课程性质）</span>
               </div>
             </template>
+<<<<<<< ours
             <el-table v-if="courseByNature.length" :data="courseByNature">
               <el-table-column prop="courseNature" label="课程性质" />
               <el-table-column prop="courseCount" label="数量" width="120" />
             </el-table>
+=======
+            <el-table v-if="courseByNature.length" :data="visibleCourseByNature">
+              <el-table-column prop="courseNature" label="课程性质" />
+              <el-table-column prop="courseCount" label="数量" width="120" />
+            </el-table>
+            <div v-if="courseByNature.length > 5" class="table-actions">
+              <el-button type="primary" link @click="toggleCourseByNature">
+                {{ showAllCourseByNature ? "收起" : "查看更多" }}
+              </el-button>
+            </div>
+>>>>>>> theirs
             <el-empty v-else description="暂无数据" />
           </el-card>
 
@@ -137,11 +161,30 @@
                 <span>知识点覆盖（课程维度）</span>
               </div>
             </template>
+<<<<<<< ours
             <el-table v-if="knowledgePointByCourse.length" :data="knowledgePointByCourse">
+=======
+            <el-table
+              v-if="knowledgePointByCourse.length"
+              :data="visibleKnowledgePointByCourse"
+            >
+>>>>>>> theirs
               <el-table-column prop="courseName" label="课程" />
               <el-table-column prop="knowledgePointCount" label="知识点数量" width="120" />
               <el-table-column prop="questionCount" label="题目数量" width="120" />
             </el-table>
+<<<<<<< ours
+=======
+            <div v-if="knowledgePointByCourse.length > 5" class="table-actions">
+              <el-button
+                type="primary"
+                link
+                @click="toggleKnowledgePointByCourse"
+              >
+                {{ showAllKnowledgePointByCourse ? "收起" : "查看更多" }}
+              </el-button>
+            </div>
+>>>>>>> theirs
             <el-empty v-else description="暂无数据" />
           </el-card>
 
@@ -151,11 +194,30 @@
                 <span>知识点覆盖（知识点维度）</span>
               </div>
             </template>
+<<<<<<< ours
             <el-table v-if="knowledgePointCoverage.length" :data="knowledgePointCoverage">
+=======
+            <el-table
+              v-if="knowledgePointCoverage.length"
+              :data="visibleKnowledgePointCoverage"
+            >
+>>>>>>> theirs
               <el-table-column prop="kpName" label="知识点" />
               <el-table-column prop="courseName" label="课程" />
               <el-table-column prop="questionCount" label="题目数量" width="120" />
             </el-table>
+<<<<<<< ours
+=======
+            <div v-if="knowledgePointCoverage.length > 5" class="table-actions">
+              <el-button
+                type="primary"
+                link
+                @click="toggleKnowledgePointCoverage"
+              >
+                {{ showAllKnowledgePointCoverage ? "收起" : "查看更多" }}
+              </el-button>
+            </div>
+>>>>>>> theirs
             <el-empty v-else description="暂无数据" />
           </el-card>
 
@@ -204,7 +266,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import {
   Cpu,
   Document,
@@ -249,6 +311,48 @@ const knowledgePointCoverage = ref([]);
 const knowledgePointByCourse = ref([]);
 const paperTypeDist = ref([]);
 const papersByCourse = ref([]);
+<<<<<<< ours
+=======
+
+const showAllCourseByProgram = ref(false);
+const showAllCourseByNature = ref(false);
+const showAllKnowledgePointCoverage = ref(false);
+const showAllKnowledgePointByCourse = ref(false);
+
+const visibleCourseByProgram = computed(() =>
+  showAllCourseByProgram.value
+    ? courseByProgram.value
+    : courseByProgram.value.slice(0, 5)
+);
+const visibleCourseByNature = computed(() =>
+  showAllCourseByNature.value
+    ? courseByNature.value
+    : courseByNature.value.slice(0, 5)
+);
+const visibleKnowledgePointCoverage = computed(() =>
+  showAllKnowledgePointCoverage.value
+    ? knowledgePointCoverage.value
+    : knowledgePointCoverage.value.slice(0, 5)
+);
+const visibleKnowledgePointByCourse = computed(() =>
+  showAllKnowledgePointByCourse.value
+    ? knowledgePointByCourse.value
+    : knowledgePointByCourse.value.slice(0, 5)
+);
+
+const toggleCourseByProgram = () => {
+  showAllCourseByProgram.value = !showAllCourseByProgram.value;
+};
+const toggleCourseByNature = () => {
+  showAllCourseByNature.value = !showAllCourseByNature.value;
+};
+const toggleKnowledgePointCoverage = () => {
+  showAllKnowledgePointCoverage.value = !showAllKnowledgePointCoverage.value;
+};
+const toggleKnowledgePointByCourse = () => {
+  showAllKnowledgePointByCourse.value = !showAllKnowledgePointByCourse.value;
+};
+>>>>>>> theirs
 
 // 获取课程统计数据
 const fetchCourseStatistics = async () => {
@@ -388,4 +492,13 @@ onMounted(async () => {
   align-items: center;
 }
 
+<<<<<<< ours
+=======
+.table-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 0 0;
+}
+
+>>>>>>> theirs
 </style>

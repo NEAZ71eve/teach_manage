@@ -177,7 +177,7 @@ public class ExamPaperServiceImpl implements ExamPaperService {
                 System.out.println("4.2 课程ID格式错误: " + courseId);
                 throw new IllegalArgumentException("课程ID格式错误");
             }
-            
+
             // 检查课程是否存在
             try {
                 System.out.println("4.2.1 检查课程是否存在");
@@ -186,9 +186,15 @@ public class ExamPaperServiceImpl implements ExamPaperService {
                 // 如果没有知识点，可能是课程不存在，或者该课程下没有知识点
                 List<Question> courseQuestions = questionRepository.findByCourseId(courseIdInt);
                 System.out.println("4.2.2 课程下的题目数量: " + (courseQuestions != null ? courseQuestions.size() : 0));
+                if (courseQuestions == null || courseQuestions.isEmpty()) {
+                    throw new IllegalArgumentException("该课程暂无题目，无法自动组卷");
+                }
                 // 不需要抛出异常，只需要记录日志
             } catch (Exception e) {
                 System.out.println("4.2.3 检查课程是否存在时发生错误: " + e.getMessage());
+                if (e instanceof IllegalArgumentException) {
+                    throw e;
+                }
                 // 不需要抛出异常，只需要记录日志
             }
             

@@ -167,6 +167,12 @@ public class ExamPaperController {
             response.put("success", true);
             response.put("paperId", paperId);
             return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            Map<String, Object> errorResponse = new java.util.HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("error", e.getMessage());
+            errorResponse.put("errorType", e.getClass().getName());
+            return ResponseEntity.ok(errorResponse);
         } catch (Exception e) {
             System.out.println("自动组卷失败，详细错误信息:");
             System.out.println("错误类型: " + e.getClass().getName());

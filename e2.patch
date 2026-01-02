@@ -1,0 +1,1389 @@
+diff --git a/backend/src/main/java/com/example/coursemanagement/controller/ExamPaperController.java b/backend/src/main/java/com/example/coursemanagement/controller/ExamPaperController.java
+index 18fa6a4f3b01383c69ba6f31752d1a6c656a2174..5cdcdccbd96ac4e1c2ae03dfd1e0bb4583a56f7d 100644
+--- a/backend/src/main/java/com/example/coursemanagement/controller/ExamPaperController.java
++++ b/backend/src/main/java/com/example/coursemanagement/controller/ExamPaperController.java
+@@ -135,63 +135,86 @@ public class ExamPaperController {
+         try {
+             System.out.println("收到自动组卷请求，参数: " + params);
+             
+             String courseId = String.valueOf(params.get("courseId"));
+             String paperName = String.valueOf(params.get("paperName"));
+             Double totalScore = params.get("totalScore") instanceof Double ? (Double) params.get("totalScore") : Double.valueOf(params.get("totalScore").toString());
+             
+             // 处理知识点权重，确保所有值都是Double类型
+             Map<String, Object> rawKnowledgePointWeights = (Map<String, Object>) params.get("knowledgePointWeights");
+             Map<String, Double> knowledgePointWeights = new java.util.HashMap<>();
+             for (Map.Entry<String, Object> entry : rawKnowledgePointWeights.entrySet()) {
+                 Object value = entry.getValue();
+                 Double doubleValue;
+                 if (value instanceof Double) {
+                     doubleValue = (Double) value;
+                 } else if (value instanceof Integer) {
+                     doubleValue = ((Integer) value).doubleValue();
+                 } else {
+                     doubleValue = Double.parseDouble(value.toString());
+                 }
+                 knowledgePointWeights.put(entry.getKey(), doubleValue);
+             }
+             
+             // 处理难度分布，确保所有值都是Double类型
+             Map<String, Object> rawDifficultyDistribution = (Map<String, Object>) params.get("difficultyDistribution");
+-            Map<String, Double> difficultyDistribution = new java.util.HashMap<>();
+-            for (Map.Entry<String, Object> entry : rawDifficultyDistribution.entrySet()) {
+-                Object value = entry.getValue();
+-                Double doubleValue;
+-                if (value instanceof Double) {
+-                    doubleValue = (Double) value;
+-                } else if (value instanceof Integer) {
+-                    doubleValue = ((Integer) value).doubleValue();
+-                } else {
+-                    doubleValue = Double.parseDouble(value.toString());
+-                }
+-                difficultyDistribution.put(entry.getKey(), doubleValue);
+-            }
++            Map<String, Double> difficultyDistribution = normalizeDifficultyDistribution(rawDifficultyDistribution);
+             
+             System.out.println("调用自动组卷服务");
+             String paperId = examPaperService.autoGeneratePaper(courseId, paperName, totalScore, knowledgePointWeights, difficultyDistribution);
+             System.out.println("自动组卷成功，试卷ID: " + paperId);
+             
+             Map<String, Object> response = new java.util.HashMap<>();
+             response.put("success", true);
+             response.put("paperId", paperId);
+             return ResponseEntity.ok(response);
++        } catch (IllegalArgumentException e) {
++            Map<String, Object> errorResponse = new java.util.HashMap<>();
++            errorResponse.put("success", false);
++            errorResponse.put("error", e.getMessage());
++            errorResponse.put("errorType", e.getClass().getName());
++            return ResponseEntity.ok(errorResponse);
+         } catch (Exception e) {
+             System.out.println("自动组卷失败，详细错误信息:");
+             System.out.println("错误类型: " + e.getClass().getName());
+             System.out.println("错误信息: " + e.getMessage());
+             System.out.println("完整堆栈:");
+             e.printStackTrace();
+             
+             Map<String, Object> errorResponse = new java.util.HashMap<>();
+             errorResponse.put("success", false);
+             errorResponse.put("error", e.getMessage());
+             errorResponse.put("errorType", e.getClass().getName());
+             errorResponse.put("stackTrace", e.getStackTrace());
+             return ResponseEntity.status(500).body(errorResponse);
+         }
+     }
++
++    private Map<String, Double> normalizeDifficultyDistribution(Map<String, Object> rawDifficultyDistribution) {
++        Map<String, Double> normalized = new java.util.HashMap<>();
++        if (rawDifficultyDistribution == null) {
++            return normalized;
++        }
++        Map<String, String> difficultyAlias = new java.util.HashMap<>();
++        difficultyAlias.put("easy", "简单");
++        difficultyAlias.put("medium", "中等");
++        difficultyAlias.put("hard", "困难");
++        difficultyAlias.put("一般", "中等");
++
++        for (Map.Entry<String, Object> entry : rawDifficultyDistribution.entrySet()) {
++            Object value = entry.getValue();
++            Double doubleValue;
++            if (value instanceof Double) {
++                doubleValue = (Double) value;
++            } else if (value instanceof Integer) {
++                doubleValue = ((Integer) value).doubleValue();
++            } else {
++                doubleValue = Double.parseDouble(value.toString());
++            }
++
++            String key = entry.getKey();
++            String normalizedKey = difficultyAlias.getOrDefault(key, key);
++            normalized.put(normalizedKey, doubleValue);
++        }
++        return normalized;
++    }
+ }
+diff --git a/backend/src/main/java/com/example/coursemanagement/repository/TrainingProgramRepository.java b/backend/src/main/java/com/example/coursemanagement/repository/TrainingProgramRepository.java
+index fa8d72b2ec1a594dc901bb147c0a09a40f8f1f68..8d2ce4cafb620ee3b47341b498d2aadde7701d10 100644
+--- a/backend/src/main/java/com/example/coursemanagement/repository/TrainingProgramRepository.java
++++ b/backend/src/main/java/com/example/coursemanagement/repository/TrainingProgramRepository.java
+@@ -1,87 +1,127 @@
+ package com.example.coursemanagement.repository;
+ 
+ import com.example.coursemanagement.entity.TrainingProgram;
+ import org.springframework.beans.factory.annotation.Autowired;
+ import org.springframework.jdbc.core.BeanPropertyRowMapper;
+ import org.springframework.jdbc.core.JdbcTemplate;
+ import org.springframework.stereotype.Repository;
+ 
+ import java.util.List;
+ import java.util.Optional;
+ 
+ /**
+  * 培养方案数据访问层，使用Spring JDBC Template实现
+  */
+ @Repository
+ public class TrainingProgramRepository {
+ 
+     @Autowired
+     private JdbcTemplate jdbcTemplate;
+ 
++    private volatile Boolean descriptionColumnAvailable;
++
+     /**
+      * 查询所有培养方案
+      */
+     public List<TrainingProgram> findAll() {
+         String sql = "SELECT * FROM training_program";
+         return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(TrainingProgram.class));
+     }
+ 
+     /**
+      * 根据ID查询培养方案
+      */
+     public Optional<TrainingProgram> findById(Integer id) {
+         String sql = "SELECT * FROM training_program WHERE program_id = ?";
+         List<TrainingProgram> programs = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(TrainingProgram.class), id);
+         return programs.isEmpty() ? Optional.empty() : Optional.of(programs.get(0));
+     }
+ 
+     /**
+      * 新增培养方案
+      */
+     public int save(TrainingProgram program) {
+-        String sql = "INSERT INTO training_program (major_name, duration, total_credit, effective_year, create_time, update_time) VALUES (?, ?, ?, ?, NOW(), NOW())";
+-        return jdbcTemplate.update(sql, 
+-                program.getMajorName(), 
+-                program.getDuration(), 
+-                program.getTotalCredit(), 
++        if (isDescriptionColumnAvailable()) {
++            String sql = "INSERT INTO training_program (major_name, duration, total_credit, effective_year, description, create_time, update_time) VALUES (?, ?, ?, ?, ?, NOW(), NOW())";
++            return jdbcTemplate.update(sql,
++                    program.getMajorName(),
++                    program.getDuration(),
++                    program.getTotalCredit(),
++                    program.getEffectiveYear(),
++                    program.getDescription());
++        }
++
++        String fallbackSql = "INSERT INTO training_program (major_name, duration, total_credit, effective_year, create_time, update_time) VALUES (?, ?, ?, ?, NOW(), NOW())";
++        return jdbcTemplate.update(fallbackSql,
++                program.getMajorName(),
++                program.getDuration(),
++                program.getTotalCredit(),
+                 program.getEffectiveYear());
+     }
+ 
+     /**
+      * 更新培养方案
+      */
+     public int update(TrainingProgram program) {
+-        String sql = "UPDATE training_program SET major_name = ?, duration = ?, total_credit = ?, effective_year = ?, update_time = NOW() WHERE program_id = ?";
+-        return jdbcTemplate.update(sql, 
+-                program.getMajorName(), 
+-                program.getDuration(), 
+-                program.getTotalCredit(), 
+-                program.getEffectiveYear(), 
++        if (isDescriptionColumnAvailable()) {
++            String sql = "UPDATE training_program SET major_name = ?, duration = ?, total_credit = ?, effective_year = ?, description = ?, update_time = NOW() WHERE program_id = ?";
++            return jdbcTemplate.update(sql,
++                    program.getMajorName(),
++                    program.getDuration(),
++                    program.getTotalCredit(),
++                    program.getEffectiveYear(),
++                    program.getDescription(),
++                    program.getProgramId());
++        }
++
++        String fallbackSql = "UPDATE training_program SET major_name = ?, duration = ?, total_credit = ?, effective_year = ?, update_time = NOW() WHERE program_id = ?";
++        return jdbcTemplate.update(fallbackSql,
++                program.getMajorName(),
++                program.getDuration(),
++                program.getTotalCredit(),
++                program.getEffectiveYear(),
+                 program.getProgramId());
+     }
+ 
++    private boolean isDescriptionColumnAvailable() {
++        if (descriptionColumnAvailable != null) {
++            return descriptionColumnAvailable;
++        }
++        synchronized (this) {
++            if (descriptionColumnAvailable != null) {
++                return descriptionColumnAvailable;
++            }
++            Integer count = jdbcTemplate.queryForObject(
++                    "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'training_program' AND column_name = 'description'",
++                    Integer.class
++            );
++            descriptionColumnAvailable = count != null && count > 0;
++            return descriptionColumnAvailable;
++        }
++    }
++
+     /**
+      * 删除培养方案
+      */
+     public int deleteById(Integer id) {
+         String sql = "DELETE FROM training_program WHERE program_id = ?";
+         return jdbcTemplate.update(sql, id);
+     }
+ 
+     /**
+      * 批量删除培养方案
+      */
+     public int deleteBatch(List<Integer> ids) {
+         String sql = "DELETE FROM training_program WHERE program_id IN (" + ids.stream().map(id -> "?").reduce((a, b) -> a + "," + b).orElse("") + ")";
+         return jdbcTemplate.update(sql, ids.toArray());
+     }
+ 
+     /**
+      * 分页查询培养方案
+      */
+     public List<TrainingProgram> findByPage(int page, int limit) {
+         int offset = (page - 1) * limit;
+         String sql = "SELECT * FROM training_program LIMIT ? OFFSET ?";
+         return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(TrainingProgram.class), limit, offset);
+     }
+ 
+diff --git a/backend/src/main/java/com/example/coursemanagement/service/impl/ExamPaperServiceImpl.java b/backend/src/main/java/com/example/coursemanagement/service/impl/ExamPaperServiceImpl.java
+index a543d07b126ea3ea28329794c5bf884a3cf97910..1a804b479479640f9db2a7bf5b9f2b9415a67ffd 100644
+--- a/backend/src/main/java/com/example/coursemanagement/service/impl/ExamPaperServiceImpl.java
++++ b/backend/src/main/java/com/example/coursemanagement/service/impl/ExamPaperServiceImpl.java
+@@ -155,62 +155,68 @@ public class ExamPaperServiceImpl implements ExamPaperService {
+                 
+                 // 重新计算归一化后的总和
+                 weightSum = 0.0;
+                 for (Double value : knowledgePointWeights.values()) {
+                     weightSum += value != null ? value.doubleValue() : 0.0;
+                 }
+                 System.out.println("3.2 权重归一化处理后，总和: " + weightSum);
+                 System.out.println("3.3 归一化后的权重: " + knowledgePointWeights);
+             }
+ 
+             // 3. 创建试卷
+             System.out.println("4. 开始创建试卷");
+             ExamPaper paper = new ExamPaper();
+             paper.setPaperName(paperName != null && !paperName.isEmpty() ? paperName : "自动组卷 - " + courseId);
+             System.out.println("4.1 设置试卷名称: " + paper.getPaperName());
+             
+             Integer courseIdInt = null;
+             try {
+                 courseIdInt = Integer.parseInt(courseId);
+                 paper.setCourseId(courseIdInt);
+                 System.out.println("4.2 设置课程ID: " + courseIdInt);
+             } catch (NumberFormatException e) {
+                 System.out.println("4.2 课程ID格式错误: " + courseId);
+                 throw new IllegalArgumentException("课程ID格式错误");
+             }
+-            
++
+             // 检查课程是否存在
+             try {
+                 System.out.println("4.2.1 检查课程是否存在");
+                 // 这里假设我们有一个CourseRepository可以查询课程是否存在
+                 // 由于我们没有直接访问CourseRepository，我们可以尝试查询该课程的知识点
+                 // 如果没有知识点，可能是课程不存在，或者该课程下没有知识点
+                 List<Question> courseQuestions = questionRepository.findByCourseId(courseIdInt);
+                 System.out.println("4.2.2 课程下的题目数量: " + (courseQuestions != null ? courseQuestions.size() : 0));
++                if (courseQuestions == null || courseQuestions.isEmpty()) {
++                    throw new IllegalArgumentException("该课程暂无题目，无法自动组卷");
++                }
+                 // 不需要抛出异常，只需要记录日志
+             } catch (Exception e) {
+                 System.out.println("4.2.3 检查课程是否存在时发生错误: " + e.getMessage());
++                if (e instanceof IllegalArgumentException) {
++                    throw e;
++                }
+                 // 不需要抛出异常，只需要记录日志
+             }
+             
+             paper.setTotalScore(totalScore);
+             System.out.println("4.3 设置总分: " + totalScore);
+             paper.setPaperType("自动组卷");
+             paper.setCreateTeacher("admin"); // 默认创建教师
+             System.out.println("4.4 准备保存试卷到数据库");
+             
+             int saveResult;
+             try {
+                 saveResult = examPaperRepository.save(paper);
+                 System.out.println("4.5 保存试卷结果: " + saveResult);
+                 System.out.println("4.6 创建试卷成功，试卷ID: " + paper.getPaperId());
+             } catch (Exception e) {
+                 System.out.println("4.5 保存试卷失败，详细错误信息:");
+                 System.out.println("错误类型: " + e.getClass().getName());
+                 System.out.println("错误信息: " + e.getMessage());
+                 System.out.println("完整堆栈:");
+                 e.printStackTrace();
+                 throw e;
+             }
+ 
+             // 4. 为每个知识点分配题目
+             System.out.println("5. 开始为知识点分配题目");
+@@ -262,51 +268,51 @@ public class ExamPaperServiceImpl implements ExamPaperService {
+                     System.out.println("日志4: 知识点题目分配开始");
+                     System.out.println("日志5: 继续处理该知识点");
+                     hasQuestions = true;
+                 } catch (Exception e) {
+                     System.out.println("5.2.4 获取题目列表失败，错误信息: " + e.getMessage());
+                     System.out.println("日志3: 获取题目列表失败，错误信息: " + e.getMessage());
+                     System.out.println("日志4: 跳过该知识点");
+                     System.out.println("日志5: 继续处理下一个知识点");
+                     e.printStackTrace();
+                     continue;
+                 }
+                 
+                 // 如果没有题目，跳过
+                 if (!hasQuestions || pointQuestions == null || pointQuestions.isEmpty()) {
+                     System.out.println("5.3 跳过该知识点，没有可用题目");
+                     continue;
+                 }
+                 
+                 try {
+                     System.out.println("5.4 开始按难度分组题目");
+                     // 按难度分组题目
+                     Map<String, List<Question>> questionsByDifficulty = new java.util.HashMap<>();
+                     for (Question question : pointQuestions) {
+                         String difficulty = question.getDifficulty();
+                         if (difficulty == null || difficulty.isEmpty()) {
+-                            difficulty = "一般"; // 默认难度
++                            difficulty = "中等"; // 默认难度
+                         }
+                         questionsByDifficulty.computeIfAbsent(difficulty, k -> new java.util.ArrayList<>()).add(question);
+                     }
+                     System.out.println("5.4.1 按难度分组完成，分组结果: " + questionsByDifficulty);
+                     
+                     // 计算每种难度的目标分数
+                     System.out.println("5.5 开始计算每种难度的目标分数");
+                     Map<String, Double> difficultyTargetScores = new java.util.HashMap<>();
+                     double difficultySum = 0.0;
+                     for (Double value : difficultyDistribution.values()) {
+                         difficultySum += value != null ? value.doubleValue() : 0.0;
+                     }
+                     System.out.println("5.5.1 原始难度分布总和: " + difficultySum);
+                     
+                     // 难度分布归一化
+                     if (Math.abs(difficultySum - 1.0) > 0.02) {
+                         System.out.println("5.6 难度分布总和不等于1，开始归一化处理");
+                         for (Map.Entry<String, Double> diffEntry : difficultyDistribution.entrySet()) {
+                             String difficulty = diffEntry.getKey();
+                             Double diffWeight = diffEntry.getValue() != null ? diffEntry.getValue() : 0.0;
+                             Double normalizedDiffWeight = difficultySum > 0 ? diffWeight / difficultySum : 0.0;
+                             difficultyTargetScores.put(difficulty, pointScore * normalizedDiffWeight);
+                         }
+                     } else {
+                         System.out.println("5.6 难度分布总和为1，不需要归一化");
+@@ -424,26 +430,26 @@ public class ExamPaperServiceImpl implements ExamPaperService {
+             }
+             
+             // 如果没有添加任何题目，删除该试卷
+             System.out.println("6. 组卷完成，总共添加了" + totalQuestionsAdded + "道题目");
+             if (totalQuestionsAdded == 0) {
+                 System.out.println("6.1 没有添加任何题目，删除试卷");
+                 examPaperRepository.deleteById(paper.getPaperId());
+                 throw new IllegalArgumentException("没有为试卷添加任何题目，无法生成试卷");
+             } else {
+                 System.out.println("6.1 成功添加了" + totalQuestionsAdded + "道题目到试卷中");
+             }
+ 
+             System.out.println("7. 自动组卷成功，返回试卷ID: " + paper.getPaperId());
+             return paper.getPaperId().toString();
+         } catch (Exception e) {
+             System.out.println("=== 自动组卷流程失败 ===");
+             System.out.println("错误类型: " + e.getClass().getName());
+             System.out.println("错误信息: " + e.getMessage());
+             System.out.println("错误堆栈:");
+             e.printStackTrace();
+             throw e;
+         } finally {
+             System.out.println("=== 自动组卷流程结束 ===");
+         }
+     }
+-}
+\ No newline at end of file
++}
+diff --git a/backend/src/main/java/com/example/coursemanagement/service/impl/StatisticsServiceImpl.java b/backend/src/main/java/com/example/coursemanagement/service/impl/StatisticsServiceImpl.java
+index e2b7c852d8b8a39bd38b55f3ce1424e079414d6d..b26b90800a6c5c8525d038299821eb3a0456ebca 100644
+--- a/backend/src/main/java/com/example/coursemanagement/service/impl/StatisticsServiceImpl.java
++++ b/backend/src/main/java/com/example/coursemanagement/service/impl/StatisticsServiceImpl.java
+@@ -18,64 +18,121 @@ import java.util.Map;
+  */
+ @Service
+ public class StatisticsServiceImpl implements StatisticsService {
+ 
+     @Autowired
+     private CourseRepository courseRepository; 
+ 
+     @Autowired
+     private KnowledgePointRepository knowledgePointRepository;
+ 
+     @Autowired
+     private QuestionRepository questionRepository;
+ 
+     @Autowired
+     private ExamPaperRepository examPaperRepository;
+ 
+     @Autowired
+     private JdbcTemplate jdbcTemplate;
+ 
+     @Override
+     public Map<String, Object> getCourseStatistics() {
+         Map<String, Object> statistics = new HashMap<>();
+         // 获取课程总数
+         int totalCourses = courseRepository.count();
+         statistics.put("totalCourses", totalCourses);
+-        // 这里可以添加更多课程统计信息，如按学期、教师、课程类型等维度的统计
++        // 课程平均学分
++        Double avgCredit = jdbcTemplate.queryForObject("SELECT IFNULL(AVG(credit), 0) FROM course", Double.class);
++        statistics.put("averageCredit", avgCredit != null ? avgCredit : 0.0);
++
++        // 按培养方案统计课程数量
++        String programSql = "SELECT tp.program_id AS programId, tp.major_name AS programName, " +
++                "COUNT(c.course_id) AS courseCount " +
++                "FROM training_program tp " +
++                "LEFT JOIN course c ON c.program_id = tp.program_id " +
++                "GROUP BY tp.program_id, tp.major_name " +
++                "ORDER BY courseCount DESC";
++        List<Map<String, Object>> courseByProgram = jdbcTemplate.queryForList(programSql);
++        statistics.put("courseByProgram", courseByProgram);
++
++        // 按课程性质统计
++        String natureSql = "SELECT course_nature AS courseNature, COUNT(*) AS courseCount " +
++                "FROM course GROUP BY course_nature ORDER BY courseCount DESC";
++        List<Map<String, Object>> courseByNature = jdbcTemplate.queryForList(natureSql);
++        statistics.put("courseByNature", courseByNature);
+         return statistics;
+     }
+ 
+     @Override
+     public Map<String, Object> getKnowledgePointCoverage() {
+         Map<String, Object> statistics = new HashMap<>();
+         // 获取知识点总数
+         int totalKnowledgePoints = knowledgePointRepository.count();
+         // 这里可以添加知识点覆盖率统计，如各知识点的题目数量分布
+         statistics.put("totalKnowledgePoints", totalKnowledgePoints);
++
++        String knowledgePointSql = "SELECT kp.kp_id AS kpId, kp.kp_name AS kpName, " +
++                "c.course_name AS courseName, COUNT(q.question_id) AS questionCount " +
++                "FROM knowledge_point kp " +
++                "LEFT JOIN question q ON q.kp_id = kp.kp_id " +
++                "LEFT JOIN course c ON c.course_id = kp.course_id " +
++                "GROUP BY kp.kp_id, kp.kp_name, c.course_name " +
++                "ORDER BY questionCount DESC";
++        List<Map<String, Object>> coverageByKnowledgePoint = jdbcTemplate.queryForList(knowledgePointSql);
++        statistics.put("coverageByKnowledgePoint", coverageByKnowledgePoint);
++
++        String courseCoverageSql = "SELECT c.course_id AS courseId, c.course_name AS courseName, " +
++                "COUNT(DISTINCT kp.kp_id) AS knowledgePointCount, " +
++                "COUNT(q.question_id) AS questionCount " +
++                "FROM course c " +
++                "LEFT JOIN knowledge_point kp ON kp.course_id = c.course_id " +
++                "LEFT JOIN question q ON q.kp_id = kp.kp_id " +
++                "GROUP BY c.course_id, c.course_name " +
++                "ORDER BY knowledgePointCount DESC";
++        List<Map<String, Object>> coverageByCourse = jdbcTemplate.queryForList(courseCoverageSql);
++        statistics.put("coverageByCourse", coverageByCourse);
+         return statistics;
+     }
+ 
+     @Override
+     public Map<String, Object> getQuestionBankStatistics() {
+         Map<String, Object> statistics = new HashMap<>();
+         // 获取题目总数
+         int totalQuestions = questionRepository.count();
+         statistics.put("totalQuestions", totalQuestions);
+ 
+         // 计算题型分布：按question_type分组计数
+         String sql = "SELECT question_type AS type, COUNT(*) AS count FROM question GROUP BY question_type";
+         List<Map<String, Object>> typeDistribution = jdbcTemplate.queryForList(sql);
+         statistics.put("questionTypeDistribution", typeDistribution);
+ 
++        // 计算难度分布
++        String difficultySql = "SELECT difficulty AS difficulty, COUNT(*) AS count FROM question GROUP BY difficulty";
++        List<Map<String, Object>> difficultyDistribution = jdbcTemplate.queryForList(difficultySql);
++        statistics.put("questionDifficultyDistribution", difficultyDistribution);
++
+         return statistics;
+     }
+ 
+     @Override
+     public Map<String, Object> getExamPaperStatistics() {
+         Map<String, Object> statistics = new HashMap<>();
+         // 获取试卷总数
+         int totalPapers = examPaperRepository.count();
+         statistics.put("totalPapers", totalPapers);
+-        // 这里可以添加更多试卷统计信息，如按课程、教师等维度的统计
++
++        Double avgTotalScore = jdbcTemplate.queryForObject("SELECT IFNULL(AVG(total_score), 0) FROM exam_paper", Double.class);
++        statistics.put("averageTotalScore", avgTotalScore != null ? avgTotalScore : 0.0);
++
++        String paperTypeSql = "SELECT paper_type AS type, COUNT(*) AS count FROM exam_paper GROUP BY paper_type";
++        List<Map<String, Object>> paperTypeDistribution = jdbcTemplate.queryForList(paperTypeSql);
++        statistics.put("paperTypeDistribution", paperTypeDistribution);
++
++        String papersByCourseSql = "SELECT c.course_name AS courseName, COUNT(p.paper_id) AS paperCount " +
++                "FROM course c LEFT JOIN exam_paper p ON p.course_id = c.course_id " +
++                "GROUP BY c.course_id, c.course_name " +
++                "ORDER BY paperCount DESC";
++        List<Map<String, Object>> papersByCourse = jdbcTemplate.queryForList(papersByCourseSql);
++        statistics.put("papersByCourse", papersByCourse);
+         return statistics;
+     }
+ }
+diff --git a/frontend/src/views/ExamPaperManagement.vue b/frontend/src/views/ExamPaperManagement.vue
+index 2e5cc60b2701cb0bc33371e3876ed3ec6c26e414..f96daf36b42dc9640b84e7a926f9f5d1f936125e 100644
+--- a/frontend/src/views/ExamPaperManagement.vue
++++ b/frontend/src/views/ExamPaperManagement.vue
+@@ -141,73 +141,73 @@
+         <el-form-item label="所属课程" required>
+           <el-select
+             v-model="autoGenerateForm.courseId"
+             placeholder="请选择课程"
+             @change="handleCourseChange"
+           >
+             <el-option
+               v-for="course in courses"
+               :key="course.courseId"
+               :label="course.courseName"
+               :value="course.courseId"
+             />
+           </el-select>
+         </el-form-item>
+         <el-form-item label="总分" required>
+           <el-input
+             v-model.number="autoGenerateForm.totalScore"
+             placeholder="请输入试卷总分"
+             type="number"
+             min="0"
+             step="0.5"
+           />
+         </el-form-item>
+         <el-form-item label="难度分布" required>
+           <div class="difficulty-distribution">
+-            <el-form-item label="容易" required>
++            <el-form-item label="简单" required>
+               <el-slider
+-                v-model="autoGenerateForm.difficultyDistribution.easy"
++                v-model="autoGenerateForm.difficultyDistribution['简单']"
+                 :min="0"
+                 :max="1"
+                 :step="0.1"
+                 show-input
+                 :input-format="(value) => value * 100 + '%'"
+               />
+             </el-form-item>
+             <el-form-item label="中等" required>
+               <el-slider
+-                v-model="autoGenerateForm.difficultyDistribution.medium"
++                v-model="autoGenerateForm.difficultyDistribution['中等']"
+                 :min="0"
+                 :max="1"
+                 :step="0.1"
+                 show-input
+                 :input-format="(value) => value * 100 + '%'"
+               />
+             </el-form-item>
+             <el-form-item label="困难" required>
+               <el-slider
+-                v-model="autoGenerateForm.difficultyDistribution.hard"
++                v-model="autoGenerateForm.difficultyDistribution['困难']"
+                 :min="0"
+                 :max="1"
+                 :step="0.1"
+                 show-input
+                 :input-format="(value) => value * 100 + '%'"
+               />
+             </el-form-item>
+           </div>
+         </el-form-item>
+         <el-form-item label="知识点权重" required>
+           <el-table :data="autoGenerateForm.knowledgePointWeights" border>
+             <el-table-column prop="pointId" label="知识点ID" width="100" />
+             <el-table-column prop="pointName" label="知识点名称" width="200" />
+             <el-table-column label="权重" width="200">
+               <template #default="scope">
+                 <el-slider
+                   v-model="scope.row.weight"
+                   :min="0"
+                   :max="1"
+                   :step="0.01"
+                   show-input
+                   :input-format="(value) => value * 100 + '%'"
+                 />
+               </template>
+             </el-table-column>
+@@ -378,53 +378,53 @@ import {
+ const papers = ref([]);
+ const total = ref(0);
+ const currentPage = ref(1);
+ const pageSize = ref(10);
+ const selectedPaperIds = ref([]);
+ 
+ // 对话框
+ const dialogVisible = ref(false);
+ const dialogTitle = ref("添加试卷");
+ const paperForm = reactive({
+   paperId: null,
+   paperName: "",
+   courseId: null,
+   totalScore: 100,
+   paperType: "手动组卷",
+   createTeacher: "1", // 示例教师ID
+ });
+ 
+ // 自动组卷对话框
+ const autoGenerateDialogVisible = ref(false);
+ const autoGenerateForm = reactive({
+   paperName: "",
+   courseId: null,
+   totalScore: 100,
+   difficultyDistribution: {
+-    easy: 0.3,
+-    medium: 0.5,
+-    hard: 0.2,
++    简单: 0.3,
++    中等: 0.5,
++    困难: 0.2,
+   },
+   knowledgePointWeights: [],
+ });
+ 
+ // 课程和知识点数据
+ const courses = ref([]);
+ const allKnowledgePoints = ref([]);
+ 
+ // 获取课程列表
+ const fetchCourses = async () => {
+   try {
+     const response = await getAllCourses();
+     console.log("获取到的课程列表:", response);
+     courses.value = response;
+   } catch (error) {
+     console.error("获取课程列表失败:", error);
+     ElMessage.error("获取课程列表失败");
+   }
+ };
+ 
+ // 获取知识点列表
+ const fetchKnowledgePoints = async () => {
+   try {
+     const response = await getAllKnowledgePoints();
+     console.log("原始知识点数据:", response);
+@@ -815,53 +815,53 @@ const handleGeneratePaper = async () => {
+   } catch (error) {
+     ElMessage.error("试卷生成失败");
+     console.error("生成试卷失败:", error);
+   }
+ };
+ 
+ // 重置试卷表单
+ const resetPaperForm = () => {
+   Object.assign(paperForm, {
+     paperId: null,
+     paperName: "",
+     courseId: courses.value.length > 0 ? courses.value[0].courseId : null,
+     totalScore: 100,
+     paperType: "手动组卷",
+     createTeacher: "1",
+   });
+ };
+ 
+ // 重置自动组卷表单
+ const resetAutoGenerateForm = () => {
+   Object.assign(autoGenerateForm, {
+     paperName: "",
+     courseId: courses.value.length > 0 ? courses.value[0].courseId : null,
+     totalScore: 100,
+     difficultyDistribution: {
+-      easy: 0.3,
+-      medium: 0.5,
+-      hard: 0.2,
++      简单: 0.3,
++      中等: 0.5,
++      困难: 0.2,
+     },
+     knowledgePointWeights: [],
+   });
+ };
+ 
+ // 页面挂载时获取数据
+ onMounted(async () => {
+   // 确保fetchPapers函数能被调用，即使其他函数调用失败
+   await Promise.allSettled([
+     fetchCourses(),
+     fetchKnowledgePoints(),
+     fetchPapers(),
+   ]);
+ });
+ </script>
+ 
+ <style scoped>
+ .card-header {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+ }
+ 
+ .header-actions {
+   display: flex;
+diff --git a/frontend/src/views/Statistics.vue b/frontend/src/views/Statistics.vue
+index 794a128bd3ef0687991fe7a8a01185734e09da46..ee216b4d72a6a4c948596e45114e5a394ee28976 100644
+--- a/frontend/src/views/Statistics.vue
++++ b/frontend/src/views/Statistics.vue
+@@ -35,206 +35,377 @@
+           </el-card>
+ 
+           <el-card class="stat-card">
+             <el-statistic
+               title="题目总数"
+               :value="questionBankStatistics.totalQuestions"
+               :precision="0"
+             >
+               <template #prefix>
+                 <el-icon class="el-icon--primary"><EditPen /></el-icon>
+               </template>
+             </el-statistic>
+           </el-card>
+ 
+           <el-card class="stat-card">
+             <el-statistic
+               title="试卷总数"
+               :value="examPaperStatistics.totalPapers"
+               :precision="0"
+             >
+               <template #prefix>
+                 <el-icon class="el-icon--danger"><DocumentRemove /></el-icon>
+               </template>
+             </el-statistic>
+           </el-card>
++
++          <el-card class="stat-card">
++            <el-statistic
++              title="课程平均学分"
++              :value="courseStatistics.averageCredit"
++              :precision="1"
++            >
++              <template #prefix>
++                <el-icon class="el-icon--success"><Cpu /></el-icon>
++              </template>
++            </el-statistic>
++          </el-card>
++
++          <el-card class="stat-card">
++            <el-statistic
++              title="试卷平均总分"
++              :value="examPaperStatistics.averageTotalScore"
++              :precision="1"
++            >
++              <template #prefix>
++                <el-icon class="el-icon--primary"><DocumentRemove /></el-icon>
++              </template>
++            </el-statistic>
++          </el-card>
+         </div>
+ 
+         <!-- 题型分布表格 -->
+         <el-card class="mb-4">
+           <template #header>
+             <div class="card-header">
+               <span>题型分布</span>
+             </div>
+           </template>
+           <el-table :data="questionTypeDist" style="width: 100%">
+             <el-table-column
+               prop="type"
+               label="题型"
+               width="120"
+               :formatter="formatQuestionType"
+             >
+             </el-table-column>
+             <el-table-column prop="count" label="数量" width="100">
+             </el-table-column>
+           </el-table>
+         </el-card>
+ 
+-        <!-- 统计图表 -->
++        <!-- 统计分析报表 -->
+         <div class="statistics-charts">
+           <el-card class="chart-card">
+             <template #header>
+               <div class="chart-header">
+-                <span>课程分布</span>
++                <span>课程分布（培养方案）</span>
+               </div>
+             </template>
+-            <div class="chart-content">
+-              <el-empty description="图表功能开发中..." />
++            <el-table v-if="courseByProgram.length" :data="visibleCourseByProgram">
++              <el-table-column prop="programName" label="培养方案" />
++              <el-table-column prop="courseCount" label="课程数量" width="120" />
++            </el-table>
++            <div v-if="courseByProgram.length > tablePreviewLimit" class="table-actions">
++              <el-button type="primary" link @click="toggleCourseByProgram">
++                {{ showAllCourseByProgram ? "收起" : "查看更多" }}
++              </el-button>
+             </div>
++            <el-empty v-else description="暂无数据" />
+           </el-card>
+ 
+           <el-card class="chart-card">
+             <template #header>
+               <div class="chart-header">
+-                <span>知识点覆盖率</span>
++                <span>课程分布（课程性质）</span>
+               </div>
+             </template>
+-            <div class="chart-content">
+-              <el-empty description="图表功能开发中..." />
++            <el-table v-if="courseByNature.length" :data="visibleCourseByNature">
++              <el-table-column prop="courseNature" label="课程性质" />
++              <el-table-column prop="courseCount" label="数量" width="120" />
++            </el-table>
++            <div v-if="courseByNature.length > tablePreviewLimit" class="table-actions">
++              <el-button type="primary" link @click="toggleCourseByNature">
++                {{ showAllCourseByNature ? "收起" : "查看更多" }}
++              </el-button>
+             </div>
++            <el-empty v-else description="暂无数据" />
+           </el-card>
+ 
+           <el-card class="chart-card">
+             <template #header>
+               <div class="chart-header">
+-                <span>题库题型分布</span>
++                <span>知识点覆盖（课程维度）</span>
+               </div>
+             </template>
+-            <div class="chart-content">
+-              <el-empty description="图表功能开发中..." />
++            <el-table
++              v-if="knowledgePointByCourse.length"
++              :data="visibleKnowledgePointByCourse"
++            >
++              <el-table-column prop="courseName" label="课程" />
++              <el-table-column prop="knowledgePointCount" label="知识点数量" width="120" />
++              <el-table-column prop="questionCount" label="题目数量" width="120" />
++            </el-table>
++            <div v-if="knowledgePointByCourse.length > tablePreviewLimit" class="table-actions">
++              <el-button
++                type="primary"
++                link
++                @click="toggleKnowledgePointByCourse"
++              >
++                {{ showAllKnowledgePointByCourse ? "收起" : "查看更多" }}
++              </el-button>
+             </div>
++            <el-empty v-else description="暂无数据" />
+           </el-card>
+ 
+           <el-card class="chart-card">
+             <template #header>
+               <div class="chart-header">
+-                <span>试卷难度分布</span>
++                <span>知识点覆盖（知识点维度）</span>
+               </div>
+             </template>
+-            <div class="chart-content">
+-              <el-empty description="图表功能开发中..." />
++            <el-table
++              v-if="knowledgePointCoverage.length"
++              :data="visibleKnowledgePointCoverage"
++            >
++              <el-table-column prop="kpName" label="知识点" />
++              <el-table-column prop="courseName" label="课程" />
++              <el-table-column prop="questionCount" label="题目数量" width="120" />
++            </el-table>
++            <div v-if="knowledgePointCoverage.length > tablePreviewLimit" class="table-actions">
++              <el-button
++                type="primary"
++                link
++                @click="toggleKnowledgePointCoverage"
++              >
++                {{ showAllKnowledgePointCoverage ? "收起" : "查看更多" }}
++              </el-button>
+             </div>
++            <el-empty v-else description="暂无数据" />
++          </el-card>
++
++          <el-card class="chart-card">
++            <template #header>
++              <div class="chart-header">
++                <span>题目难度分布</span>
++              </div>
++            </template>
++            <el-table v-if="questionDifficultyDist.length" :data="questionDifficultyDist">
++              <el-table-column prop="difficulty" label="难度" />
++              <el-table-column prop="count" label="数量" width="120" />
++            </el-table>
++            <el-empty v-else description="暂无数据" />
++          </el-card>
++
++          <el-card class="chart-card">
++            <template #header>
++              <div class="chart-header">
++                <span>试卷类型分布</span>
++              </div>
++            </template>
++            <el-table v-if="paperTypeDist.length" :data="paperTypeDist">
++              <el-table-column prop="type" label="类型" />
++              <el-table-column prop="count" label="数量" width="120" />
++            </el-table>
++            <el-empty v-else description="暂无数据" />
++          </el-card>
++
++          <el-card class="chart-card">
++            <template #header>
++              <div class="chart-header">
++                <span>试卷课程分布</span>
++              </div>
++            </template>
++            <el-table v-if="papersByCourse.length" :data="papersByCourse">
++              <el-table-column prop="courseName" label="课程" />
++              <el-table-column prop="paperCount" label="试卷数量" width="120" />
++            </el-table>
++            <el-empty v-else description="暂无数据" />
+           </el-card>
+         </div>
+       </div>
+     </el-card>
+   </div>
+ </template>
+ 
+ <script setup>
+-import { ref, onMounted } from "vue";
++import { ref, onMounted, computed } from "vue";
+ import {
+   Cpu,
+   Document,
+   EditPen,
+   DocumentRemove,
+ } from "@element-plus/icons-vue";
+ import { ElMessage } from "element-plus";
+ import request from "../api/request";
+ 
+ // 统计数据
+ const courseStatistics = ref({
+   totalCourses: 0,
++  averageCredit: 0,
++  courseByProgram: [],
++  courseByNature: [],
+ });
+ 
+ const knowledgePointStatistics = ref({
+   totalKnowledgePoints: 0,
++  coverageByKnowledgePoint: [],
++  coverageByCourse: [],
+ });
+ 
+ const questionBankStatistics = ref({
+   totalQuestions: 0,
+   questionTypeDistribution: [],
++  questionDifficultyDistribution: [],
+ });
+ 
+ const examPaperStatistics = ref({
+   totalPapers: 0,
++  averageTotalScore: 0,
++  paperTypeDistribution: [],
++  papersByCourse: [],
+ });
+ 
+ const questionTypeDist = ref([]); // 用于表格数据
++const questionDifficultyDist = ref([]);
++const courseByProgram = ref([]);
++const courseByNature = ref([]);
++const knowledgePointCoverage = ref([]);
++const knowledgePointByCourse = ref([]);
++const paperTypeDist = ref([]);
++const papersByCourse = ref([]);
++const tablePreviewLimit = 5;
++
++const showAllCourseByProgram = ref(false);
++const showAllCourseByNature = ref(false);
++const showAllKnowledgePointCoverage = ref(false);
++const showAllKnowledgePointByCourse = ref(false);
++
++const visibleCourseByProgram = computed(() =>
++  showAllCourseByProgram.value
++    ? courseByProgram.value
++    : courseByProgram.value.slice(0, tablePreviewLimit)
++);
++const visibleCourseByNature = computed(() =>
++  showAllCourseByNature.value
++    ? courseByNature.value
++    : courseByNature.value.slice(0, tablePreviewLimit)
++);
++const visibleKnowledgePointCoverage = computed(() =>
++  showAllKnowledgePointCoverage.value
++    ? knowledgePointCoverage.value
++    : knowledgePointCoverage.value.slice(0, tablePreviewLimit)
++);
++const visibleKnowledgePointByCourse = computed(() =>
++  showAllKnowledgePointByCourse.value
++    ? knowledgePointByCourse.value
++    : knowledgePointByCourse.value.slice(0, tablePreviewLimit)
++);
++
++const toggleCourseByProgram = () => {
++  showAllCourseByProgram.value = !showAllCourseByProgram.value;
++};
++const toggleCourseByNature = () => {
++  showAllCourseByNature.value = !showAllCourseByNature.value;
++};
++const toggleKnowledgePointCoverage = () => {
++  showAllKnowledgePointCoverage.value = !showAllKnowledgePointCoverage.value;
++};
++const toggleKnowledgePointByCourse = () => {
++  showAllKnowledgePointByCourse.value = !showAllKnowledgePointByCourse.value;
++};
+ 
+ // 获取课程统计数据
+ const fetchCourseStatistics = async () => {
+   try {
+     const response = await request({
+       url: "/statistics/course",
+       method: "GET",
+     });
+     courseStatistics.value = response;
++    courseByProgram.value = response.courseByProgram || [];
++    courseByNature.value = response.courseByNature || [];
+   } catch (error) {
+     ElMessage.error("获取课程统计数据失败");
+     console.error("获取课程统计数据失败:", error);
+   }
+ };
+ 
+ // 获取知识点统计数据
+ const fetchKnowledgePointStatistics = async () => {
+   try {
+     const response = await request({
+       url: "/statistics/knowledge-point",
+       method: "GET",
+     });
+     knowledgePointStatistics.value = response;
++    knowledgePointCoverage.value = response.coverageByKnowledgePoint || [];
++    knowledgePointByCourse.value = response.coverageByCourse || [];
+   } catch (error) {
+     ElMessage.error("获取知识点统计数据失败");
+     console.error("获取知识点统计数据失败:", error);
+   }
+ };
+ 
+ // 获取题库统计数据
+ const fetchQuestionBankStatistics = async () => {
+   try {
+     const response = await request({
+       url: "/statistics/question-bank",
+       method: "GET",
+     });
+     questionBankStatistics.value = response;
+     // 提取题型分布数据用于表格
+     questionTypeDist.value = response.questionTypeDistribution || [];
++    questionDifficultyDist.value =
++      response.questionDifficultyDistribution || [];
+   } catch (error) {
+     ElMessage.error("获取题库统计数据失败");
+     console.error("获取题库统计数据失败:", error);
+   }
+ };
+ 
+ // 获取试卷统计数据
+ const fetchExamPaperStatistics = async () => {
+   try {
+     const response = await request({
+       url: "/statistics/exam-paper",
+       method: "GET",
+     });
+     examPaperStatistics.value = response;
++    paperTypeDist.value = response.paperTypeDistribution || [];
++    papersByCourse.value = response.papersByCourse || [];
+   } catch (error) {
+     ElMessage.error("获取试卷统计数据失败");
+     console.error("获取试卷统计数据失败:", error);
+   }
+ };
+ 
+ // 获取所有统计数据
+ const fetchAllStatistics = async () => {
+   await Promise.all([
+     fetchCourseStatistics(),
+     fetchKnowledgePointStatistics(),
+     fetchQuestionBankStatistics(),
+     fetchExamPaperStatistics(),
+   ]);
+ };
+ 
+ // 将题型编号转换为名称
+ const formatQuestionType = (row, column, cellValue) => {
+   const typeMap = {
+     1: "单选题",
+     2: "多选题",
+     3: "判断题",
+     4: "填空题",
+     5: "简答题",
+   };
+@@ -260,41 +431,41 @@ onMounted(async () => {
+ 
+ .statistics-dashboard {
+   width: 100%;
+ }
+ 
+ .statistics-cards {
+   display: flex;
+   flex-wrap: wrap;
+   gap: 20px;
+   margin-bottom: 20px;
+ }
+ 
+ .stat-card {
+   flex: 1;
+   min-width: 200px;
+   max-width: 300px;
+ }
+ 
+ .statistics-charts {
+   display: grid;
+   grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+   gap: 20px;
+ }
+ 
+ .chart-card {
+-  height: 300px;
++  height: auto;
+ }
+ 
+ .chart-header {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+ }
+ 
+-.chart-content {
+-  height: 240px;
++.table-actions {
+   display: flex;
+-  justify-content: center;
+-  align-items: center;
++  justify-content: flex-end;
++  padding: 8px 0 0;
+ }
++
+ </style>
+diff --git a/frontend/src/views/TrainingProgramManagement.vue b/frontend/src/views/TrainingProgramManagement.vue
+index 70a5e1a98cc61544b0e28419864f4b1c6878bb1b..5edf39d298469d59ff94c4c8e00aa1e458231785 100644
+--- a/frontend/src/views/TrainingProgramManagement.vue
++++ b/frontend/src/views/TrainingProgramManagement.vue
+@@ -11,50 +11,51 @@
+               :disabled="selectedProgramIds.length === 0"
+             >
+               <el-icon><Delete /></el-icon>
+               批量删除
+             </el-button>
+             <el-button type="primary" @click="handleAddProgram">
+               <el-icon><Plus /></el-icon>
+               添加培养方案
+             </el-button>
+           </div>
+         </div>
+       </template>
+ 
+       <el-table
+         :data="programs"
+         border
+         stripe
+         @selection-change="handleSelectionChange"
+       >
+         <el-table-column type="selection" width="55" />
+         <el-table-column prop="programId" label="方案ID" width="80" />
+         <el-table-column prop="majorName" label="专业名称" width="200" />
+         <el-table-column prop="duration" label="学制" width="80" />
+         <el-table-column prop="totalCredit" label="总学分" width="80" />
+         <el-table-column prop="effectiveYear" label="生效年份" width="120" />
++        <el-table-column prop="description" label="培养方案描述" min-width="200" />
+         <el-table-column prop="createTime" label="创建时间" width="180" />
+         <el-table-column label="操作" width="250" fixed="right">
+           <template #default="scope">
+             <el-button
+               type="primary"
+               size="small"
+               @click="handleEditProgram(scope.row)"
+             >
+               <el-icon><Edit /></el-icon>
+               编辑
+             </el-button>
+             <el-button
+               type="success"
+               size="small"
+               @click="handleManageCourses(scope.row)"
+             >
+               <el-icon><Menu /></el-icon>
+               管理课程
+             </el-button>
+             <el-button
+               type="danger"
+               size="small"
+               @click="handleDeleteProgram(scope.row.programId)"
+             >
+               <el-icon><Delete /></el-icon>
+@@ -91,50 +92,58 @@
+             v-model.number="programForm.duration"
+             placeholder="请输入学制（年）"
+             type="number"
+             min="1"
+             max="8"
+           />
+         </el-form-item>
+         <el-form-item label="总学分" required>
+           <el-input
+             v-model.number="programForm.totalCredit"
+             placeholder="请输入总学分要求"
+             type="number"
+             step="0.5"
+             min="0"
+           />
+         </el-form-item>
+         <el-form-item label="生效年份" required>
+           <el-input
+             v-model.number="programForm.effectiveYear"
+             placeholder="请输入生效年份"
+             type="number"
+             min="2000"
+             max="2100"
+           />
+         </el-form-item>
++        <el-form-item label="培养方案描述">
++          <el-input
++            v-model="programForm.description"
++            placeholder="请输入培养方案描述"
++            type="textarea"
++            rows="3"
++          />
++        </el-form-item>
+       </el-form>
+       <template #footer>
+         <span class="dialog-footer">
+           <el-button @click="dialogVisible = false">取消</el-button>
+           <el-button type="primary" @click="handleSaveProgram">确定</el-button>
+         </span>
+       </template>
+     </el-dialog>
+ 
+     <!-- 课程管理对话框 -->
+     <el-dialog
+       v-model="courseDialogVisible"
+       :title="`${currentProgram.majorName} - 课程管理`"
+       width="900px"
+     >
+       <div class="course-management-container">
+         <!-- 课程列表 -->
+         <el-card class="mb-4">
+           <template #header>
+             <div class="card-header">
+               <span>课程列表</span>
+               <el-button type="primary" size="small" @click="handleAddCourse">
+                 <el-icon><Plus /></el-icon>
+                 添加课程
+               </el-button>
+@@ -416,50 +425,51 @@ import {
+   deleteProgramBatch,
+ } from "../api/trainingProgram";
+ import {
+   getCoursesByProgram,
+   addCourse,
+   updateCourse,
+   deleteCourse,
+   getProgramFullSchedule,
+ } from "../api/course";
+ 
+ // 表格数据
+ const programs = ref([]);
+ const total = ref(0);
+ const currentPage = ref(1);
+ const pageSize = ref(10);
+ const selectedProgramIds = ref([]);
+ 
+ // 对话框
+ const dialogVisible = ref(false);
+ const programForm = reactive({
+   programId: null,
+   majorName: "",
+   duration: 4,
+   totalCredit: 160,
+   effectiveYear: new Date().getFullYear(),
++  description: "",
+ });
+ 
+ // 课程管理相关状态
+ const courseDialogVisible = ref(false);
+ const currentProgram = reactive({});
+ const programCourses = ref([]);
+ 
+ // 课程学期安排相关状态
+ const activeStep = ref(0);
+ const selectedSemester = ref(1);
+ const semesterCourses = ref([]);
+ 
+ // 完整课程安排表格相关状态
+ const showFullScheduleTable = ref(false);
+ const fullScheduleTableData = ref([]);
+ 
+ // 课程表单相关状态
+ const courseFormVisible = ref(false);
+ const courseForm = reactive({
+   courseId: null,
+   courseName: "",
+   courseCode: "",
+   programId: null,
+   credit: 3.0,
+   totalHours: 48,
+@@ -515,50 +525,51 @@ const handleBatchDelete = async () => {
+         cancelButtonText: "取消",
+         type: "warning",
+       }
+     );
+ 
+     await deleteProgramBatch(selectedProgramIds.value);
+     ElMessage.success("批量删除成功");
+     selectedProgramIds.value = [];
+     fetchPrograms();
+   } catch (error) {
+     if (error !== "cancel") {
+       ElMessage.error("批量删除失败");
+       console.error("批量删除失败:", error);
+     }
+   }
+ };
+ 
+ // 添加培养方案
+ const handleAddProgram = () => {
+   Object.assign(programForm, {
+     programId: null,
+     majorName: "",
+     duration: 4,
+     totalCredit: 160,
+     effectiveYear: new Date().getFullYear(),
++    description: "",
+   });
+   dialogVisible.value = true;
+ };
+ 
+ // 编辑培养方案
+ const handleEditProgram = (row) => {
+   Object.assign(programForm, row);
+   dialogVisible.value = true;
+ };
+ 
+ // 保存培养方案
+ const handleSaveProgram = async () => {
+   try {
+     console.log("保存培养方案数据:", programForm);
+     // 移除空的description字段，避免后端处理问题
+     const formData = { ...programForm };
+     if (!formData.description) {
+       delete formData.description;
+     }
+     if (formData.programId) {
+       // 更新培养方案
+       await updateTrainingProgram(formData.programId, formData);
+       ElMessage.success("培养方案更新成功");
+     } else {
+       // 添加培养方案
