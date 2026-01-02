@@ -132,7 +132,7 @@ public class TrainingProgramRepository {
         String sql = "SELECT COUNT(*) FROM training_program";
         return jdbcTemplate.queryForObject(sql, Integer.class);
     }
-    
+
     /**
      * 根据老师ID查询培养方案列表
      */
