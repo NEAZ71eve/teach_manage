@@ -258,28 +258,38 @@
         <el-card class="mb-4">
           <template #header>
             <div class="card-header">
-              <span>课程学期安排</span>
+              <div class="header-title">
+                <span>课程学期安排</span>
+                <span class="header-subtitle">按学期查看课程安排与统计数据</span>
+              </div>
+              <div class="header-actions">
+                <el-tag effect="light" type="info">当前：第{{ selectedSemester }}学期</el-tag>
+              </div>
             </div>
           </template>
-          <el-steps :active="activeStep" simple>
+          <el-steps :active="activeStep" simple class="semester-steps">
             <el-step v-for="i in 8" :key="i" :title="`第${i}学期`" />
           </el-steps>
-          <div class="mt-4">
-            <el-select
-                v-model="selectedSemester"
-                placeholder="选择学期"
-                style="width: 200px; margin-right: 10px"
-            >
-              <el-option
-                  v-for="i in 8"
-                  :key="i"
-                  :label="`第${i}学期`"
-                  :value="i"
-              />
-            </el-select>
-            <el-button type="primary" @click="handleViewSemesterCourses"
-            >查看课程</el-button
-            >
+          <div class="semester-toolbar">
+            <div class="semester-picker">
+              <span class="toolbar-label">选择学期</span>
+              <el-select
+                  v-model="selectedSemester"
+                  placeholder="选择学期"
+                  style="width: 200px"
+              >
+                <el-option
+                    v-for="i in 8"
+                    :key="i"
+                    :label="`第${i}学期`"
+                    :value="i"
+                />
+              </el-select>
+            </div>
+            <el-button type="primary" @click="handleViewSemesterCourses">
+              <el-icon><Search /></el-icon>
+              查看课程
+            </el-button>
           </div>
 
           <!-- 学期课程列表 -->
@@ -288,7 +298,7 @@
               :data="semesterCourses"
               border
               stripe
-              class="mt-4"
+              class="mt-4 semester-course-table"
           >
             <el-table-column prop="courseName" label="课程名称" width="200" />
             <el-table-column prop="credit" label="学分" width="80" />
@@ -297,24 +307,40 @@
             <el-table-column prop="courseNature" label="课程性质" width="120" />
             <el-table-column prop="teacherIds" label="授课教师" width="150" />
           </el-table>
-          <div v-if="semesterStats" class="mt-4">
-            <el-descriptions title="学期统计" :column="3" border>
-              <el-descriptions-item label="课程数量">
-                {{ semesterStats.totalCourses }}
-              </el-descriptions-item>
-              <el-descriptions-item label="总学分">
-                {{ semesterStats.totalCredit }}
-              </el-descriptions-item>
-              <el-descriptions-item label="总学时">
-                {{ semesterStats.totalHours }}
-              </el-descriptions-item>
-              <el-descriptions-item label="理论学时">
-                {{ semesterStats.totalTheoreticalHours }}
-              </el-descriptions-item>
-              <el-descriptions-item label="实践学时">
-                {{ semesterStats.totalPracticalHours }}
-              </el-descriptions-item>
-            </el-descriptions>
+          <div v-if="semesterStats" class="mt-4 semester-stats">
+            <div class="stats-header">学期统计</div>
+            <el-row :gutter="12" class="stats-grid">
+              <el-col :span="8">
+                <div class="stat-card">
+                  <span class="stat-label">课程数量</span>
+                  <span class="stat-value">{{ semesterStats.totalCourses }}</span>
+                </div>
+              </el-col>
+              <el-col :span="8">
+                <div class="stat-card">
+                  <span class="stat-label">总学分</span>
+                  <span class="stat-value">{{ semesterStats.totalCredit }}</span>
+                </div>
+              </el-col>
+              <el-col :span="8">
+                <div class="stat-card">
+                  <span class="stat-label">总学时</span>
+                  <span class="stat-value">{{ semesterStats.totalHours }}</span>
+                </div>
+              </el-col>
+              <el-col :span="12">
+                <div class="stat-card">
+                  <span class="stat-label">理论学时</span>
+                  <span class="stat-value">{{ semesterStats.totalTheoreticalHours }}</span>
+                </div>
+              </el-col>
+              <el-col :span="12">
+                <div class="stat-card">
+                  <span class="stat-label">实践学时</span>
+                  <span class="stat-value">{{ semesterStats.totalPracticalHours }}</span>
+                </div>
+              </el-col>
+            </el-row>
             <div class="stats-tags">
               <div class="stat-group">
                 <span class="stat-label">课程性质：</span>
@@ -339,16 +365,27 @@
               </div>
             </div>
           </div>
-          <el-empty v-else description="该学期暂无课程" class="mt-4" />
+          <el-empty
+              v-if="semesterCourses.length === 0 && !semesterStats"
+              description="该学期暂无课程"
+              class="mt-4"
+          />
         </el-card>
 
         <!-- 导出完整课程安排 -->
         <el-card>
           <template #header>
             <div class="card-header">
-              <span>完整课程安排</span>
+              <div class="header-title">
+                <span>完整课程安排</span>
+                <span class="header-subtitle">覆盖四年八个学期的课程分布与统计</span>
+              </div>
               <div class="header-actions">
-                <el-button type="success" @click="handleExportFullSchedule">
+                <el-button
+                    type="success"
+                    :loading="exportingFullSchedule"
+                    @click="handleExportFullSchedule"
+                >
                   <el-icon><Download /></el-icon>
                   导出Excel
                 </el-button>
@@ -369,6 +406,9 @@
               </div>
             </div>
           </template>
+          <div class="export-hint">
+            生成课程安排后可直接下载为Excel格式（CSV），支持本地打开与归档。
+          </div>
 
           <!-- 完整课程安排表格 -->
           <el-table
@@ -408,6 +448,7 @@
             <el-button
                 type="success"
                 size="large"
+                :loading="exportingFullSchedule"
                 @click="handleExportFullSchedule"
             >
               <el-icon><Download /></el-icon>
@@ -538,7 +579,7 @@
 
 <script setup>
 import { ref, onMounted, reactive, computed } from "vue";
-import { Plus, Edit, Delete, Menu, Download } from "@element-plus/icons-vue";
+import { Plus, Edit, Delete, Menu, Download, Search } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import {
   getTrainingPrograms,
@@ -588,6 +629,7 @@ const showAllCourses = ref(false);
 const showAllScheduleRows = ref(false);
 const courseCollapseLimit = 8;
 const scheduleCollapseLimit = 12;
+const exportingFullSchedule = ref(false);
 
 // 完整课程安排表格相关状态
 const showFullScheduleTable = ref(false);
@@ -613,6 +655,58 @@ const toggleCourseCollapse = () => {
 
 const toggleScheduleCollapse = () => {
   showAllScheduleRows.value = !showAllScheduleRows.value;
+};
+
+const escapeCsvValue = (value) => {
+  if (value === null || value === undefined) return "";
+  const stringValue = String(value);
+  if (
+    stringValue.includes(",") ||
+    stringValue.includes("\"") ||
+    stringValue.includes("\n")
+  ) {
+    return `"${stringValue.replace(/"/g, '""')}"`;
+  }
+  return stringValue;
+};
+
+const downloadCsv = (rows, filename) => {
+  const content = rows.map((row) => row.map(escapeCsvValue).join(",")).join("\n");
+  const blob = new Blob([`\ufeff${content}`], {
+    type: "text/csv;charset=utf-8;",
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
+
+const buildFullScheduleTableData = (schedule) => {
+  const tableData = [];
+  for (let semester = 1; semester <= 8; semester++) {
+    const courses = schedule[semester] || [];
+    courses.forEach((course) => {
+      tableData.push({
+        semester: `第${semester}学期`,
+        courseName: course.courseName,
+        courseCode: course.courseCode,
+        credit: course.credit,
+        totalHours: course.totalHours,
+        theoreticalHours: course.theoreticalHours,
+        practicalHours: course.practicalHours,
+        courseType: course.courseType,
+        courseNature: course.courseNature,
+        examMark: course.examMark,
+        courseCategory: course.courseCategory,
+        teacherIds: course.teacherIds,
+      });
+    });
+  }
+  return tableData;
 };
 
 // 课程表单相关状态
@@ -766,6 +860,10 @@ const handleManageCourses = async (program) => {
   Object.assign(currentProgram, program);
   showAllCourses.value = false;
   showAllScheduleRows.value = false;
+  semesterCourses.value = [];
+  semesterStats.value = null;
+  activeStep.value = 0;
+  selectedSemester.value = 1;
   await fetchProgramCourses(program.programId);
   courseDialogVisible.value = true;
 };
@@ -868,40 +966,57 @@ const handleViewSemesterCourses = async () => {
 // 导出完整课程安排
 const handleExportFullSchedule = async () => {
   try {
+    exportingFullSchedule.value = true;
     const schedule = await getProgramFullSchedule(currentProgram.programId);
-
-    // 生成表格数据
-    const tableData = [];
-    for (let semester = 1; semester <= 8; semester++) {
-      const courses = schedule[semester] || [];
-      courses.forEach((course) => {
-        tableData.push({
-          semester: `第${semester}学期`,
-          courseName: course.courseName,
-          courseCode: course.courseCode,
-          credit: course.credit,
-          totalHours: course.totalHours,
-          theoreticalHours: course.theoreticalHours,
-          practicalHours: course.practicalHours,
-          courseType: course.courseType,
-          courseNature: course.courseNature,
-          examMark: course.examMark,
-          courseCategory: course.courseCategory,
-          teacherIds: course.teacherIds,
-        });
-      });
+    const tableData = buildFullScheduleTableData(schedule);
+    if (tableData.length === 0) {
+      ElMessage.warning("暂无可导出的课程安排");
+      return;
     }
 
     fullScheduleTableData.value = tableData;
     showFullScheduleTable.value = true;
     showAllScheduleRows.value = false;
 
-    // 这里可以添加导出Excel的逻辑
-    ElMessage.success("完整课程安排已生成");
-    console.log("完整课程安排表格数据:", tableData);
+    const header = [
+      "学期",
+      "课程名称",
+      "课程代码",
+      "学分",
+      "总学时",
+      "理论学时",
+      "实践学时",
+      "课程类型",
+      "课程性质",
+      "考核方式",
+      "课程类别",
+      "授课教师",
+    ];
+    const rows = tableData.map((course) => [
+      course.semester,
+      course.courseName,
+      course.courseCode,
+      course.credit,
+      course.totalHours,
+      course.theoreticalHours,
+      course.practicalHours,
+      course.courseType,
+      course.courseNature,
+      course.examMark,
+      course.courseCategory,
+      course.teacherIds,
+    ]);
+    const fileBaseName = currentProgram.majorName
+      ? `${currentProgram.majorName}_完整课程安排`
+      : "培养方案_完整课程安排";
+    downloadCsv([header, ...rows], `${fileBaseName}.csv`);
+
+    ElMessage.success("完整课程安排已导出");
   } catch (error) {
     ElMessage.error("导出完整课程安排失败");
     console.error("导出完整课程安排失败:", error);
+  } finally {
+    exportingFullSchedule.value = false;
   }
 };
 
@@ -916,6 +1031,17 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.header-title {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.header-subtitle {
+  font-size: 12px;
+  color: #909399;
 }
 
 .stats-tags {
@@ -939,6 +1065,80 @@ onMounted(() => {
 
 .stat-tag {
   margin-bottom: 4px;
+}
+
+.semester-steps {
+  margin-top: 6px;
+}
+
+.semester-toolbar {
+  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  background: #f6f8fb;
+  border-radius: 10px;
+}
+
+.semester-picker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.toolbar-label {
+  font-size: 13px;
+  color: #606266;
+}
+
+.semester-course-table {
+  border-radius: 10px;
+}
+
+.semester-stats {
+  padding: 16px;
+  border-radius: 12px;
+  background: #f9fafc;
+  border: 1px solid #ebeef5;
+}
+
+.stats-header {
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 12px;
+}
+
+.stats-grid {
+  margin-bottom: 12px;
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.stat-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.export-hint {
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  border-radius: 10px;
+  background: #f5f7fa;
+  color: #606266;
+  font-size: 13px;
 }
 
 /* 新增：仅标题风格（不影响其它区域） */
@@ -971,6 +1171,9 @@ onMounted(() => {
 
 .mt-4 {
   margin-top: 16px;
+}
+
+.pagination {
   display: flex;
   justify-content: center;
 }

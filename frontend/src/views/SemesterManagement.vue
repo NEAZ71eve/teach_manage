@@ -174,6 +174,26 @@ for (let i = currentYear - 5; i <= currentYear + 5; i++) {
 const academicYear = ref(currentYear.toString());
 const semesterType = ref(1);
 
+const normalizeIsCurrentValue = (value) => {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value === 1;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (["1", "true", "yes", "y", "是"].includes(normalized)) return true;
+    if (["0", "false", "no", "n", "否"].includes(normalized)) return false;
+  }
+  return null;
+};
+
+const inferIsCurrentByDate = (row) => {
+  if (!row.startDate || !row.endDate) return false;
+  const start = new Date(row.startDate);
+  const end = new Date(row.endDate);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return false;
+  const now = new Date();
+  return now >= start && now <= end;
+};
+
 // 根据学年和学期自动生成学期信息
 const generateSemesterInfo = () => {
   if (!academicYear.value || !semesterType.value) return;
@@ -222,7 +242,19 @@ watch([academicYear, semesterType], () => {
 const fetchSemesters = async () => {
   try {
     const response = await getSemesters(currentPage.value, pageSize.value);
-    semesters.value = response.records;
+    semesters.value = (response.records || []).map((row) => {
+      const resolvedCurrent =
+          normalizeIsCurrentValue(row.isCurrent) ??
+          normalizeIsCurrentValue(row.is_current) ??
+          normalizeIsCurrentValue(row.currentFlag) ??
+          normalizeIsCurrentValue(row.current) ??
+          (row.status === "进行中" ? true : null) ??
+          inferIsCurrentByDate(row);
+      return {
+        ...row,
+        isCurrent: resolvedCurrent,
+      };
+    });
     total.value = response.total;
   } catch (error) {
     ElMessage.error("获取学期列表失败");
