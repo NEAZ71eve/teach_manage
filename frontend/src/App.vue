@@ -104,7 +104,7 @@
 
                 <el-menu-item
                     index="/semester-schedule"
-                    v-if="canAccessMenu('/semester-schedule')"
+                    v-if="false"
                 >
                   <el-icon><Notebook /></el-icon>
                   <span>学期课表</span>
