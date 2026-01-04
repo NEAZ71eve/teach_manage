@@ -98,26 +98,46 @@ public class KnowledgePointRepository {
      * 新增知识点
      */
     public int save(KnowledgePoint point) {
+        // 转换难度值：前端传递的是"易"、"中"、"难"，数据库存储的是"简单"、"中等"、"困难"
+        String difficulty = point.getDifficulty();
+        if ("易".equals(difficulty)) {
+            difficulty = "简单";
+        } else if ("中".equals(difficulty)) {
+            difficulty = "中等";
+        } else if ("难".equals(difficulty)) {
+            difficulty = "困难";
+        }
+        
         String sql = "INSERT INTO knowledge_point (kp_name, course_id, parent_kp_id, description, difficulty, create_time, update_time) VALUES (?, ?, ?, ?, ?, NOW(), NOW())";
         return jdbcTemplate.update(sql, 
                 point.getKpName(), 
                 point.getCourseId(), 
                 point.getParentId(), 
                 point.getDescription(),
-                point.getDifficulty());
+                difficulty);
     }
 
     /**
      * 更新知识点
      */
     public int update(KnowledgePoint point) {
+        // 转换难度值：前端传递的是"易"、"中"、"难"，数据库存储的是"简单"、"中等"、"困难"
+        String difficulty = point.getDifficulty();
+        if ("易".equals(difficulty)) {
+            difficulty = "简单";
+        } else if ("中".equals(difficulty)) {
+            difficulty = "中等";
+        } else if ("难".equals(difficulty)) {
+            difficulty = "困难";
+        }
+        
         String sql = "UPDATE knowledge_point SET kp_name = ?, course_id = ?, parent_kp_id = ?, description = ?, difficulty = ?, update_time = NOW() WHERE kp_id = ?";
         return jdbcTemplate.update(sql, 
                 point.getKpName(), 
                 point.getCourseId(), 
                 point.getParentId(), 
                 point.getDescription(),
-                point.getDifficulty(),
+                difficulty,
                 point.getKpId());
     }
 

@@ -13,24 +13,24 @@
           <div class="header-actions">
             <el-space :size="10" wrap>
               <el-select
-                  v-model="selectedCourse"
-                  placeholder="选择课程"
-                  style="width: 220px"
-                  @change="handleCourseChange"
+                v-model="selectedCourse"
+                placeholder="选择课程"
+                style="width: 220px"
+                @change="handleCourseChange"
               >
                 <el-option label="全部课程" :value="0" />
                 <el-option
-                    v-for="course in courses"
-                    :key="course.courseId"
-                    :label="course.courseName"
-                    :value="course.courseId"
+                  v-for="course in courses"
+                  :key="course.courseId"
+                  :label="course.courseName"
+                  :value="course.courseId"
                 />
               </el-select>
 
               <el-button
-                  type="danger"
-                  :disabled="selectedPointIds.length === 0"
-                  @click="handleBatchDelete"
+                type="danger"
+                :disabled="selectedPointIds.length === 0"
+                @click="handleBatchDelete"
               >
                 <el-icon><Delete /></el-icon>
                 批量删除
@@ -56,25 +56,17 @@
             </span>
           </div>
           <div class="toolbar-right">
-            <el-button
-                size="small"
-                plain
-                @click="expandAll"
-            >
+            <el-button size="small" plain @click="expandAll">
               展开全部
             </el-button>
-            <el-button
-                size="small"
-                plain
-                @click="collapseAll"
-            >
+            <el-button size="small" plain @click="collapseAll">
               收起全部
             </el-button>
             <el-button
-                size="small"
-                plain
-                @click="clearChecked"
-                :disabled="selectedPointIds.length === 0"
+              size="small"
+              plain
+              @click="clearChecked"
+              :disabled="selectedPointIds.length === 0"
             >
               清空勾选
             </el-button>
@@ -83,18 +75,17 @@
 
         <div class="tree-container">
           <el-tree
-              ref="treeRef"
-              :data="knowledgePointTree"
-              :props="treeProps"
-              show-checkbox
-              node-key="pointId"
-              highlight-current
-              :default-expanded-keys="[]"
-              @check-change="handleCheckChange"
-              @node-click="handleNodeClick"
-              class="kp-tree"
+            ref="treeRef"
+            :data="knowledgePointTree"
+            :props="treeProps"
+            show-checkbox
+            node-key="pointId"
+            highlight-current
+            :default-expanded-keys="[]"
+            @check-change="handleCheckChange"
+            @node-click="handleNodeClick"
+            class="kp-tree"
           >
-
             <template #default="{ node, data }">
               <div class="tree-node">
                 <div class="node-main">
@@ -104,26 +95,30 @@
 
                   <div class="node-meta">
                     <el-tag
-                        v-if="courseNameMap[data.courseId]"
-                        size="small"
-                        type="info"
-                        class="meta-tag"
-                        effect="plain"
+                      v-if="courseNameMap[data.courseId]"
+                      size="small"
+                      type="info"
+                      class="meta-tag"
+                      effect="plain"
                     >
                       {{ courseNameMap[data.courseId] }}
                     </el-tag>
 
                     <el-tag
-                        v-if="data.difficulty"
-                        size="small"
-                        :type="difficultyTagType(data.difficulty)"
-                        class="meta-tag"
-                        effect="plain"
+                      v-if="data.difficulty"
+                      size="small"
+                      :type="difficultyTagType(data.difficulty)"
+                      class="meta-tag"
+                      effect="plain"
                     >
                       难度：{{ data.difficulty }}
                     </el-tag>
 
-                    <span v-if="data.description" class="meta-desc" :title="data.description">
+                    <span
+                      v-if="data.description"
+                      class="meta-desc"
+                      :title="data.description"
+                    >
                       {{ data.description }}
                     </span>
                   </div>
@@ -132,10 +127,10 @@
                 <div class="node-actions" @click.stop>
                   <el-tooltip content="编辑" placement="top">
                     <el-button
-                        circle
-                        size="small"
-                        type="primary"
-                        @click.stop="handleEditPoint(data)"
+                      circle
+                      size="small"
+                      type="primary"
+                      @click.stop="handleEditPoint(data)"
                     >
                       <el-icon><Edit /></el-icon>
                     </el-button>
@@ -143,10 +138,10 @@
 
                   <el-tooltip content="删除" placement="top">
                     <el-button
-                        circle
-                        size="small"
-                        type="danger"
-                        @click.stop="handleDeletePoint(data.pointId)"
+                      circle
+                      size="small"
+                      type="danger"
+                      @click.stop="handleDeletePoint(data.pointId)"
                     >
                       <el-icon><Delete /></el-icon>
                     </el-button>
@@ -154,10 +149,10 @@
 
                   <el-tooltip content="添加子知识点" placement="top">
                     <el-button
-                        circle
-                        size="small"
-                        type="success"
-                        @click.stop="handleAddChildPoint(data)"
+                      circle
+                      size="small"
+                      type="success"
+                      @click.stop="handleAddChildPoint(data)"
                     >
                       <el-icon><Plus /></el-icon>
                     </el-button>
@@ -168,8 +163,8 @@
           </el-tree>
 
           <el-empty
-              v-if="knowledgePointTree.length === 0"
-              description="暂无知识点数据"
+            v-if="knowledgePointTree.length === 0"
+            description="暂无知识点数据"
           />
         </div>
       </div>
@@ -177,47 +172,60 @@
 
     <!-- 知识点表单对话框 -->
     <el-dialog
-        v-model="dialogVisible"
-        :title="dialogTitle"
-        width="680px"
-        class="kp-dialog"
-        destroy-on-close
+      v-model="dialogVisible"
+      :title="dialogTitle"
+      width="680px"
+      class="kp-dialog"
+      destroy-on-close
     >
       <el-form :model="pointForm" label-width="120px" class="kp-form">
         <el-form-item label="知识点名称" required>
           <el-input
-              v-model="pointForm.pointName"
-              placeholder="请输入知识点名称"
-              maxlength="50"
-              show-word-limit
+            v-model="pointForm.pointName"
+            placeholder="请输入知识点名称"
+            maxlength="50"
+            show-word-limit
           />
         </el-form-item>
 
         <el-form-item label="所属课程" required>
-          <el-select v-model="pointForm.courseId" placeholder="请选择课程" style="width: 100%">
+          <el-select
+            v-model="pointForm.courseId"
+            placeholder="请选择课程"
+            style="width: 100%"
+          >
             <el-option
-                v-for="course in courses"
-                :key="course.courseId"
-                :label="course.courseName"
-                :value="course.courseId"
+              v-for="course in courses"
+              :key="course.courseId"
+              :label="course.courseName"
+              :value="course.courseId"
             />
           </el-select>
         </el-form-item>
 
         <el-form-item label="父知识点">
-          <el-select v-model="pointForm.parentId" placeholder="请选择父知识点" style="width: 100%" clearable>
+          <el-select
+            v-model="pointForm.parentId"
+            placeholder="请选择父知识点"
+            style="width: 100%"
+            clearable
+          >
             <el-option label="无父知识点" :value="0" />
             <el-option
-                v-for="point in getFilteredKnowledgePoints()"
-                :key="point.pointId"
-                :label="point.pointName"
-                :value="point.pointId"
+              v-for="point in getFilteredKnowledgePoints()"
+              :key="point.pointId"
+              :label="point.pointName"
+              :value="point.pointId"
             />
           </el-select>
         </el-form-item>
 
         <el-form-item label="难度">
-          <el-select v-model="pointForm.difficulty" placeholder="请选择难度" style="width: 100%">
+          <el-select
+            v-model="pointForm.difficulty"
+            placeholder="请选择难度"
+            style="width: 100%"
+          >
             <el-option label="易" value="易" />
             <el-option label="中" value="中" />
             <el-option label="难" value="难" />
@@ -226,12 +234,12 @@
 
         <el-form-item label="描述">
           <el-input
-              v-model="pointForm.description"
-              type="textarea"
-              placeholder="请输入知识点描述（可选）"
-              :rows="3"
-              maxlength="200"
-              show-word-limit
+            v-model="pointForm.description"
+            type="textarea"
+            placeholder="请输入知识点描述（可选）"
+            :rows="3"
+            maxlength="200"
+            show-word-limit
           />
         </el-form-item>
       </el-form>
@@ -366,7 +374,7 @@ const fetchKnowledgePointTree = async () => {
 const getFilteredKnowledgePoints = () => {
   if (selectedCourse.value === 0) return allKnowledgePoints.value;
   return allKnowledgePoints.value.filter(
-      (point) => point.courseId === selectedCourse.value
+    (point) => point.courseId === selectedCourse.value
   );
 };
 
@@ -436,13 +444,13 @@ const handleEditPoint = (point) => {
 const handleDeletePoint = async (pointId) => {
   try {
     await ElMessageBox.confirm(
-        "确定要删除该知识点及其所有子知识点吗？",
-        "删除确认",
-        {
-          confirmButtonText: "确定",
-          cancelButtonText: "取消",
-          type: "warning",
-        }
+      "确定要删除该知识点及其所有子知识点吗？",
+      "删除确认",
+      {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning",
+      }
     );
 
     await deleteKnowledgePoint(pointId);
@@ -460,13 +468,13 @@ const handleDeletePoint = async (pointId) => {
 const handleBatchDelete = async () => {
   try {
     await ElMessageBox.confirm(
-        `确定要删除选中的 ${selectedPointIds.value.length} 个知识点吗？`,
-        "删除确认",
-        {
-          confirmButtonText: "确定",
-          cancelButtonText: "取消",
-          type: "warning",
-        }
+      `确定要删除选中的 ${selectedPointIds.value.length} 个知识点吗？`,
+      "删除确认",
+      {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning",
+      }
     );
 
     await deleteKnowledgePointBatch(selectedPointIds.value);
@@ -739,7 +747,7 @@ onMounted(async () => {
 
 /* 高亮当前节点更柔和 */
 :deep(.el-tree-node.is-current > .el-tree-node__content) {
-  background: rgba(64, 158, 255, 0.10);
+  background: rgba(64, 158, 255, 0.1);
   border-radius: 12px;
 }
 

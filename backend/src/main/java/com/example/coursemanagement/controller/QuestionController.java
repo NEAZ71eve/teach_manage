@@ -99,8 +99,17 @@ public class QuestionController {
      */
     @PutMapping("/{id}")
     public ResponseEntity<Boolean> updateQuestion(@PathVariable Integer id, @RequestBody Question question) {
+        System.out.println("=== 开始更新题目 ===");
+        System.out.println("更新的题目ID: " + id);
+        System.out.println("更新的题目数据: " + question);
+        
         question.setQuestionId(id);
-        return ResponseEntity.ok(questionService.updateById(question));
+        boolean result = questionService.updateById(question);
+        
+        System.out.println("更新结果: " + result);
+        System.out.println("=== 更新题目结束 ===");
+        
+        return ResponseEntity.ok(result);
     }
 
     /**

@@ -703,19 +703,24 @@ const handleSaveQuestion = async () => {
 
     questionData.tags = selectedTags.value.map((tagId) => ({ tagId }));
 
+    console.log('保存题目数据:', questionData);
+    
     if (questionForm.questionId) {
-      await updateQuestion(questionForm.questionId, questionData);
+      const result = await updateQuestion(questionForm.questionId, questionData);
+      console.log('更新题目结果:', result);
       ElMessage.success("题目更新成功");
     } else {
-      await addQuestion(questionData);
+      const result = await addQuestion(questionData);
+      console.log('添加题目结果:', result);
       ElMessage.success("题目添加成功");
     }
 
     dialogVisible.value = false;
     fetchQuestions();
   } catch (error) {
-    ElMessage.error(questionForm.questionId ? "题目更新失败" : "题目添加失败");
-    console.error("保存题目失败:", error);
+    console.error('保存题目失败:', error);
+    console.error('错误详情:', error.response);
+    ElMessage.error(questionForm.questionId ? "题目更新失败: " + (error.response?.data?.message || error.message) : "题目添加失败: " + (error.response?.data?.message || error.message));
   }
 };
 

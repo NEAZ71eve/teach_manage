@@ -94,8 +94,8 @@ public class QuestionRepository {
                 return 0;
             }
             
-            // 直接执行INSERT语句，只插入question表中肯定存在的字段
-            String sql = "INSERT INTO question (question_type, question_content, kp_id, difficulty, score, correct_answer, create_time, update_time) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())";
+            // 直接执行INSERT语句，包含category_id字段
+            String sql = "INSERT INTO question (question_type, question_content, kp_id, category_id, difficulty, score, correct_answer, create_time, update_time) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
             System.out.println("执行的SQL语句: " + sql);
             
             // 使用PreparedStatement直接执行，不使用GeneratedKeyHolder获取主键
@@ -104,6 +104,7 @@ public class QuestionRepository {
                 question.getQuestionType(),
                 question.getQuestionContent(),
                 question.getKpId(),
+                question.getCategoryId(),
                 question.getDifficulty(),
                 question.getScore(),
                 question.getCorrectAnswer()
@@ -142,33 +143,50 @@ public class QuestionRepository {
      */
     @Transactional
     public int update(Question question) {
+        // 先查询knowledge_point表，检查kp_id是否存在
+        String checkKpSql = "SELECT COUNT(*) FROM knowledge_point WHERE kp_id = ?";
+        Integer kpCount = jdbcTemplate.queryForObject(checkKpSql, Integer.class, question.getKpId());
+        if (kpCount == 0) {
+            System.out.println("知识点ID " + question.getKpId() + " 不存在，无法更新题目");
+            return 0;
+        }
+        
+        // 执行UPDATE语句，更新question表
         String sql = "UPDATE question SET question_type = ?, question_content = ?, kp_id = ?, category_id = ?, difficulty = ?, score = ?, correct_answer = ?, analysis = ?, update_time = NOW() WHERE question_id = ?";
         int result = jdbcTemplate.update(
                 sql, 
                 question.getQuestionType(), 
                 question.getQuestionContent(), 
-                question.getKpId(), 
-                question.getCategoryId() != null ? question.getCategoryId() : null,
+                question.getKpId(),
+                question.getCategoryId(),
                 question.getDifficulty(), 
                 question.getScore(),
                 question.getCorrectAnswer(),
                 question.getAnalysis() != null ? question.getAnalysis() : null,
                 question.getQuestionId());
         
-        // 更新题目选项
+        // 更新题目选项（添加try-catch处理表不存在的情况）
         if (question.getOptions() != null) {
-            // 先删除旧选项
-            jdbcTemplate.update("DELETE FROM question_option WHERE question_id = ?", question.getQuestionId());
-            // 再插入新选项
-            saveQuestionOptions(question);
+            try {
+                // 先删除旧选项
+                jdbcTemplate.update("DELETE FROM question_option WHERE question_id = ?", question.getQuestionId());
+                // 再插入新选项
+                saveQuestionOptions(question);
+            } catch (Exception e) {
+                System.out.println("更新题目选项失败，可能是question_option表不存在: " + e.getMessage());
+            }
         }
         
-        // 更新题目标签
+        // 更新题目标签（添加try-catch处理表不存在的情况）
         if (question.getTags() != null) {
-            // 先删除旧标签关联
-            jdbcTemplate.update("DELETE FROM question_tag_relation WHERE question_id = ?", question.getQuestionId());
-            // 再插入新标签关联
-            saveQuestionTags(question);
+            try {
+                // 先删除旧标签关联
+                jdbcTemplate.update("DELETE FROM question_tag_relation WHERE question_id = ?", question.getQuestionId());
+                // 再插入新标签关联
+                saveQuestionTags(question);
+            } catch (Exception e) {
+                System.out.println("更新题目标签失败，可能是question_tag_relation表不存在: " + e.getMessage());
+            }
         }
         
         return result;
@@ -179,12 +197,27 @@ public class QuestionRepository {
      */
     @Transactional
     public int deleteById(Integer id) {
-        // 删除题目标签关联
-        jdbcTemplate.update("DELETE FROM question_tag_relation WHERE question_id = ?", id);
-        // 删除题目选项
-        jdbcTemplate.update("DELETE FROM question_option WHERE question_id = ?", id);
-        // 删除题目统计
-        jdbcTemplate.update("DELETE FROM question_statistics WHERE question_id = ?", id);
+        // 删除题目标签关联（添加try-catch处理表不存在的情况）
+        try {
+            jdbcTemplate.update("DELETE FROM question_tag_relation WHERE question_id = ?", id);
+        } catch (Exception e) {
+            System.out.println("删除题目标签关联失败，可能是question_tag_relation表不存在: " + e.getMessage());
+        }
+        
+        // 删除题目选项（添加try-catch处理表不存在的情况）
+        try {
+            jdbcTemplate.update("DELETE FROM question_option WHERE question_id = ?", id);
+        } catch (Exception e) {
+            System.out.println("删除题目选项失败，可能是question_option表不存在: " + e.getMessage());
+        }
+        
+        // 删除题目统计（添加try-catch处理表不存在的情况）
+        try {
+            jdbcTemplate.update("DELETE FROM question_statistics WHERE question_id = ?", id);
+        } catch (Exception e) {
+            System.out.println("删除题目统计失败，可能是question_statistics表不存在: " + e.getMessage());
+        }
+        
         // 删除题目
         return jdbcTemplate.update("DELETE FROM question WHERE question_id = ?", id);
     }
@@ -200,12 +233,27 @@ public class QuestionRepository {
         
         String placeholders = ids.stream().map(id -> "?").reduce((a, b) -> a + "," + b).orElse("");
         
-        // 批量删除题目标签关联
-        jdbcTemplate.update("DELETE FROM question_tag_relation WHERE question_id IN (" + placeholders + ")", ids.toArray());
-        // 批量删除题目选项
-        jdbcTemplate.update("DELETE FROM question_option WHERE question_id IN (" + placeholders + ")", ids.toArray());
-        // 批量删除题目统计
-        jdbcTemplate.update("DELETE FROM question_statistics WHERE question_id IN (" + placeholders + ")", ids.toArray());
+        // 批量删除题目标签关联（添加try-catch处理表不存在的情况）
+        try {
+            jdbcTemplate.update("DELETE FROM question_tag_relation WHERE question_id IN (" + placeholders + ")", ids.toArray());
+        } catch (Exception e) {
+            System.out.println("批量删除题目标签关联失败，可能是question_tag_relation表不存在: " + e.getMessage());
+        }
+        
+        // 批量删除题目选项（添加try-catch处理表不存在的情况）
+        try {
+            jdbcTemplate.update("DELETE FROM question_option WHERE question_id IN (" + placeholders + ")", ids.toArray());
+        } catch (Exception e) {
+            System.out.println("批量删除题目选项失败，可能是question_option表不存在: " + e.getMessage());
+        }
+        
+        // 批量删除题目统计（添加try-catch处理表不存在的情况）
+        try {
+            jdbcTemplate.update("DELETE FROM question_statistics WHERE question_id IN (" + placeholders + ")", ids.toArray());
+        } catch (Exception e) {
+            System.out.println("批量删除题目统计失败，可能是question_statistics表不存在: " + e.getMessage());
+        }
+        
         // 批量删除题目
         return jdbcTemplate.update("DELETE FROM question WHERE question_id IN (" + placeholders + ")", ids.toArray());
     }

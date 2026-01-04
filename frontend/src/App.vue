@@ -18,15 +18,19 @@
           <div class="header-right">
             <div class="user-info" v-if="isLoggedIn">
               <div class="user-chip">
-                <span class="user-name">{{ userInfo.realName || userInfo.username }}</span>
-                <span class="user-role" v-if="userInfo.username === 'admin'">管理员</span>
+                <span class="user-name">{{
+                  userInfo.realName || userInfo.username
+                }}</span>
+                <span class="user-role" v-if="userInfo.username === 'admin'"
+                  >管理员</span
+                >
               </div>
 
               <el-button
-                  class="logout-btn"
-                  type="danger"
-                  size="small"
-                  @click="handleLogout"
+                class="logout-btn"
+                type="danger"
+                size="small"
+                @click="handleLogout"
               >
                 登出
               </el-button>
@@ -39,10 +43,10 @@
           <el-aside width="220px" class="app-aside">
             <div class="aside-inner">
               <el-menu
-                  :default-active="activeMenu"
-                  class="app-menu"
-                  @select="handleMenuSelect"
-                  router
+                :default-active="activeMenu"
+                class="app-menu"
+                @select="handleMenuSelect"
+                router
               >
                 <el-menu-item index="/courses" v-if="canAccessMenu('/courses')">
                   <el-icon><Document /></el-icon>
@@ -50,62 +54,69 @@
                 </el-menu-item>
 
                 <el-menu-item
-                    index="/knowledge-points"
-                    v-if="canAccessMenu('/knowledge-points')"
+                  index="/knowledge-points"
+                  v-if="canAccessMenu('/knowledge-points')"
                 >
                   <el-icon><Collection /></el-icon>
                   <span>知识点管理</span>
                 </el-menu-item>
 
                 <el-menu-item
-                    index="/question-bank"
-                    v-if="canAccessMenu('/question-bank')"
+                  index="/question-bank"
+                  v-if="canAccessMenu('/question-bank')"
                 >
                   <el-icon><EditPen /></el-icon>
                   <span>题库管理</span>
                 </el-menu-item>
 
                 <el-menu-item
-                    index="/exam-papers"
-                    v-if="canAccessMenu('/exam-papers')"
+                  index="/exam-papers"
+                  v-if="canAccessMenu('/exam-papers')"
                 >
                   <el-icon><Notebook /></el-icon>
                   <span>试卷管理</span>
                 </el-menu-item>
 
                 <el-menu-item
-                    index="/training-programs"
-                    v-if="canAccessMenu('/training-programs')"
+                  index="/training-programs"
+                  v-if="canAccessMenu('/training-programs')"
                 >
                   <el-icon><List /></el-icon>
                   <span>培养方案管理</span>
                 </el-menu-item>
 
-                <el-menu-item index="/statistics" v-if="canAccessMenu('/statistics')">
+                <el-menu-item
+                  index="/statistics"
+                  v-if="canAccessMenu('/statistics')"
+                >
                   <el-icon><DataAnalysis /></el-icon>
                   <span>统计分析</span>
                 </el-menu-item>
 
                 <el-menu-item
-                    index="/practice-projects"
-                    v-if="canAccessMenu('/practice-projects')"
+                  index="/practice-projects"
+                  v-if="canAccessMenu('/practice-projects')"
                 >
                   <el-icon><Operation /></el-icon>
                   <span>实践项目</span>
                 </el-menu-item>
 
                 <el-menu-item
-                    index="/semester-management"
-                    v-if="canAccessMenu('/semester-management')"
+                  index="/semester-management"
+                  v-if="canAccessMenu('/semester-management')"
                 >
                   <el-icon><Calendar /></el-icon>
                   <span>学期管理</span>
                 </el-menu-item>
 
+<<<<<<< HEAD
                 <el-menu-item
                     index="/semester-schedule"
                     v-if="false"
                 >
+=======
+                <el-menu-item index="/semester-schedule" v-if="false">
+>>>>>>> 4c7fdc3 (解决了一些已知问题)
                   <el-icon><Notebook /></el-icon>
                   <span>学期课表</span>
                 </el-menu-item>
@@ -121,8 +132,8 @@
                 </el-menu-item>
 
                 <el-menu-item
-                    index="/permissions"
-                    v-if="canAccessMenu('/permissions')"
+                  index="/permissions"
+                  v-if="canAccessMenu('/permissions')"
                 >
                   <el-icon><Lock /></el-icon>
                   <span>权限管理</span>
@@ -177,6 +188,7 @@ const activeMenu = ref("/courses");
 // 初始化响应式变量
 const userInfo = ref({ username: "", realName: "" });
 const permissions = ref([]);
+const roles = ref([]);
 
 // 是否已登录
 const isLoggedIn = ref(false);
@@ -202,6 +214,7 @@ const getUserInfoAndPermissions = () => {
   const token = localStorage.getItem("token");
   const userStr = localStorage.getItem("user");
   const permissionsStr = localStorage.getItem("permissions");
+  const rolesStr = localStorage.getItem("roles");
 
   isLoggedIn.value = !!(token && userStr);
 
@@ -220,19 +233,92 @@ const getUserInfoAndPermissions = () => {
   } else {
     permissions.value = [];
   }
+
+  if (rolesStr && isLoggedIn.value) {
+    try {
+      roles.value = JSON.parse(rolesStr) || [];
+    } catch (e) {
+      roles.value = [];
+    }
+  } else {
+    roles.value = [];
+  }
 };
 
 // 检查用户是否有访问菜单的权限
 const canAccessMenu = (menuPath) => {
-  const requiredPermissions = menuPermissions[menuPath] || [];
-  if (requiredPermissions.length === 0) return true;
-
-  const permissionCodes = permissions.value
-      .map((p) => (typeof p === "string" ? p : p.permissionCode))
-      .filter(Boolean);
-
   // 管理员直接放行
   if (userInfo.value.username === "admin") return true;
+
+  // 获取角色名称列表
+  const roleNames = roles.value
+    .map((role) => (typeof role === "string" ? role : role.roleName))
+    .filter(Boolean);
+
+  // 获取权限码列表
+  const permissionCodes = permissions.value
+    .map((p) => (typeof p === "string" ? p : p.permissionCode))
+    .filter(Boolean);
+
+  // 检查是否为教师角色或专业负责教师角色
+  const isTeacher = roleNames.some(
+    (roleName) => roleName.includes("教师") || roleName === "teacher"
+  );
+
+  const isProgramTeacher = roleNames.some(
+    (roleName) =>
+      roleName.includes("专业负责教师") || roleName === "专业负责教师"
+  );
+
+  // 检查教师是否绑定了专业
+  const hasProgram = userInfo.value.programId && userInfo.value.programId !== 0;
+
+  // 普通教师角色隐藏的菜单（不包括培养方案管理）
+  if (isTeacher && !isProgramTeacher) {
+    const hiddenMenusForNormalTeachers = ["/users", "/roles", "/permissions"];
+    if (hiddenMenusForNormalTeachers.includes(menuPath)) {
+      return false;
+    }
+  }
+
+  // 专业负责教师角色隐藏的菜单（不包括培养方案管理）
+  if (isProgramTeacher) {
+    const hiddenMenusForProgramTeachers = ["/users", "/roles", "/permissions"];
+    if (hiddenMenusForProgramTeachers.includes(menuPath)) {
+      return false;
+    }
+  }
+
+  // 教师角色默认拥有的菜单权限（无论是否绑定专业）
+  const defaultAllowedMenus = [
+    "/courses",
+    "/knowledge-points",
+    "/question-bank",
+  ];
+
+  // 检查是否为教师角色或具有相应权限
+  if (
+    isTeacher ||
+    isProgramTeacher ||
+    (permissionCodes.includes("knowledge-point:list") &&
+      menuPath === "/knowledge-points") ||
+    (permissionCodes.includes("question:list") && menuPath === "/question-bank")
+  ) {
+    if (defaultAllowedMenus.includes(menuPath)) {
+      return true;
+    }
+  }
+
+  // 专业负责教师或绑定了专业的教师默认拥有培养方案管理权限
+  if (
+    (isProgramTeacher || (isTeacher && hasProgram)) &&
+    menuPath === "/training-programs"
+  ) {
+    return true;
+  }
+
+  const requiredPermissions = menuPermissions[menuPath] || [];
+  if (requiredPermissions.length === 0) return true;
 
   return requiredPermissions.some((perm) => permissionCodes.includes(perm));
 };
@@ -257,11 +343,11 @@ onMounted(() => {
 });
 
 watch(
-    () => route.path,
-    () => {
-      activeMenu.value = route.path;
-      getUserInfoAndPermissions();
-    }
+  () => route.path,
+  () => {
+    activeMenu.value = route.path;
+    getUserInfoAndPermissions();
+  }
 );
 
 const handleMenuSelect = (key) => {
@@ -275,10 +361,22 @@ const handleMenuSelect = (key) => {
   min-height: 100vh;
   position: relative;
   overflow: hidden;
-  background: radial-gradient(1200px 600px at 20% 10%, rgba(64, 158, 255, 0.16), transparent 60%),
-  radial-gradient(900px 500px at 85% 20%, rgba(103, 194, 58, 0.12), transparent 55%),
-  radial-gradient(700px 500px at 70% 90%, rgba(230, 162, 60, 0.10), transparent 55%),
-  linear-gradient(180deg, #f6f8fb 0%, #eef2f7 100%);
+  background: radial-gradient(
+      1200px 600px at 20% 10%,
+      rgba(64, 158, 255, 0.16),
+      transparent 60%
+    ),
+    radial-gradient(
+      900px 500px at 85% 20%,
+      rgba(103, 194, 58, 0.12),
+      transparent 55%
+    ),
+    radial-gradient(
+      700px 500px at 70% 90%,
+      rgba(230, 162, 60, 0.1),
+      transparent 55%
+    ),
+    linear-gradient(180deg, #f6f8fb 0%, #eef2f7 100%);
 }
 
 .bg-decoration {
@@ -394,7 +492,7 @@ const handleMenuSelect = (key) => {
 .app-aside {
   border-radius: 16px;
   overflow: hidden;
-  background: rgba(16, 24, 40, 0.90);
+  background: rgba(16, 24, 40, 0.9);
   border: 1px solid rgba(0, 0, 0, 0.06);
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.08);
 }
@@ -430,13 +528,17 @@ const handleMenuSelect = (key) => {
 
 /* hover */
 .app-menu :deep(.el-menu-item:hover) {
-  background: rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.1);
   transform: translateX(1px);
 }
 
 /* active */
 .app-menu :deep(.el-menu-item.is-active) {
-  background: linear-gradient(135deg, rgba(64, 158, 255, 0.95), rgba(106, 168, 255, 0.92));
+  background: linear-gradient(
+    135deg,
+    rgba(64, 158, 255, 0.95),
+    rgba(106, 168, 255, 0.92)
+  );
   color: #fff;
   box-shadow: 0 10px 20px rgba(64, 158, 255, 0.22);
 }

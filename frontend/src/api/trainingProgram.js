@@ -4,11 +4,16 @@ import request from './request'
  * 获取培养方案列表（带分页）
  * @param {number} page - 当前页码
  * @param {number} pageSize - 每页大小
+ * @param {number|null} programId - 专业ID，用于过滤特定专业的培养方案
  * @returns {Promise}
  */
-export const getTrainingPrograms = (page, pageSize) => {
+export const getTrainingPrograms = (page, pageSize, programId = null) => {
+  let url = `/training-program/page?page=${page}&limit=${pageSize}`;
+  if (programId) {
+    url += `&programId=${programId}`;
+  }
   return request({
-    url: `/training-program/page?page=${page}&limit=${pageSize}`,
+    url: url,
     method: 'GET'
   })
 }

@@ -171,17 +171,6 @@ const hasPermission = (to, permissions) => {
     return true;
   }
 
-  // 如果用户没有权限信息，则不允许访问
-  if (!permissions || permissions.length === 0) {
-    return false;
-  }
-
-  // 检查用户是否有路由要求的任一权限
-  const permissionCodes = permissions.map((p) => {
-    // 处理权限数据可能的不同结构
-    return typeof p === "string" ? p : p.permissionCode;
-  }).filter(Boolean);
-  
   // 检查是否是管理员用户
   const userStr = localStorage.getItem("user");
   const user = userStr ? JSON.parse(userStr) : null;
@@ -189,6 +178,47 @@ const hasPermission = (to, permissions) => {
     return true;
   }
 
+  // 获取权限码列表
+  const permissionCodes = permissions.map((p) => {
+    // 处理权限数据可能的不同结构
+    return typeof p === "string" ? p : p.permissionCode;
+  }).filter(Boolean);
+
+  // 获取角色列表
+  const rolesStr = localStorage.getItem("roles");
+  const roles = rolesStr ? JSON.parse(rolesStr) : [];
+  const roleNames = roles.map((role) => {
+    return typeof role === "string" ? role : role.roleName;
+  }).filter(Boolean);
+
+  // 检查是否为教师角色或专业负责教师角色
+  const isTeacher = roleNames.some(
+    (roleName) => roleName.includes("教师") || roleName === "teacher"
+  );
+
+  const isProgramTeacher = roleNames.some(
+    (roleName) =>
+      roleName.includes("专业负责教师") || roleName === "专业负责教师"
+  );
+
+  // 教师角色默认拥有的菜单权限
+  const defaultAllowedMenus = [
+    "/courses",
+    "/knowledge-points",
+    "/question-bank",
+  ];
+
+  // 检查当前路由是否为教师角色默认允许的菜单
+  if ((isTeacher || isProgramTeacher) && defaultAllowedMenus.includes(to.path)) {
+    return true;
+  }
+
+  // 专业负责教师默认拥有培养方案管理权限
+  if (isProgramTeacher && to.path === "/training-programs") {
+    return true;
+  }
+
+  // 检查用户是否有路由要求的任一权限
   return to.meta.permissions.some((requiredPermission) => {
     return permissionCodes.includes(requiredPermission);
   });

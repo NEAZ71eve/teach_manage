@@ -396,15 +396,21 @@ public class LoginController {
                             );
                             
                             if (isNormalUser) {
-                                // 对于普通教师和学生，只保留查看权限
+                                // 对于普通教师和学生，只保留查看权限、课程管理权限、知识点管理权限和题库管理权限
                                 permissions = permissions.stream()
                                         .filter(permission -> {
                                             String permissionCode = permission.getPermissionCode();
-                                            // 只保留查看权限（以:list或:view结尾的权限）
-                                            return permissionCode.endsWith(":list") || permissionCode.endsWith(":view");
+                                            // 保留查看权限（以:list或:view结尾的权限）和课程、知识点、题库管理相关的所有权限
+                                            return permissionCode.endsWith(":list") || 
+                                                   permissionCode.endsWith(":view") ||
+                                                   permissionCode.startsWith("course:") ||
+                                                   permissionCode.startsWith("knowledge-point:") ||
+                                                   permissionCode.startsWith("question:");
                                         })
                                         .collect(Collectors.toList());
                             }
+                            
+                            // 专业负责教师角色保持完整权限，包括培养方案管理权限
                             // 专业负责教师角色保持完整权限
                         }
                     }
