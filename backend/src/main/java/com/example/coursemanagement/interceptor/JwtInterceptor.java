@@ -95,12 +95,6 @@ public class JwtInterceptor implements HandlerInterceptor {
      * 检查用户是否有权限访问该资源
      */
     private boolean checkPermission(String requestURI, String method, List<String> permissions, List<String> roles) {
-        // 系统管理员和学院管理员拥有所有权限
-        boolean isAdmin = roles.contains("系统管理员") || roles.contains("学院管理员");
-        if (isAdmin) {
-            return true;
-        }
-
         // 权限映射，将请求路径和方法映射到对应的权限代码
         String permissionCode = getPermissionCode(requestURI, method);
         if (permissionCode == null) {
@@ -117,11 +111,49 @@ public class JwtInterceptor implements HandlerInterceptor {
      */
     private String getPermissionCode(String requestURI, String method) {
         // 简化的权限映射，实际应用中应该从数据库或配置文件加载
-        if (requestURI.startsWith("/course")) {
+        if (requestURI.startsWith("/users")) {
             if (method.equals("GET")) {
-                if (requestURI.endsWith("/page") || requestURI.equals("/course")) {
-                    return "course:list";
-                }
+                return "user:list";
+            } else if (method.equals("POST")) {
+                return "user:add";
+            } else if (method.equals("PUT")) {
+                return "user:edit";
+            } else if (method.equals("DELETE")) {
+                return "user:delete";
+            }
+        } else if (requestURI.startsWith("/roles")) {
+            if (method.equals("GET")) {
+                return "role:list";
+            } else if (method.equals("POST")) {
+                return "role:add";
+            } else if (method.equals("PUT")) {
+                return "role:edit";
+            } else if (method.equals("DELETE")) {
+                return "role:delete";
+            }
+        } else if (requestURI.startsWith("/permissions")) {
+            if (method.equals("GET")) {
+                return "permission:list";
+            } else if (method.equals("POST")) {
+                return "permission:add";
+            } else if (method.equals("PUT")) {
+                return "permission:edit";
+            } else if (method.equals("DELETE")) {
+                return "permission:delete";
+            }
+        } else if (requestURI.startsWith("/course-schedule")) {
+            if (method.equals("GET")) {
+                return "course-schedule:list";
+            } else if (method.equals("POST")) {
+                return "course-schedule:add";
+            } else if (method.equals("PUT")) {
+                return "course-schedule:edit";
+            } else if (method.equals("DELETE")) {
+                return "course-schedule:delete";
+            }
+        } else if (requestURI.startsWith("/course")) {
+            if (method.equals("GET")) {
+                return "course:list";
             } else if (method.equals("POST")) {
                 return "course:add";
             } else if (method.equals("PUT")) {
@@ -131,13 +163,13 @@ public class JwtInterceptor implements HandlerInterceptor {
             }
         } else if (requestURI.startsWith("/training-program")) {
             if (method.equals("GET")) {
-                return "trainingProgram:list";
+                return "training-program:list";
             } else if (method.equals("POST")) {
-                return "trainingProgram:add";
+                return "training-program:add";
             } else if (method.equals("PUT")) {
-                return "trainingProgram:edit";
+                return "training-program:edit";
             } else if (method.equals("DELETE")) {
-                return "trainingProgram:delete";
+                return "training-program:delete";
             }
         } else if (requestURI.startsWith("/knowledge-point")) {
             if (method.equals("GET")) {
@@ -159,18 +191,25 @@ public class JwtInterceptor implements HandlerInterceptor {
             } else if (method.equals("DELETE")) {
                 return "question:delete";
             }
-        } else if (requestURI.startsWith("/exam-papers")) {
+        } else if (requestURI.startsWith("/question")) {
             if (method.equals("GET")) {
-                return "examPaper:list";
+                return "question:list";
             } else if (method.equals("POST")) {
-                if (requestURI.endsWith("/generate")) {
-                    return "examPaper:generate";
-                }
-                return "examPaper:add";
+                return "question:add";
             } else if (method.equals("PUT")) {
-                return "examPaper:edit";
+                return "question:edit";
             } else if (method.equals("DELETE")) {
-                return "examPaper:delete";
+                return "question:delete";
+            }
+        } else if (requestURI.startsWith("/exam-paper")) {
+            if (method.equals("GET")) {
+                return "exam-paper:list";
+            } else if (method.equals("POST")) {
+                return "exam-paper:add";
+            } else if (method.equals("PUT")) {
+                return "exam-paper:edit";
+            } else if (method.equals("DELETE")) {
+                return "exam-paper:delete";
             }
         } else if (requestURI.startsWith("/semesters")) {
             if (method.equals("GET")) {
@@ -182,9 +221,29 @@ public class JwtInterceptor implements HandlerInterceptor {
             } else if (method.equals("DELETE")) {
                 return "semester:delete";
             }
-        } else if (requestURI.equals("/statistics")) {
+        } else if (requestURI.startsWith("/semester")) {
+            if (method.equals("GET")) {
+                return "semester:list";
+            } else if (method.equals("POST")) {
+                return "semester:add";
+            } else if (method.equals("PUT")) {
+                return "semester:edit";
+            } else if (method.equals("DELETE")) {
+                return "semester:delete";
+            }
+        } else if (requestURI.startsWith("/statistics")) {
             if (method.equals("GET")) {
                 return "statistics:view";
+            }
+        } else if (requestURI.startsWith("/practice-project")) {
+            if (method.equals("GET")) {
+                return "practice-project:list";
+            } else if (method.equals("POST")) {
+                return "practice-project:add";
+            } else if (method.equals("PUT")) {
+                return "practice-project:edit";
+            } else if (method.equals("DELETE")) {
+                return "practice-project:delete";
             }
         }
 

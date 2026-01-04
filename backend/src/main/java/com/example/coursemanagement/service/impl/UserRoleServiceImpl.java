@@ -2,12 +2,14 @@ package com.example.coursemanagement.service.impl;
 
 import com.example.coursemanagement.entity.UserRole;
 import com.example.coursemanagement.repository.UserRoleRepository;
-import com.example.coursemanagement.repository.RoleProgramRepository;
+import com.example.coursemanagement.repository.RoleRepository;
+import com.example.coursemanagement.repository.UserRepository;
 import com.example.coursemanagement.service.UserRoleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * 用户角色关联服务实现类
@@ -17,9 +19,12 @@ public class UserRoleServiceImpl implements UserRoleService {
 
     @Autowired
     private UserRoleRepository userRoleRepository;
-    
+
     @Autowired
-    private RoleProgramRepository roleProgramRepository;
+    private RoleRepository roleRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Override
     public List<UserRole> findByUserId(Integer userId) {
@@ -28,40 +33,38 @@ public class UserRoleServiceImpl implements UserRoleService {
 
     @Override
     public int assignRoles(Integer userId, List<Integer> roleIds) {
+        if (roleIds == null || roleIds.size() != 1) {
+            throw new RuntimeException("用户必须且只能选择一个角色");
+        }
+
+        Integer roleId = roleIds.get(0);
+        String roleName = roleRepository.findById(roleId)
+                .map(role -> role.getRoleName())
+                .orElseThrow(() -> new RuntimeException("角色不存在"));
+
+        if ("学院管理员".equals(roleName)) {
+            Optional<UserRole> existingProgramTeacher = userRoleRepository.findByRoleId(roleId).stream()
+                    .filter(userRole -> !userRole.getUserId().equals(userId))
+                    .findFirst();
+            if (existingProgramTeacher.isPresent()) {
+                throw new RuntimeException("专业负责教师只能绑定一个用户");
+            }
+            Optional<com.example.coursemanagement.entity.User> userOptional = userRepository.findById(userId);
+            if (userOptional.isPresent() && userOptional.get().getProgramId() == null) {
+                throw new RuntimeException("专业负责教师必须绑定负责专业");
+            }
+        } else {
+            userRepository.updateProgramId(userId, null);
+        }
+
         // 先删除用户已有的所有角色
         userRoleRepository.deleteByUserId(userId);
         
         // 为用户分配新角色
-        int count = 0;
-        for (Integer roleId : roleIds) {
-            // 检查该角色是否为教师角色且已绑定专业
-            boolean isTeacherWithProgram = false;
-            try {
-                // 获取角色已绑定的专业数量
-                isTeacherWithProgram = !roleProgramRepository.findByRoleId(roleId).isEmpty();
-            } catch (Exception e) {
-                // 忽略异常，继续执行
-            }
-            
-            if (isTeacherWithProgram) {
-                // 如果是有负责专业的教师角色，检查是否已有其他用户绑定
-                List<UserRole> existingUsers = userRoleRepository.findByRoleId(roleId);
-                if (!existingUsers.isEmpty()) {
-                    // 检查是否是当前用户自己
-                    boolean isCurrentUser = existingUsers.stream().anyMatch(ur -> ur.getUserId().equals(userId));
-                    if (!isCurrentUser) {
-                        throw new RuntimeException("该教师角色已绑定专业，只能分配给一个用户");
-                    }
-                }
-            }
-            
-            UserRole userRole = new UserRole();
-            userRole.setUserId(userId);
-            userRole.setRoleId(roleId);
-            count += userRoleRepository.save(userRole);
-        }
-        
-        return count;
+        UserRole userRole = new UserRole();
+        userRole.setUserId(userId);
+        userRole.setRoleId(roleId);
+        return userRoleRepository.save(userRole);
     }
 
     @Override

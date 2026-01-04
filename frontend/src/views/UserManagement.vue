@@ -7,9 +7,19 @@
     <el-table :data="users" style="width: 100%">
       <el-table-column prop="userId" label="用户ID" width="80" />
       <el-table-column prop="username" label="用户名" width="120" />
-      <el-table-column prop="realName" label="真实姓名" width="120" />
+      <el-table-column prop="realName" label="姓名" width="120" />
+      <el-table-column prop="roleName" label="用户类型" width="140">
+        <template #default="scope">
+          {{ displayRoleName(scope.row.roleName) }}
+        </template>
+      </el-table-column>
       <el-table-column prop="email" label="邮箱" />
       <el-table-column prop="phone" label="电话" width="120" />
+      <el-table-column prop="programId" label="负责专业" width="140">
+        <template #default="scope">
+          {{ getProgramName(scope.row.programId) }}
+        </template>
+      </el-table-column>
       <el-table-column prop="status" label="状态" width="100">
         <template #default="scope">
           <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'">
@@ -59,8 +69,8 @@
             placeholder="请输入密码"
           />
         </el-form-item>
-        <el-form-item label="真实姓名" required>
-          <el-input v-model="formData.realName" placeholder="请输入真实姓名" />
+        <el-form-item label="姓名" required>
+          <el-input v-model="formData.realName" placeholder="请输入姓名" />
         </el-form-item>
         <el-form-item label="邮箱" required>
           <el-input
@@ -72,63 +82,37 @@
         <el-form-item label="电话" required>
           <el-input v-model="formData.phone" placeholder="请输入电话" />
         </el-form-item>
-        <el-form-item label="角色" required>
+        <el-form-item label="用户类型" required>
           <el-select
-            v-model="formData.roleIds"
-            multiple
-            placeholder="请选择角色"
+            v-model="formData.roleId"
+            placeholder="请选择用户类型"
             style="width: 100%"
             @change="handleRoleChange"
             :rules="[
-              { required: true, message: '请选择角色', trigger: 'blur' },
+              { required: true, message: '请选择用户类型', trigger: 'blur' },
             ]"
           >
             <el-option
-              v-for="role in roles"
+              v-for="role in availableRoles"
               :key="role.roleId"
-              :label="role.roleName"
+              :label="displayRoleName(role.roleName)"
               :value="role.roleId"
             />
           </el-select>
         </el-form-item>
-        <!-- 负责专业显示逻辑：如果是教师角色 -->
-        <el-form-item label="负责专业" v-if="isTeacher">
-          <!-- 获取教师角色已绑定的专业 -->
-          <template v-if="teacherRolePrograms.length > 0">
-            <el-select
-              v-model="formData.programId"
-              style="width: 100%"
-              disabled
-            >
-              <el-option
-                v-for="program in programs"
-                :key="program.programId"
-                :label="program.majorName"
-                :value="program.programId"
-              />
-            </el-select>
-            <div style="margin-top: 10px; color: #606266; font-size: 12px">
-              注：该教师角色已绑定专业 "{{
-                getProgramName(teacherRolePrograms[0].programId)
-              }}"，专业权限将从角色继承
-            </div>
-          </template>
-          <!-- 如果教师角色未绑定专业，则允许用户选择专业 -->
-          <template v-else>
-            <el-select
-              v-model="formData.programId"
-              placeholder="请选择负责的专业（培养方案）"
-              style="width: 100%"
-            >
-              <el-option key="0" label="无" :value="null" />
-              <el-option
-                v-for="program in programs"
-                :key="program.programId"
-                :label="program.majorName"
-                :value="program.programId"
-              />
-            </el-select>
-          </template>
+        <el-form-item label="负责专业" v-if="isProgramTeacher">
+          <el-select
+            v-model="formData.programId"
+            placeholder="请选择负责的专业（培养方案）"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="program in programs"
+              :key="program.programId"
+              :label="program.majorName"
+              :value="program.programId"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="状态">
           <el-switch
@@ -159,14 +143,12 @@ import {
   getUserRoles,
   assignRoles,
 } from "../api/user";
-import { getRoles, getAllRolePrograms, getRolePrograms } from "../api/role";
+import { getRoles } from "../api/role";
 import { getAllTrainingPrograms } from "../api/trainingProgram";
 
 const users = ref([]);
 const roles = ref([]);
 const programs = ref([]);
-const rolePrograms = ref([]);
-const teacherRolePrograms = ref([]); // 教师角色已绑定的专业
 const dialogVisible = ref(false);
 const dialogTitle = ref("新增用户");
 const formData = ref({
@@ -176,56 +158,34 @@ const formData = ref({
   realName: "",
   email: "",
   phone: "",
-  roleIds: [],
+  roleId: null,
   programId: null,
   status: 1,
 });
 
-// 计算属性：判断是否为教师角色
-const isTeacher = computed(() => {
-  if (!formData.value.roleIds || formData.value.roleIds.length === 0) {
-    return false;
-  }
-  return formData.value.roleIds.some((roleId) => {
-    const role = roles.value.find((r) => r.roleId === roleId);
-    return role && role.roleName === "教师";
-  });
+const isProgramTeacher = computed(() => {
+  const role = roles.value.find((r) => r.roleId === formData.value.roleId);
+  return role && role.roleName === "学院管理员";
 });
+
+const availableRoles = computed(() => {
+  return roles.value.filter((role) =>
+    ["系统管理员", "学院管理员", "教师"].includes(role.roleName)
+  );
+});
+
+const displayRoleName = (roleName) => {
+  if (roleName === "学院管理员") return "专业负责教师";
+  if (roleName === "教师") return "普通老师";
+  return roleName || "未分配";
+};
 
 // 获取专业名称
 const getProgramName = (programId) => {
+  if (!programId) return "-";
   const program = programs.value.find((p) => p.programId === programId);
   return program ? program.majorName : "未知专业";
 };
-
-// 获取教师角色已绑定的专业
-const loadTeacherRolePrograms = async () => {
-  if (!isTeacher.value) {
-    teacherRolePrograms.value = [];
-    return;
-  }
-
-  try {
-    const teacherRole = roles.value.find((r) => r.roleName === "教师");
-    if (teacherRole) {
-      const programs = await getRolePrograms(teacherRole.roleId);
-      teacherRolePrograms.value = programs;
-
-      // 如果教师角色已绑定专业，并且用户还没有设置programId，则自动设置
-      if (programs.length > 0 && !formData.value.programId) {
-        formData.value.programId = programs[0].programId;
-      }
-    }
-  } catch (error) {
-    console.error("获取教师角色专业失败:", error);
-    teacherRolePrograms.value = [];
-  }
-};
-
-// 显示专业选择框的条件：教师角色且用户已有负责专业
-const showProgramSelect = computed(() => {
-  return isTeacher.value && formData.value.programId !== null;
-});
 
 // 获取用户列表
 const loadUsers = async () => {
@@ -243,21 +203,9 @@ const loadRoles = async () => {
   try {
     const response = await getRoles();
     roles.value = response;
-    // 获取所有角色-专业关联
-    await loadRolePrograms();
   } catch (error) {
     ElMessage.error("获取角色列表失败");
     console.error("获取角色列表失败:", error);
-  }
-};
-
-// 获取所有角色-专业关联
-const loadRolePrograms = async () => {
-  try {
-    const response = await getAllRolePrograms();
-    rolePrograms.value = response;
-  } catch (error) {
-    console.error("获取角色-专业关联失败:", error);
   }
 };
 
@@ -276,30 +224,7 @@ const loadPrograms = async () => {
 const loadUserRoles = async (userId) => {
   try {
     const response = await getUserRoles(userId);
-    // 将用户角色ID列表设置到formData中
-    formData.value.roleIds = response.map((item) => item.roleId);
-
-    // 如果用户角色中包含教师角色，并且教师角色已绑定专业，则设置programId
-    const isTeacherRole = formData.value.roleIds.some((roleId) => {
-      const role = roles.value.find((r) => r.roleId === roleId);
-      return role && role.roleName === "教师";
-    });
-
-    if (isTeacherRole) {
-      // 获取教师角色已绑定的专业
-      const teacherRole = roles.value.find((r) => r.roleName === "教师");
-      if (teacherRole) {
-        try {
-          const teacherPrograms = await getRolePrograms(teacherRole.roleId);
-          if (teacherPrograms.length > 0 && !formData.value.programId) {
-            // 如果教师角色已绑定专业，并且用户还没有设置programId，则设置为角色绑定的第一个专业
-            formData.value.programId = teacherPrograms[0].programId;
-          }
-        } catch (error) {
-          console.error("获取教师角色专业失败:", error);
-        }
-      }
-    }
+    formData.value.roleId = response[0]?.roleId ?? null;
   } catch (error) {
     ElMessage.error("获取用户角色失败");
     console.error("获取用户角色失败:", error);
@@ -308,13 +233,8 @@ const loadUserRoles = async (userId) => {
 
 // 角色变化时处理
 const handleRoleChange = async () => {
-  // 如果不再是教师角色，清空专业选择
-  if (!isTeacher.value) {
+  if (!isProgramTeacher.value) {
     formData.value.programId = null;
-    teacherRolePrograms.value = [];
-  } else {
-    // 如果是教师角色，加载教师角色已绑定的专业
-    await loadTeacherRolePrograms();
   }
 };
 
@@ -328,11 +248,10 @@ const openAddDialog = () => {
     realName: "",
     email: "",
     phone: "",
-    roleIds: [],
+    roleId: null,
     programId: null,
     status: 1,
   };
-  teacherRolePrograms.value = [];
   dialogVisible.value = true;
 };
 
@@ -342,7 +261,7 @@ const openEditDialog = async (user) => {
   formData.value = {
     ...user,
     password: "", // 编辑时清空密码，如需修改密码则重新输入
-    roleIds: user.roleIds || [],
+    roleId: user.roleId || null,
     programId: user.programId || null,
   };
   dialogVisible.value = true;
@@ -350,22 +269,28 @@ const openEditDialog = async (user) => {
   // 获取用户角色
   await loadUserRoles(user.userId);
 
-  // 如果是教师角色，加载教师角色已绑定的专业
-  if (isTeacher.value) {
-    await loadTeacherRolePrograms();
-  }
 };
 
 // 保存用户
 const saveUser = async () => {
   try {
+    if (!formData.value.roleId) {
+      ElMessage.error("请选择用户类型");
+      return;
+    }
+    if (isProgramTeacher.value && !formData.value.programId) {
+      ElMessage.error("专业负责教师必须选择负责专业");
+      return;
+    }
     let userId;
     if (formData.value.userId) {
       // 更新用户
       await updateUser(formData.value.userId, {
+        username: formData.value.username,
         realName: formData.value.realName,
         email: formData.value.email,
         phone: formData.value.phone,
+        password: formData.value.password,
         programId: formData.value.programId,
         status: formData.value.status,
       });
@@ -385,7 +310,7 @@ const saveUser = async () => {
     }
 
     // 分配角色
-    await assignRoles(userId, formData.value.roleIds);
+    await assignRoles(userId, [formData.value.roleId]);
 
     ElMessage.success(formData.value.userId ? "更新用户成功" : "新增用户成功");
     dialogVisible.value = false;

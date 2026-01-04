@@ -304,15 +304,8 @@ const hasPermission = (permissionCode) => {
     typeof role === "string" ? role : role.roleName
   );
 
-  // 检查是否为教师角色或专业负责教师角色
-  const isTeacher = roleNames.some(
-    (roleName) => roleName.includes("教师") || roleName === "teacher"
-  );
-
-  const isProgramTeacher = roleNames.some(
-    (roleName) =>
-      roleName.includes("专业负责教师") || roleName === "专业负责教师"
-  );
+  const isProgramTeacher =
+    roleNames.includes("学院管理员") || roleNames.includes("专业负责教师");
 
   // 课程管理相关权限，教师角色和专业负责教师角色默认拥有
   const coursePermissions = [
@@ -323,10 +316,7 @@ const hasPermission = (permissionCode) => {
   ];
 
   // 如果是课程管理相关权限，且为教师角色或专业负责教师角色，则返回true
-  if (
-    coursePermissions.includes(permissionCode) &&
-    (isTeacher || isProgramTeacher)
-  ) {
+  if (coursePermissions.includes(permissionCode) && isProgramTeacher) {
     return true;
   }
 

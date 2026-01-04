@@ -84,6 +84,23 @@ const loginRules = {
   password: [{ required: true, message: "请输入密码", trigger: "blur" }],
 };
 
+const resolveLandingRoute = (user, roles) => {
+  const roleNames = (roles || [])
+    .map((role) => (typeof role === "string" ? role : role.roleName))
+    .filter(Boolean);
+
+  const isSystemAdmin =
+    (user && user.username === "admin") || roleNames.includes("系统管理员");
+  const isProgramTeacher =
+    roleNames.includes("学院管理员") || roleNames.includes("专业负责教师");
+  const isNormalTeacher = roleNames.includes("教师") && !isProgramTeacher;
+
+  if (isSystemAdmin) return "/users";
+  if (isProgramTeacher) return "/courses";
+  if (isNormalTeacher) return "/knowledge-points";
+  return "/courses";
+};
+
 const handleLogin = async () => {
   if (!loginFormRef.value) return;
 
@@ -108,7 +125,7 @@ const handleLogin = async () => {
         localStorage.setItem("permissions", JSON.stringify(response.permissions || []));
 
         ElMessage.success("登录成功");
-        router.push("/courses");
+        router.push(resolveLandingRoute(response.user, response.roles));
       } else {
         ElMessage.error(response.message || "登录失败");
       }

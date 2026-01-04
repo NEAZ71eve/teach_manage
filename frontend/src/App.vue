@@ -109,14 +109,10 @@
                   <span>学期管理</span>
                 </el-menu-item>
 
-<<<<<<< HEAD
                 <el-menu-item
-                    index="/semester-schedule"
-                    v-if="false"
+                  index="/semester-schedule"
+                  v-if="canAccessMenu('/semester-schedule')"
                 >
-=======
-                <el-menu-item index="/semester-schedule" v-if="false">
->>>>>>> 4c7fdc3 (解决了一些已知问题)
                   <el-icon><Notebook /></el-icon>
                   <span>学期课表</span>
                 </el-menu-item>
@@ -250,72 +246,35 @@ const canAccessMenu = (menuPath) => {
   // 管理员直接放行
   if (userInfo.value.username === "admin") return true;
 
-  // 获取角色名称列表
   const roleNames = roles.value
     .map((role) => (typeof role === "string" ? role : role.roleName))
     .filter(Boolean);
 
-  // 获取权限码列表
+  const isSystemAdmin =
+    userInfo.value.username === "admin" || roleNames.includes("系统管理员");
+  const isProgramTeacher =
+    roleNames.includes("学院管理员") || roleNames.includes("专业负责教师");
+  const isNormalTeacher = roleNames.includes("教师") && !isProgramTeacher;
+
+  if (isSystemAdmin) {
+    return menuPath === "/users";
+  }
+
+  if (isProgramTeacher) {
+    return ["/courses", "/training-programs", "/semester-schedule"].includes(
+      menuPath
+    );
+  }
+
+  if (isNormalTeacher) {
+    return ["/knowledge-points", "/question-bank", "/exam-papers"].includes(
+      menuPath
+    );
+  }
+
   const permissionCodes = permissions.value
     .map((p) => (typeof p === "string" ? p : p.permissionCode))
     .filter(Boolean);
-
-  // 检查是否为教师角色或专业负责教师角色
-  const isTeacher = roleNames.some(
-    (roleName) => roleName.includes("教师") || roleName === "teacher"
-  );
-
-  const isProgramTeacher = roleNames.some(
-    (roleName) =>
-      roleName.includes("专业负责教师") || roleName === "专业负责教师"
-  );
-
-  // 检查教师是否绑定了专业
-  const hasProgram = userInfo.value.programId && userInfo.value.programId !== 0;
-
-  // 普通教师角色隐藏的菜单（不包括培养方案管理）
-  if (isTeacher && !isProgramTeacher) {
-    const hiddenMenusForNormalTeachers = ["/users", "/roles", "/permissions"];
-    if (hiddenMenusForNormalTeachers.includes(menuPath)) {
-      return false;
-    }
-  }
-
-  // 专业负责教师角色隐藏的菜单（不包括培养方案管理）
-  if (isProgramTeacher) {
-    const hiddenMenusForProgramTeachers = ["/users", "/roles", "/permissions"];
-    if (hiddenMenusForProgramTeachers.includes(menuPath)) {
-      return false;
-    }
-  }
-
-  // 教师角色默认拥有的菜单权限（无论是否绑定专业）
-  const defaultAllowedMenus = [
-    "/courses",
-    "/knowledge-points",
-    "/question-bank",
-  ];
-
-  // 检查是否为教师角色或具有相应权限
-  if (
-    isTeacher ||
-    isProgramTeacher ||
-    (permissionCodes.includes("knowledge-point:list") &&
-      menuPath === "/knowledge-points") ||
-    (permissionCodes.includes("question:list") && menuPath === "/question-bank")
-  ) {
-    if (defaultAllowedMenus.includes(menuPath)) {
-      return true;
-    }
-  }
-
-  // 专业负责教师或绑定了专业的教师默认拥有培养方案管理权限
-  if (
-    (isProgramTeacher || (isTeacher && hasProgram)) &&
-    menuPath === "/training-programs"
-  ) {
-    return true;
-  }
 
   const requiredPermissions = menuPermissions[menuPath] || [];
   if (requiredPermissions.length === 0) return true;

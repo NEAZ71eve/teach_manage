@@ -18,6 +18,8 @@ public class User {
     private String phone;
     private Integer status;
     private Integer programId;
+    private Integer roleId;
+    private String roleName;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 }

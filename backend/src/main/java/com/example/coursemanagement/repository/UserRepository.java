@@ -22,7 +22,10 @@ public class UserRepository {
      * 查询所有用户
      */
     public List<User> findAll() {
-        String sql = "SELECT * FROM user";
+        String sql = "SELECT u.*, r.role_id AS role_id, r.role_name AS role_name " +
+                "FROM user u " +
+                "LEFT JOIN user_role ur ON u.user_id = ur.user_id " +
+                "LEFT JOIN role r ON ur.role_id = r.role_id";
         return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(User.class));
     }
 
@@ -30,7 +33,11 @@ public class UserRepository {
      * 根据ID查询用户
      */
     public Optional<User> findById(Integer id) {
-        String sql = "SELECT * FROM user WHERE user_id = ?";
+        String sql = "SELECT u.*, r.role_id AS role_id, r.role_name AS role_name " +
+                "FROM user u " +
+                "LEFT JOIN user_role ur ON u.user_id = ur.user_id " +
+                "LEFT JOIN role r ON ur.role_id = r.role_id " +
+                "WHERE u.user_id = ?";
         List<User> users = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(User.class), id);
         return users.isEmpty() ? Optional.empty() : Optional.of(users.get(0));
     }
@@ -63,19 +70,21 @@ public class UserRepository {
      * 更新用户
      */
     public int update(User user) {
-        String sql;
         if (user.getPassword() != null && !user.getPassword().isEmpty()) {
-            sql = "UPDATE user SET real_name = ?, email = ?, phone = ?, status = ?, program_id = ?, update_time = NOW() WHERE user_id = ?";
+            String sql = "UPDATE user SET username = ?, password = ?, real_name = ?, email = ?, phone = ?, status = ?, program_id = ?, update_time = NOW() WHERE user_id = ?";
             return jdbcTemplate.update(sql, 
-                    user.getRealName(), 
-                    user.getEmail(), 
-                    user.getPhone(), 
+                    user.getUsername(),
+                    user.getPassword(),
+                    user.getRealName(),
+                    user.getEmail(),
+                    user.getPhone(),
                     user.getStatus(),
                     user.getProgramId(),
                     user.getUserId());
         } else {
-            sql = "UPDATE user SET real_name = ?, email = ?, phone = ?, status = ?, program_id = ?, update_time = NOW() WHERE user_id = ?";
+            String sql = "UPDATE user SET username = ?, real_name = ?, email = ?, phone = ?, status = ?, program_id = ?, update_time = NOW() WHERE user_id = ?";
             return jdbcTemplate.update(sql, 
+                    user.getUsername(),
                     user.getRealName(), 
                     user.getEmail(), 
                     user.getPhone(), 
@@ -91,5 +100,10 @@ public class UserRepository {
     public int deleteById(Integer id) {
         String sql = "DELETE FROM user WHERE user_id = ?";
         return jdbcTemplate.update(sql, id);
+    }
+
+    public int updateProgramId(Integer userId, Integer programId) {
+        String sql = "UPDATE user SET program_id = ?, update_time = NOW() WHERE user_id = ?";
+        return jdbcTemplate.update(sql, programId, userId);
     }
 }
