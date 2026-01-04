@@ -35,6 +35,21 @@
             </el-select>
 
             <el-select
+                v-model="courseNatureFilter"
+                placeholder="课程性质"
+                style="width: 140px; margin-right: 10px"
+                clearable
+            >
+              <el-option label="全部性质" value="" />
+              <el-option
+                  v-for="nature in courseNatureOptions"
+                  :key="nature"
+                  :label="nature"
+                  :value="nature"
+              />
+            </el-select>
+
+            <el-select
                 v-model="searchParams.categoryId"
                 placeholder="选择分类"
                 style="width: 120px; margin-right: 10px"
@@ -407,13 +422,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted, reactive, watch } from "vue";
+import { ref, onMounted, reactive, watch, computed } from "vue";
 import { Plus, Edit, Delete, View } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { getAllCourses } from "../api/course";
 import { getAllKnowledgePoints, getKnowledgePointsByCourseId } from "../api/knowledgePoint";
 import {
   getQuestions,
+  getAllQuestions,
   addQuestion,
   updateQuestion,
   deleteQuestion,
@@ -437,6 +453,7 @@ const searchParams = reactive({
   kpId: "",
   keyword: "",
 });
+const courseNatureFilter = ref("");
 
 // 对话框
 const dialogVisible = ref(false);
@@ -464,8 +481,116 @@ const currentQuestion = ref(null);
 // 课程和知识点数据
 const courses = ref([]);
 const knowledgePoints = ref([]);
+const allKnowledgePoints = ref([]);
 const categories = ref([]);
 const tags = ref([]);
+
+const currentUser = computed(() => {
+  const userStr = localStorage.getItem("user");
+  return userStr ? JSON.parse(userStr) : {};
+});
+const roleNames = computed(() => {
+  const roles = JSON.parse(localStorage.getItem("roles") || "[]");
+  return roles
+    .map((role) => (typeof role === "string" ? role : role.roleName))
+    .filter(Boolean);
+});
+const isProgramTeacher = computed(
+  () =>
+    roleNames.value.includes("学院管理员") ||
+    roleNames.value.includes("专业负责教师")
+);
+const isNormalTeacher = computed(
+  () => roleNames.value.includes("教师") && !isProgramTeacher.value
+);
+
+const parseTeacherIds = (teacherIds) => {
+  if (!teacherIds) return [];
+  return teacherIds
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+};
+
+const courseNatureOptions = computed(() => {
+  const options = new Set();
+  courses.value.forEach((course) => {
+    if (course.courseNature) options.add(course.courseNature);
+  });
+  return Array.from(options);
+});
+
+const courseNatureMap = computed(() => {
+  const map = {};
+  courses.value.forEach((course) => {
+    map[course.courseId] = course.courseNature;
+  });
+  return map;
+});
+
+const kpCourseMap = computed(() => {
+  const map = {};
+  allKnowledgePoints.value.forEach((point) => {
+    map[point.kpId] = point.courseId;
+  });
+  return map;
+});
+
+const allowedCourseIds = computed(() => {
+  return new Set(courses.value.map((course) => course.courseId));
+});
+
+const resolveQuestionCourseNature = (question) => {
+  const courseId = kpCourseMap.value[question.kpId];
+  return courseNatureMap.value[courseId];
+};
+
+const applyQuestionFilters = (list) => {
+  const keyword = searchParams.keyword?.trim().toLowerCase();
+  return (list || []).filter((question) => {
+    if (
+      searchParams.questionType &&
+      Number(question.questionType) !== Number(searchParams.questionType)
+    ) {
+      return false;
+    }
+    if (searchParams.difficulty && question.difficulty !== searchParams.difficulty) {
+      return false;
+    }
+    if (
+      searchParams.categoryId &&
+      Number(question.categoryId) !== Number(searchParams.categoryId)
+    ) {
+      return false;
+    }
+    if (searchParams.kpId && Number(question.kpId) !== Number(searchParams.kpId)) {
+      return false;
+    }
+    if (
+      keyword &&
+      !String(question.questionContent || "")
+        .toLowerCase()
+        .includes(keyword)
+    ) {
+      return false;
+    }
+    if (courseNatureFilter.value) {
+      const nature = resolveQuestionCourseNature(question);
+      if (nature !== courseNatureFilter.value) return false;
+    }
+    if (isNormalTeacher.value) {
+      const courseId = kpCourseMap.value[question.kpId];
+      if (!allowedCourseIds.value.has(courseId)) return false;
+    }
+    return true;
+  });
+};
+
+const applyPagination = (list) => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  const end = start + pageSize.value;
+  return list.slice(start, end);
+};
 
 // 选项管理
 const options = ref([
@@ -478,7 +603,15 @@ const selectedTags = ref([]);
 const fetchCourses = async () => {
   try {
     const response = await getAllCourses();
-    courses.value = response || [];
+    const allCourses = response || [];
+    if (isNormalTeacher.value) {
+      const teacherId = currentUser.value?.userId;
+      courses.value = allCourses.filter((course) =>
+        parseTeacherIds(course.teacherIds).includes(String(teacherId))
+      );
+    } else {
+      courses.value = allCourses;
+    }
     if (courses.value.length > 0) {
       questionForm.courseId = courses.value[0].courseId;
     }
@@ -502,6 +635,23 @@ const fetchKnowledgePoints = async () => {
   }
 };
 
+const fetchAllKnowledgePoints = async () => {
+  try {
+    const response = await getAllKnowledgePoints();
+    const points = response || [];
+    if (isNormalTeacher.value) {
+      const allowed = allowedCourseIds.value;
+      allKnowledgePoints.value = points.filter((point) =>
+        allowed.has(point.courseId)
+      );
+    } else {
+      allKnowledgePoints.value = points;
+    }
+  } catch (error) {
+    console.error("获取全部知识点列表失败:", error);
+  }
+};
+
 // 根据当前课程获取知识点
 const fetchKnowledgePointsByCourse = async () => {
   try {
@@ -521,7 +671,19 @@ const fetchKnowledgePointsByCourse = async () => {
 // 获取题目列表
 const fetchQuestions = async () => {
   try {
-    const response = await getQuestions(currentPage.value, pageSize.value, searchParams);
+    if (courseNatureFilter.value || isNormalTeacher.value) {
+      const response = await getAllQuestions();
+      const filtered = applyQuestionFilters(response || []);
+      total.value = filtered.length;
+      questions.value = applyPagination(filtered);
+      return;
+    }
+
+    const response = await getQuestions(
+      currentPage.value,
+      pageSize.value,
+      searchParams
+    );
     questions.value = response.records || [];
     total.value = response.total || 0;
   } catch (error) {
@@ -625,6 +787,11 @@ watch(
     },
     { deep: true }
 );
+
+watch(courseNatureFilter, () => {
+  currentPage.value = 1;
+  fetchQuestions();
+});
 
 // 批量删除
 const handleBatchDelete = async () => {
@@ -801,6 +968,7 @@ onMounted(async () => {
   } else {
     await fetchKnowledgePoints();
   }
+  await fetchAllKnowledgePoints();
   await fetchCategories();
   await fetchTags();
   await fetchQuestions();

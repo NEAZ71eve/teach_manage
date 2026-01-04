@@ -172,7 +172,12 @@
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleSavePaper">确定</el-button>
+          <el-button type="primary" @click="handleSavePaper">
+            保存
+          </el-button>
+          <el-button type="success" @click="handleSavePaper(true)">
+            保存并加题
+          </el-button>
         </span>
       </template>
     </el-dialog>
@@ -369,8 +374,55 @@
         title="添加题目到试卷"
         width="800px"
     >
+      <div class="question-filter-bar">
+        <el-select
+            v-model="questionFilter.questionType"
+            placeholder="题型"
+            clearable
+            style="width: 120px"
+        >
+          <el-option label="单选题" :value="1" />
+          <el-option label="多选题" :value="2" />
+          <el-option label="判断题" :value="3" />
+          <el-option label="填空题" :value="4" />
+          <el-option label="简答题" :value="5" />
+        </el-select>
+
+        <el-select
+            v-model="questionFilter.difficulty"
+            placeholder="难度"
+            clearable
+            style="width: 120px"
+        >
+          <el-option label="简单" value="简单" />
+          <el-option label="中等" value="中等" />
+          <el-option label="困难" value="困难" />
+        </el-select>
+
+        <el-select
+            v-model="questionFilter.kpId"
+            placeholder="知识点"
+            clearable
+            style="width: 200px"
+        >
+          <el-option
+              v-for="point in availableKnowledgePoints"
+              :key="point.pointId"
+              :label="point.pointName"
+              :value="point.pointId"
+          />
+        </el-select>
+
+        <el-input
+            v-model="questionFilter.keyword"
+            placeholder="关键词"
+            clearable
+            style="width: 220px"
+        />
+      </div>
+
       <el-table
-          :data="availableQuestions"
+          :data="filteredAvailableQuestions"
           border
           stripe
           @selection-change="handleQuestionSelectionChange"
@@ -389,7 +441,6 @@
           <el-button type="primary" @click="handleConfirmAddQuestion"
           >确定添加</el-button
           >
-          >
         </span>
       </template>
     </el-dialog>
@@ -397,7 +448,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, reactive, watch } from "vue";
+import { ref, onMounted, reactive, computed } from "vue";
 import {
   Plus,
   Edit,
@@ -462,13 +513,47 @@ const autoGenerateForm = reactive({
 // 课程和知识点数据
 const courses = ref([]);
 const allKnowledgePoints = ref([]);
+const currentUser = computed(() => {
+  const userStr = localStorage.getItem("user");
+  return userStr ? JSON.parse(userStr) : {};
+});
+const roleNames = computed(() => {
+  const roles = JSON.parse(localStorage.getItem("roles") || "[]");
+  return roles
+    .map((role) => (typeof role === "string" ? role : role.roleName))
+    .filter(Boolean);
+});
+const isProgramTeacher = computed(
+  () =>
+    roleNames.value.includes("学院管理员") ||
+    roleNames.value.includes("专业负责教师")
+);
+const isNormalTeacher = computed(
+  () => roleNames.value.includes("教师") && !isProgramTeacher.value
+);
+
+const parseTeacherIds = (teacherIds) => {
+  if (!teacherIds) return [];
+  return teacherIds
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+};
 
 // 获取课程列表
 const fetchCourses = async () => {
   try {
     const response = await getAllCourses();
     console.log("获取到的课程列表:", response);
-    courses.value = response;
+    const allCourses = response || [];
+    if (isNormalTeacher.value) {
+      const teacherId = currentUser.value?.userId;
+      courses.value = allCourses.filter((course) =>
+        parseTeacherIds(course.teacherIds).includes(String(teacherId))
+      );
+    } else {
+      courses.value = allCourses;
+    }
   } catch (error) {
     console.error("获取课程列表失败:", error);
     ElMessage.error("获取课程列表失败");
@@ -660,7 +745,15 @@ const handleEditPaper = (row) => {
 };
 
 // 保存试卷
-const handleSavePaper = async () => {
+const findLatestPaper = (paperName, courseId) => {
+  const matches = papers.value.filter(
+    (paper) => paper.paperName === paperName && paper.courseId === courseId
+  );
+  if (matches.length === 0) return null;
+  return matches.sort((a, b) => b.paperId - a.paperId)[0];
+};
+
+const handleSavePaper = async (openManage = false) => {
   try {
     if (paperForm.paperId) {
       // 更新试卷
@@ -672,7 +765,18 @@ const handleSavePaper = async () => {
       ElMessage.success("试卷添加成功");
     }
     dialogVisible.value = false;
-    fetchPapers();
+    await fetchPapers();
+    if (openManage && !paperForm.paperId) {
+      const createdPaper = findLatestPaper(
+        paperForm.paperName,
+        paperForm.courseId
+      );
+      if (createdPaper) {
+        currentPaperId.value = createdPaper.paperId;
+        await fetchPaperQuestions(createdPaper.paperId);
+        questionManageDialogVisible.value = true;
+      }
+    }
   } catch (error) {
     ElMessage.error(paperForm.paperId ? "试卷更新失败" : "试卷添加失败");
     console.error("保存试卷失败:", error);
@@ -708,9 +812,56 @@ const handleViewPaper = (paperId) => {
 const questionManageDialogVisible = ref(false);
 const addQuestionDialogVisible = ref(false);
 const currentPaperId = ref(null);
+const currentPaperCourseId = ref(null);
 const paperQuestions = ref([]);
 const availableQuestions = ref([]);
 const selectedQuestions = ref([]);
+const questionFilter = reactive({
+  questionType: "",
+  difficulty: "",
+  kpId: "",
+  keyword: "",
+});
+
+const availableKnowledgePoints = computed(() => {
+  if (!currentPaperCourseId.value) return [];
+  return allKnowledgePoints.value.filter(
+    (point) => point.courseId === currentPaperCourseId.value
+  );
+});
+
+const filteredAvailableQuestions = computed(() => {
+  const keyword = questionFilter.keyword?.trim().toLowerCase();
+  return (availableQuestions.value || []).filter((question) => {
+    if (
+      questionFilter.questionType &&
+      Number(question.questionType) !== Number(questionFilter.questionType)
+    ) {
+      return false;
+    }
+    if (
+      questionFilter.difficulty &&
+      question.difficulty !== questionFilter.difficulty
+    ) {
+      return false;
+    }
+    if (
+      questionFilter.kpId &&
+      Number(question.kpId) !== Number(questionFilter.kpId)
+    ) {
+      return false;
+    }
+    if (
+      keyword &&
+      !String(question.questionContent || "")
+        .toLowerCase()
+        .includes(keyword)
+    ) {
+      return false;
+    }
+    return true;
+  });
+});
 
 // 获取试卷题目列表
 const fetchPaperQuestions = async (paperId) => {
@@ -738,6 +889,14 @@ const handleAddQuestion = async () => {
         (paper) => paper.paperId === currentPaperId.value
     );
     if (currentPaper) {
+      currentPaperCourseId.value = currentPaper.courseId;
+      Object.assign(questionFilter, {
+        questionType: "",
+        difficulty: "",
+        kpId: "",
+        keyword: "",
+      });
+      selectedQuestions.value = [];
       // 根据课程ID获取可用题目
       const questions = await getQuestionsByCourseId(currentPaper.courseId);
       // 过滤掉已添加到试卷的题目
@@ -860,7 +1019,12 @@ const handleGeneratePaper = async () => {
     if (response.success) {
       ElMessage.success(`试卷生成成功，ID: ${response.paperId}`);
       autoGenerateDialogVisible.value = false;
-      fetchPapers();
+      await fetchPapers();
+      if (response.paperId) {
+        currentPaperId.value = Number(response.paperId);
+        await fetchPaperQuestions(currentPaperId.value);
+        questionManageDialogVisible.value = true;
+      }
     } else {
       ElMessage.error("试卷生成失败: " + (response.error || "未知错误"));
     }
@@ -963,5 +1127,12 @@ onMounted(async () => {
 .action-button {
   min-width: 64px;
   justify-content: center;
+}
+
+.question-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
 }
 </style>

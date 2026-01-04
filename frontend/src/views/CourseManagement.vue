@@ -14,6 +14,18 @@
           <!-- 子选项卡/操作区：仅排版美化（el-space），内部控件不改 -->
           <div class="header-actions">
             <el-space :size="10" wrap>
+              <el-select
+                v-model="courseNatureFilter"
+                placeholder="课程性质"
+                style="width: 160px"
+                clearable
+              >
+                <el-option label="全部性质" value="" />
+                <el-option label="公共基础课" value="公共基础课" />
+                <el-option label="专业基础课" value="专业基础课" />
+                <el-option label="专业课" value="专业课" />
+              </el-select>
+
               <el-input
                 v-model="searchKeyword"
                 placeholder="搜索课程名称或代码"
@@ -70,6 +82,11 @@
         <el-table-column prop="courseNature" label="课程性质" width="80" />
         <el-table-column prop="examMark" label="考试标记" width="80" />
         <el-table-column prop="courseCategory" label="课程分类" width="120" />
+        <el-table-column label="授课教师" width="180">
+          <template #default="scope">
+            {{ formatTeacherNames(scope.row.teacherIds) }}
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="scope">
             <el-space :size="6">
@@ -237,6 +254,22 @@
             <el-option label="实践课" value="实践课" />
           </el-select>
         </el-form-item>
+        <el-form-item label="授课教师">
+          <el-select
+            v-model="selectedTeacherIds"
+            placeholder="请选择授课教师"
+            multiple
+            collapse-tags
+            style="width: 100%"
+          >
+            <el-option
+              v-for="teacher in teachers"
+              :key="teacher.userId"
+              :label="formatTeacherOption(teacher)"
+              :value="String(teacher.userId)"
+            />
+          </el-select>
+        </el-form-item>
         <el-form-item label="课程描述">
           <el-input
             v-model="courseForm.description"
@@ -273,11 +306,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, reactive } from "vue";
+import { ref, onMounted, reactive, computed, watch } from "vue";
 import { Plus, Edit, Delete, Search } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import {
   getCourses,
+  getAllCourses,
   addCourse,
   updateCourse,
   deleteCourse,
@@ -288,6 +322,7 @@ import {
   saveCourseSemester,
 } from "../api/course";
 import { getAllTrainingPrograms } from "../api/trainingProgram";
+import { getUsers } from "../api/user";
 
 // 获取用户权限
 const userPermissions = ref([]);
@@ -326,11 +361,13 @@ const hasPermission = (permissionCode) => {
 
 // 表格数据
 const courses = ref([]);
+const allCourses = ref([]);
 const total = ref(0);
 const currentPage = ref(1);
 const pageSize = ref(10);
 const searchKeyword = ref("");
 const selectedCourseIds = ref([]);
+const courseNatureFilter = ref("");
 
 // 学期数据
 const semesters = ref([]);
@@ -338,6 +375,8 @@ const selectedSemesterIds = ref([]);
 
 // 培养方案数据
 const trainingPrograms = ref([]);
+const teachers = ref([]);
+const selectedTeacherIds = ref([]);
 
 // 对话框
 const dialogVisible = ref(false);
@@ -355,12 +394,66 @@ const courseForm = reactive({
   courseNature: "专业基础课",
   examMark: "",
   courseCategory: "",
+  teacherIds: "",
   description: "",
 });
+
+const parseTeacherIds = (teacherIds) => {
+  if (!teacherIds) return [];
+  return teacherIds
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+};
+
+const teacherNameMap = computed(() => {
+  const map = {};
+  teachers.value.forEach((teacher) => {
+    map[String(teacher.userId)] = teacher.realName || teacher.username;
+  });
+  return map;
+});
+
+const formatTeacherOption = (teacher) => {
+  const name = teacher.realName || teacher.username;
+  return name ? `${name}（${teacher.username}）` : teacher.username;
+};
+
+const formatTeacherNames = (teacherIds) => {
+  const ids = parseTeacherIds(teacherIds);
+  if (ids.length === 0) return "-";
+  return ids
+    .map((id) => teacherNameMap.value[id] || `教师${id}`)
+    .join("、");
+};
+
+const applyCourseNatureFilter = (list) => {
+  if (!courseNatureFilter.value) return list;
+  return list.filter((course) => course.courseNature === courseNatureFilter.value);
+};
+
+const applyPagination = (list) => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  const end = start + pageSize.value;
+  return list.slice(start, end);
+};
+
+const shouldUseClientFilter = computed(
+  () => Boolean(courseNatureFilter.value) || Boolean(searchKeyword.value)
+);
 
 // 获取课程列表
 const fetchCourses = async () => {
   try {
+    if (shouldUseClientFilter.value) {
+      const response = await getAllCourses();
+      allCourses.value = response || [];
+      const filtered = applyCourseNatureFilter(allCourses.value);
+      total.value = filtered.length;
+      courses.value = applyPagination(filtered);
+      return;
+    }
+
     const response = await getCourses(currentPage.value, pageSize.value);
     courses.value = response.records;
     total.value = response.total;
@@ -392,6 +485,18 @@ const fetchTrainingPrograms = async () => {
   }
 };
 
+const fetchTeachers = async () => {
+  try {
+    const response = await getUsers();
+    teachers.value = (response || []).filter(
+      (user) => user.roleName === "教师"
+    );
+  } catch (error) {
+    ElMessage.error("获取教师列表失败");
+    console.error("获取教师列表失败:", error);
+  }
+};
+
 // 获取课程关联的学期
 const fetchCourseSemesters = async (courseId) => {
   try {
@@ -418,9 +523,12 @@ const handleCurrentChange = (page) => {
 const handleSearch = async () => {
   if (searchKeyword.value) {
     try {
+      currentPage.value = 1;
       const response = await searchCourses(searchKeyword.value);
-      courses.value = response;
-      total.value = response.length;
+      allCourses.value = response || [];
+      const filtered = applyCourseNatureFilter(allCourses.value);
+      total.value = filtered.length;
+      courses.value = applyPagination(filtered);
     } catch (error) {
       ElMessage.error("搜索课程失败");
       console.error("搜索课程失败:", error);
@@ -477,15 +585,18 @@ const handleAddCourse = () => {
     courseNature: "专业基础课",
     examMark: "",
     courseCategory: "",
+    teacherIds: "",
     description: "",
   });
   selectedSemesterIds.value = [];
+  selectedTeacherIds.value = [];
   dialogVisible.value = true;
 };
 
 // 编辑课程
 const handleEditCourse = async (row) => {
   Object.assign(courseForm, row);
+  selectedTeacherIds.value = parseTeacherIds(row.teacherIds);
   // 获取课程关联的学期
   await fetchCourseSemesters(row.courseId);
   dialogVisible.value = true;
@@ -512,6 +623,7 @@ const calculateTheoreticalHours = () => {
 // 保存课程
 const handleSaveCourse = async () => {
   try {
+    courseForm.teacherIds = selectedTeacherIds.value.join(",");
     // 验证学时关系
     if (
       courseForm.theoreticalHours + courseForm.practicalHours !==
@@ -576,7 +688,13 @@ onMounted(async () => {
     fetchCourses(),
     fetchSemesters(),
     fetchTrainingPrograms(),
+    fetchTeachers(),
   ]);
+});
+
+watch(courseNatureFilter, () => {
+  currentPage.value = 1;
+  fetchCourses();
 });
 </script>
 

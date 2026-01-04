@@ -335,7 +335,11 @@
             <el-table-column prop="totalHours" label="总学时" width="80" />
             <el-table-column prop="courseType" label="课程类型" width="120" />
             <el-table-column prop="courseNature" label="课程性质" width="120" />
-            <el-table-column prop="teacherIds" label="授课教师" width="150" />
+            <el-table-column label="授课教师" width="150">
+              <template #default="scope">
+                {{ formatTeacherNames(scope.row.teacherIds) }}
+              </template>
+            </el-table-column>
           </el-table>
           <div v-if="semesterStats" class="mt-4 semester-stats">
             <div class="stats-header">学期统计</div>
@@ -482,7 +486,11 @@
               label="课程类别"
               width="120"
             />
-            <el-table-column prop="teacherIds" label="授课教师" width="150" />
+            <el-table-column label="授课教师" width="150">
+              <template #default="scope">
+                {{ formatTeacherNames(scope.row.teacherIds) }}
+              </template>
+            </el-table-column>
           </el-table>
 
           <div class="text-center mt-4">
@@ -594,10 +602,20 @@
           </el-select>
         </el-form-item>
         <el-form-item label="授课教师">
-          <el-input
-            v-model="courseForm.teacherIds"
-            placeholder="请输入授课教师ID，多个用逗号分隔"
-          />
+          <el-select
+            v-model="selectedTeacherIds"
+            placeholder="请选择授课教师"
+            multiple
+            collapse-tags
+            style="width: 100%"
+          >
+            <el-option
+              v-for="teacher in teachers"
+              :key="teacher.userId"
+              :label="formatTeacherOption(teacher)"
+              :value="String(teacher.userId)"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="课程描述">
           <el-input
@@ -662,6 +680,7 @@ import {
   getCourseSemesters,
   saveCourseSemester,
 } from "../api/course";
+import { getUsers } from "../api/user";
 
 // 表格数据
 const programs = ref([]);
@@ -797,6 +816,38 @@ const courseForm = reactive({
   semesterIds: [],
 });
 
+const teachers = ref([]);
+const selectedTeacherIds = ref([]);
+
+const parseTeacherIds = (teacherIds) => {
+  if (!teacherIds) return [];
+  return teacherIds
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+};
+
+const teacherNameMap = computed(() => {
+  const map = {};
+  teachers.value.forEach((teacher) => {
+    map[String(teacher.userId)] = teacher.realName || teacher.username;
+  });
+  return map;
+});
+
+const formatTeacherOption = (teacher) => {
+  const name = teacher.realName || teacher.username;
+  return name ? `${name}（${teacher.username}）` : teacher.username;
+};
+
+const formatTeacherNames = (teacherIds) => {
+  const ids = parseTeacherIds(teacherIds);
+  if (ids.length === 0) return "-";
+  return ids
+    .map((id) => teacherNameMap.value[id] || `教师${id}`)
+    .join("、");
+};
+
 // 获取培养方案列表
 const fetchPrograms = async () => {
   try {
@@ -814,6 +865,18 @@ const fetchPrograms = async () => {
   } catch (error) {
     ElMessage.error("获取培养方案列表失败");
     console.error("获取培养方案列表失败:", error);
+  }
+};
+
+const fetchTeachers = async () => {
+  try {
+    const response = await getUsers();
+    teachers.value = (response || []).filter(
+      (user) => user.roleName === "教师"
+    );
+  } catch (error) {
+    ElMessage.error("获取教师列表失败");
+    console.error("获取教师列表失败:", error);
   }
 };
 
@@ -973,12 +1036,14 @@ const handleAddCourse = () => {
     description: "",
     semesterIds: [],
   });
+  selectedTeacherIds.value = [];
   courseFormVisible.value = true;
 };
 
 // 编辑课程
 const handleEditCourse = async (course) => {
   Object.assign(courseForm, course);
+  selectedTeacherIds.value = parseTeacherIds(course.teacherIds);
   courseForm.semesterIds = [];
   try {
     // 获取课程关联的学期ID列表
@@ -993,6 +1058,7 @@ const handleEditCourse = async (course) => {
 // 保存课程
 const handleSaveCourse = async () => {
   try {
+    courseForm.teacherIds = selectedTeacherIds.value.join(",");
     let courseId = courseForm.courseId;
     if (courseId) {
       // 更新课程
@@ -1114,6 +1180,7 @@ const handleExportFullSchedule = async () => {
 // 页面挂载时获取培养方案列表
 onMounted(() => {
   fetchPrograms();
+  fetchTeachers();
 });
 </script>
 

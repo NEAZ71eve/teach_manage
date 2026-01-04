@@ -297,6 +297,32 @@ const pointForm = reactive({
 
 // 课程数据
 const courses = ref([]);
+const currentUser = computed(() => {
+  const userStr = localStorage.getItem("user");
+  return userStr ? JSON.parse(userStr) : {};
+});
+const roleNames = computed(() => {
+  const roles = JSON.parse(localStorage.getItem("roles") || "[]");
+  return roles
+    .map((role) => (typeof role === "string" ? role : role.roleName))
+    .filter(Boolean);
+});
+const isProgramTeacher = computed(
+  () =>
+    roleNames.value.includes("学院管理员") ||
+    roleNames.value.includes("专业负责教师")
+);
+const isNormalTeacher = computed(
+  () => roleNames.value.includes("教师") && !isProgramTeacher.value
+);
+
+const parseTeacherIds = (teacherIds) => {
+  if (!teacherIds) return [];
+  return teacherIds
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+};
 
 // 课程 id -> name 映射（用于树节点 Tag 展示）
 const courseNameMap = computed(() => {
@@ -318,9 +344,17 @@ const difficultyTagType = (difficulty) => {
 const fetchCourses = async () => {
   try {
     const response = await getAllCourses();
-    courses.value = response;
-    if (response.length > 0) {
-      pointForm.courseId = response[0].courseId;
+    const allCourses = response || [];
+    if (isNormalTeacher.value) {
+      const teacherId = currentUser.value?.userId;
+      courses.value = allCourses.filter((course) =>
+        parseTeacherIds(course.teacherIds).includes(String(teacherId))
+      );
+    } else {
+      courses.value = allCourses;
+    }
+    if (courses.value.length > 0) {
+      pointForm.courseId = courses.value[0].courseId;
     }
   } catch (error) {
     ElMessage.error("获取课程列表失败");
@@ -340,6 +374,18 @@ const fetchKnowledgePointTree = async () => {
     } else {
       response = await getKnowledgePointsByCourseId(selectedCourse.value);
       allPoints = await getAllKnowledgePoints();
+    }
+
+    if (isNormalTeacher.value) {
+      const allowedCourseIds = new Set(
+        courses.value.map((course) => course.courseId)
+      );
+      response = (response || []).filter((point) =>
+        allowedCourseIds.has(point.courseId)
+      );
+      allPoints = (allPoints || []).filter((point) =>
+        allowedCourseIds.has(point.courseId)
+      );
     }
 
     // 字段名转换：kpId/kpName -> pointId/pointName
