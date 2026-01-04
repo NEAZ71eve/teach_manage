@@ -21,9 +21,9 @@
                 <span class="user-name">{{
                   userInfo.realName || userInfo.username
                 }}</span>
-                <span class="user-role" v-if="userInfo.username === 'admin'"
-                  >管理员</span
-                >
+                <span class="user-role" v-if="primaryRoleLabel">
+                  {{ primaryRoleLabel }}
+                </span>
               </div>
 
               <el-button
@@ -160,7 +160,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from "vue";
+import { ref, onMounted, watch, computed } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { ElMessage } from "element-plus";
 import {
@@ -244,8 +244,6 @@ const getUserInfoAndPermissions = () => {
 // 检查用户是否有访问菜单的权限
 const canAccessMenu = (menuPath) => {
   // 管理员直接放行
-  if (userInfo.value.username === "admin") return true;
-
   const roleNames = roles.value
     .map((role) => (typeof role === "string" ? role : role.roleName))
     .filter(Boolean);
@@ -312,6 +310,22 @@ watch(
 const handleMenuSelect = (key) => {
   router.push(key);
 };
+
+const displayRoleName = (roleName) => {
+  if (roleName === "学院管理员") return "专业负责教师";
+  if (roleName === "教师") return "普通老师";
+  return roleName || "";
+};
+
+const primaryRoleLabel = computed(() => {
+  const roleNames = roles.value
+    .map((role) => (typeof role === "string" ? role : role.roleName))
+    .filter(Boolean);
+  if (roleNames.length === 0) {
+    return userInfo.value.username === "admin" ? "系统管理员" : "";
+  }
+  return displayRoleName(roleNames[0]);
+});
 </script>
 
 <style scoped>

@@ -7,8 +7,8 @@
     <el-table :data="users" style="width: 100%">
       <el-table-column prop="userId" label="用户ID" width="80" />
       <el-table-column prop="username" label="用户名" width="120" />
-      <el-table-column prop="realName" label="姓名" width="120" />
-      <el-table-column prop="roleName" label="用户类型" width="140">
+      <el-table-column prop="realName" label="真实姓名" width="120" />
+      <el-table-column prop="roleName" label="角色" width="140">
         <template #default="scope">
           {{ displayRoleName(scope.row.roleName) }}
         </template>
@@ -69,8 +69,8 @@
             placeholder="请输入密码"
           />
         </el-form-item>
-        <el-form-item label="姓名" required>
-          <el-input v-model="formData.realName" placeholder="请输入姓名" />
+        <el-form-item label="真实姓名" required>
+          <el-input v-model="formData.realName" placeholder="请输入真实姓名" />
         </el-form-item>
         <el-form-item label="邮箱" required>
           <el-input
@@ -82,7 +82,7 @@
         <el-form-item label="电话" required>
           <el-input v-model="formData.phone" placeholder="请输入电话" />
         </el-form-item>
-        <el-form-item label="用户类型" required>
+        <el-form-item label="角色" required>
           <el-select
             v-model="formData.roleId"
             placeholder="请选择用户类型"
@@ -165,7 +165,10 @@ const formData = ref({
 
 const isProgramTeacher = computed(() => {
   const role = roles.value.find((r) => r.roleId === formData.value.roleId);
-  return role && role.roleName === "学院管理员";
+  return (
+    role &&
+    (role.roleName === "学院管理员" || role.roleName === "专业负责教师")
+  );
 });
 
 const availableRoles = computed(() => {

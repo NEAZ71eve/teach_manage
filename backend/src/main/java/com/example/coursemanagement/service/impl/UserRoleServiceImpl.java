@@ -42,7 +42,14 @@ public class UserRoleServiceImpl implements UserRoleService {
                 .map(role -> role.getRoleName())
                 .orElseThrow(() -> new RuntimeException("角色不存在"));
 
-        if ("学院管理员".equals(roleName)) {
+        if (!"系统管理员".equals(roleName)
+                && !"学院管理员".equals(roleName)
+                && !"专业负责教师".equals(roleName)
+                && !"教师".equals(roleName)) {
+            throw new RuntimeException("只能分配系统管理员、专业负责教师或普通老师角色");
+        }
+
+        if ("学院管理员".equals(roleName) || "专业负责教师".equals(roleName)) {
             Optional<UserRole> existingProgramTeacher = userRoleRepository.findByRoleId(roleId).stream()
                     .filter(userRole -> !userRole.getUserId().equals(userId))
                     .findFirst();

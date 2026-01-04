@@ -4,8 +4,12 @@ import com.example.coursemanagement.entity.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
+import java.sql.PreparedStatement;
+import java.sql.Statement;
 import java.util.List;
 import java.util.Optional;
 
@@ -56,14 +60,24 @@ public class UserRepository {
      */
     public int save(User user) {
         String sql = "INSERT INTO user (username, password, real_name, email, phone, status, program_id, create_time, update_time) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
-        return jdbcTemplate.update(sql, 
-                user.getUsername(), 
-                user.getPassword(), 
-                user.getRealName(), 
-                user.getEmail(), 
-                user.getPhone(), 
-                user.getStatus(),
-                user.getProgramId());
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(connection -> {
+            PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            statement.setString(1, user.getUsername());
+            statement.setString(2, user.getPassword());
+            statement.setString(3, user.getRealName());
+            statement.setString(4, user.getEmail());
+            statement.setString(5, user.getPhone());
+            statement.setInt(6, user.getStatus());
+            if (user.getProgramId() == null) {
+                statement.setNull(7, java.sql.Types.INTEGER);
+            } else {
+                statement.setInt(7, user.getProgramId());
+            }
+            return statement;
+        }, keyHolder);
+        Number key = keyHolder.getKey();
+        return key == null ? 0 : key.intValue();
     }
 
     /**
