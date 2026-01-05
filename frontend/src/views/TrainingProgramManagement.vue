@@ -756,6 +756,93 @@ const downloadHtml = (content, filename) => {
   URL.revokeObjectURL(url);
 };
 
+const escapeHtml = (value) =>
+  String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+const buildExportHtml = ({ program, tableData }) => {
+  const title = program?.majorName
+    ? `${program.majorName} 培养方案完整课程安排`
+    : "培养方案完整课程安排";
+  const rows = tableData
+    .map(
+      (row, index) => `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${escapeHtml(row.semester)}</td>
+          <td>${escapeHtml(row.courseName)}</td>
+          <td>${escapeHtml(row.courseCode)}</td>
+          <td>${escapeHtml(row.credit)}</td>
+          <td>${escapeHtml(row.totalHours)}</td>
+          <td>${escapeHtml(row.theoreticalHours)}</td>
+          <td>${escapeHtml(row.practicalHours)}</td>
+          <td>${escapeHtml(row.courseType)}</td>
+          <td>${escapeHtml(row.courseNature)}</td>
+          <td>${escapeHtml(row.examMark)}</td>
+          <td>${escapeHtml(row.courseCategory)}</td>
+          <td>${escapeHtml(formatTeacherNames(row.teacherIds))}</td>
+        </tr>
+      `
+    )
+    .join("");
+
+  return `
+    <!DOCTYPE html>
+    <html lang="zh-CN">
+    <head>
+      <meta charset="utf-8" />
+      <title>${escapeHtml(title)}</title>
+      <style>
+        body { font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif; color: #1f2329; margin: 24px; }
+        h1 { font-size: 20px; margin-bottom: 8px; }
+        .meta { margin-bottom: 16px; line-height: 1.6; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th, td { border: 1px solid #dcdfe6; padding: 6px 8px; text-align: center; }
+        th { background: #f5f7fa; font-weight: 600; }
+        tbody tr:nth-child(even) { background: #fafafa; }
+      </style>
+    </head>
+    <body>
+      <h1>${escapeHtml(title)}</h1>
+      <div class="meta">
+        <div>专业名称：${escapeHtml(program?.majorName || "-")}</div>
+        <div>学制：${escapeHtml(program?.duration || "-")} 年</div>
+        <div>总学分：${escapeHtml(program?.totalCredit || "-")}</div>
+        <div>生效年份：${escapeHtml(program?.effectiveYear || "-")}</div>
+        <div>培养方案描述：${escapeHtml(program?.description || "-")}</div>
+        <div>导出时间：${escapeHtml(new Date().toLocaleString())}</div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>学期</th>
+            <th>课程名称</th>
+            <th>课程代码</th>
+            <th>学分</th>
+            <th>总学时</th>
+            <th>理论学时</th>
+            <th>实践学时</th>
+            <th>课程类型</th>
+            <th>课程性质</th>
+            <th>考核方式</th>
+            <th>课程类别</th>
+            <th>授课教师</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+        </tbody>
+      </table>
+    </body>
+    </html>
+  `;
+};
+
 const buildFullScheduleTableData = (schedule) => {
   const tableData = [];
   for (let semester = 1; semester <= 8; semester++) {
@@ -1122,12 +1209,11 @@ const handleExportFullSchedule = async () => {
     const fileBaseName = currentProgram.majorName
       ? `${currentProgram.majorName}_完整课程安排`
       : "培养方案_完整课程安排";
-    const response = await fetch("/培养方案.html");
-    if (!response.ok) {
-      throw new Error("模板加载失败");
-    }
-    const templateContent = await response.text();
-    downloadHtml(templateContent, `${fileBaseName}.html`);
+    const htmlContent = buildExportHtml({
+      program: currentProgram,
+      tableData,
+    });
+    downloadHtml(htmlContent, `${fileBaseName}.html`);
 
     ElMessage.success("完整课程安排已导出");
   } catch (error) {
