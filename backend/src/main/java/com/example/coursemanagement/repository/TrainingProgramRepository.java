@@ -403,11 +403,58 @@ public class TrainingProgramRepository implements TrainingProgramRepositoryApi {
     }
 
     /**
+     * 分页查询培养方案（支持过滤）
+     */
+    public List<TrainingProgram> findByPage(int page, int limit, Integer programId, Integer teacherId) {
+        int offset = (page - 1) * limit;
+        List<Object> params = new ArrayList<>();
+        List<String> conditions = new ArrayList<>();
+        
+        // 优先使用teacherId过滤，如果没有teacherId则使用programId过滤
+        if (teacherId != null && isColumnAvailable("teacher_id")) {
+            conditions.add("teacher_id = ?");
+            params.add(teacherId);
+        } else if (programId != null) {
+            conditions.add("program_id = ?");
+            params.add(programId);
+        }
+        
+        String whereClause = conditions.isEmpty() ? "" : " WHERE " + String.join(" AND ", conditions);
+        String sql = "SELECT * FROM training_program" + whereClause + " LIMIT ? OFFSET ?";
+        params.add(limit);
+        params.add(offset);
+        
+        return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(TrainingProgram.class), params.toArray());
+    }
+
+    /**
      * 查询培养方案总数
      */
     public int count() {
         String sql = "SELECT COUNT(*) FROM training_program";
         return jdbcTemplate.queryForObject(sql, Integer.class);
+    }
+
+    /**
+     * 查询培养方案总数（支持过滤）
+     */
+    public int count(Integer programId, Integer teacherId) {
+        List<Object> params = new ArrayList<>();
+        List<String> conditions = new ArrayList<>();
+        
+        // 优先使用teacherId过滤，如果没有teacherId则使用programId过滤
+        if (teacherId != null && isColumnAvailable("teacher_id")) {
+            conditions.add("teacher_id = ?");
+            params.add(teacherId);
+        } else if (programId != null) {
+            conditions.add("program_id = ?");
+            params.add(programId);
+        }
+        
+        String whereClause = conditions.isEmpty() ? "" : " WHERE " + String.join(" AND ", conditions);
+        String sql = "SELECT COUNT(*) FROM training_program" + whereClause;
+        
+        return jdbcTemplate.queryForObject(sql, Integer.class, params.toArray());
     }
 
     /**

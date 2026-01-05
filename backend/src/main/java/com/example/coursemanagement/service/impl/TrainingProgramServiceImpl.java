@@ -77,8 +77,20 @@ public class TrainingProgramServiceImpl implements TrainingProgramService {
     }
     
     @Override
+    @Cacheable(value = "trainingProgram", key = "'count:' + #programId + '-' + #teacherId")
+    public int count(Integer programId, Integer teacherId) {
+        return trainingProgramRepository.count(programId, teacherId);
+    }
+    
+    @Override
     @Cacheable(value = "trainingProgram", key = "'teacher:' + #teacherId")
     public List<TrainingProgram> getByTeacherId(Integer teacherId) {
         return trainingProgramRepository.findByTeacherId(teacherId);
+    }
+    
+    @Override
+    @Cacheable(value = "trainingProgram", key = "'page:' + #page + '-limit:' + #limit + '-programId:' + #programId + '-teacherId:' + #teacherId")
+    public List<TrainingProgram> listPage(Integer page, Integer limit, Integer programId, Integer teacherId) {
+        return trainingProgramRepository.findByPage(page, limit, programId, teacherId);
     }
 }

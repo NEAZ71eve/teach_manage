@@ -1,517 +1,309 @@
 <template>
   <div class="training-program-management">
-    <el-card class="mb-4">
-      <template #header>
-        <div class="card-header">
-          <!-- 仅改标题：标题 + 副标题（其余不动） -->
-          <div class="title-wrap">
-            <div class="page-title">培养方案列表</div>
-            <div class="page-subtitle">
-              维护专业培养方案信息，并支持课程与学期安排管理
+    <!-- 直接显示课程管理界面 -->
+    <div class="course-management-container">
+      <!-- 课程列表 -->
+      <el-card class="mb-4">
+        <template #header>
+          <div class="card-header">
+            <span>{{ currentProgram.majorName }} - 课程列表</span>
+            <div class="header-actions">
+              <el-button
+                v-if="shouldShowCourseToggle"
+                size="small"
+                @click="toggleCourseCollapse"
+              >
+                <el-icon><View /></el-icon>
+                {{ showAllCourses ? "收起" : "展开" }}
+              </el-button>
+              <el-button type="primary" size="small" @click="handleAddCourse">
+                <el-icon><Plus /></el-icon>
+                添加课程
+              </el-button>
             </div>
           </div>
+        </template>
+        <el-table :data="visibleProgramCourses" border stripe>
+          <el-table-column prop="courseId" label="课程ID" width="80" />
+          <el-table-column
+            prop="courseName"
+            label="课程名称"
+            width="200"
+            show-overflow-tooltip
+          />
+          <el-table-column
+            prop="courseCode"
+            label="课程代码"
+            width="120"
+            show-overflow-tooltip
+          />
+          <el-table-column prop="credit" label="学分" width="80" />
+          <el-table-column prop="totalHours" label="总学时" width="80" />
+          <el-table-column prop="courseType" label="课程类型" width="120" />
+          <el-table-column prop="courseNature" label="课程性质" width="120" />
+          <el-table-column
+            label="操作"
+            width="110"
+            fixed="right"
+            align="center"
+          >
+            <template #default="scope">
+              <el-space :size="6">
+                <el-tooltip content="编辑" placement="top">
+                  <el-button
+                    v-if="hasPermission?.('course:edit') ?? true"
+                    circle
+                    type="primary"
+                    size="small"
+                    @click="handleEditCourse(scope.row)"
+                  >
+                    <el-icon><Edit /></el-icon>
+                  </el-button>
+                </el-tooltip>
 
-          <div class="header-actions">
-            <el-button
-              type="danger"
-              @click="handleBatchDelete"
-              :disabled="selectedProgramIds.length === 0"
+                <el-tooltip content="删除" placement="top">
+                  <el-button
+                    v-if="hasPermission?.('course:delete') ?? true"
+                    circle
+                    type="danger"
+                    size="small"
+                    @click="handleDeleteCourse(scope.row.courseId)"
+                  >
+                    <el-icon><Delete /></el-icon>
+                  </el-button>
+                </el-tooltip>
+              </el-space>
+            </template>
+          </el-table-column>
+        </el-table>
+      </el-card>
+
+      <!-- 课程学期安排 -->
+      <el-card class="mb-4">
+        <template #header>
+          <div class="card-header">
+            <div class="header-title">
+              <span>课程学期安排</span>
+              <span class="header-subtitle"
+                >按学期查看课程安排与统计数据</span
+              >
+            </div>
+            <div class="header-actions">
+              <el-tag effect="light" type="info"
+                >当前：第{{ selectedSemester }}学期</el-tag
+              >
+            </div>
+          </div>
+        </template>
+        <el-steps :active="activeStep" simple class="semester-steps">
+          <el-step v-for="i in 8" :key="i" :title="`第${i}学期`" />
+        </el-steps>
+        <div class="semester-toolbar">
+          <div class="semester-picker">
+            <span class="toolbar-label">选择学期</span>
+            <el-select
+              v-model="selectedSemester"
+              placeholder="选择学期"
+              style="width: 200px"
             >
-              <el-icon><Delete /></el-icon>
-              批量删除
-            </el-button>
-            <el-button type="primary" @click="handleAddProgram">
-              <el-icon><Plus /></el-icon>
-              添加培养方案
-            </el-button>
+              <el-option
+                v-for="i in 8"
+                :key="i"
+                :label="`第${i}学期`"
+                :value="i"
+              />
+            </el-select>
+          </div>
+          <el-button type="primary" @click="handleViewSemesterCourses">
+            <el-icon><Search /></el-icon>
+            查看课程
+          </el-button>
+        </div>
+
+        <!-- 学期课程列表 -->
+        <el-table
+          v-if="semesterCourses.length > 0"
+          :data="semesterCourses"
+          border
+          stripe
+          class="mt-4 semester-course-table"
+        >
+          <el-table-column prop="courseName" label="课程名称" width="200" />
+          <el-table-column prop="credit" label="学分" width="80" />
+          <el-table-column prop="totalHours" label="总学时" width="80" />
+          <el-table-column prop="courseType" label="课程类型" width="120" />
+          <el-table-column prop="courseNature" label="课程性质" width="120" />
+          <el-table-column label="授课教师" width="150">
+            <template #default="scope">
+              {{ formatTeacherNames(scope.row.teacherIds) }}
+            </template>
+          </el-table-column>
+        </el-table>
+        <div v-if="semesterStats" class="mt-4 semester-stats">
+          <div class="stats-header">学期统计</div>
+          <el-row :gutter="12" class="stats-grid">
+            <el-col :span="8">
+              <div class="stat-card">
+                <span class="stat-label">课程数量</span>
+                <span class="stat-value">{{
+                  semesterStats.totalCourses
+                }}</span>
+              </div>
+            </el-col>
+            <el-col :span="8">
+              <div class="stat-card">
+                <span class="stat-label">总学分</span>
+                <span class="stat-value">{{
+                  semesterStats.totalCredit
+                }}</span>
+              </div>
+            </el-col>
+            <el-col :span="8">
+              <div class="stat-card">
+                <span class="stat-label">总学时</span>
+                <span class="stat-value">{{ semesterStats.totalHours }}</span>
+              </div>
+            </el-col>
+            <el-col :span="12">
+              <div class="stat-card">
+                <span class="stat-label">理论学时</span>
+                <span class="stat-value">{{
+                  semesterStats.totalTheoreticalHours
+                }}</span>
+              </div>
+            </el-col>
+            <el-col :span="12">
+              <div class="stat-card">
+                <span class="stat-label">实践学时</span>
+                <span class="stat-value">{{
+                  semesterStats.totalPracticalHours
+                }}</span>
+              </div>
+            </el-col>
+          </el-row>
+          <div class="stats-tags">
+            <div class="stat-group">
+              <span class="stat-label">课程性质：</span>
+              <el-tag
+                v-for="(count, key) in semesterStats.courseNatureCount || {}"
+                :key="`nature-${key}`"
+                class="stat-tag"
+                type="info"
+              >
+                {{ key }} {{ count }}
+              </el-tag>
+            </div>
+            <div class="stat-group">
+              <span class="stat-label">课程类别：</span>
+              <el-tag
+                v-for="(count, key) in semesterStats.courseCategoryCount ||
+                {}"
+                :key="`category-${key}`"
+                class="stat-tag"
+              >
+                {{ key }} {{ count }}
+              </el-tag>
+            </div>
           </div>
         </div>
-      </template>
-
-      <el-table
-        :data="programs"
-        border
-        stripe
-        @selection-change="handleSelectionChange"
-      >
-        <el-table-column type="selection" width="55" />
-        <el-table-column prop="programId" label="方案ID" width="80" />
-        <el-table-column prop="majorName" label="专业名称" width="200" />
-        <el-table-column prop="duration" label="学制" width="80" />
-        <el-table-column prop="totalCredit" label="总学分" width="80" />
-        <el-table-column prop="effectiveYear" label="生效年份" width="80" />
-        <el-table-column
-          prop="description"
-          label="培养方案描述"
-          min-width="100"
+        <el-empty
+          v-if="semesterCourses.length === 0 && !semesterStats"
+          description="该学期暂无课程"
+          class="mt-4"
         />
-        <el-table-column prop="createTime" label="创建时间" width="180" />
-        <el-table-column label="操作" width="250" fixed="right">
-          <template #default="scope">
-            <div class="table-action-buttons">
-              <el-button
-                class="action-button"
-                type="primary"
-                size="small"
-                @click="handleEditProgram(scope.row)"
+      </el-card>
+
+      <!-- 导出完整课程安排 -->
+      <el-card>
+        <template #header>
+          <div class="card-header">
+            <div class="header-title">
+              <span>完整课程安排</span>
+              <span class="header-subtitle"
+                >覆盖四年八个学期的课程分布与统计</span
               >
-                <el-icon><Edit /></el-icon>
-                编辑
-              </el-button>
+            </div>
+            <div class="header-actions">
               <el-button
-                class="action-button"
                 type="success"
-                size="small"
-                @click="handleManageCourses(scope.row)"
+                :loading="exportingFullSchedule"
+                @click="handleExportFullSchedule"
               >
-                <el-icon><Menu /></el-icon>
-                管理课程
+                <el-icon><Download /></el-icon>
+                导出HTML
               </el-button>
               <el-button
-                class="action-button"
-                type="danger"
-                size="small"
-                @click="handleDeleteProgram(scope.row.programId)"
+                type="primary"
+                @click="showFullScheduleTable = !showFullScheduleTable"
               >
-                <el-icon><Delete /></el-icon>
-                删除
+                <el-icon><View /></el-icon>
+                {{ showFullScheduleTable ? "隐藏表格" : "显示表格" }}
+              </el-button>
+              <el-button
+                v-if="showFullScheduleTable && shouldShowScheduleToggle"
+                @click="toggleScheduleCollapse"
+              >
+                <el-icon><View /></el-icon>
+                {{ showAllScheduleRows ? "收起" : "展开" }}
               </el-button>
             </div>
-          </template>
-        </el-table-column>
-
-        <!--        <el-table-column label="操作" width="250" fixed="right">-->
-        <!--          <template #default="scope">-->
-        <!--            <el-button-->
-        <!--              type="primary"-->
-        <!--              size="small"-->
-        <!--              @click="handleEditProgram(scope.row)"-->
-        <!--            >-->
-        <!--              <el-icon><Edit /></el-icon>-->
-        <!--              编辑-->
-        <!--            </el-button>-->
-        <!--            <el-button-->
-        <!--              type="success"-->
-        <!--              size="small"-->
-        <!--              @click="handleManageCourses(scope.row)"-->
-        <!--            >-->
-        <!--              <el-icon><Menu /></el-icon>-->
-        <!--              管理课程-->
-        <!--            </el-button>-->
-        <!--            <el-button-->
-        <!--              type="danger"-->
-        <!--              size="small"-->
-        <!--              @click="handleDeleteProgram(scope.row.programId)"-->
-        <!--            >-->
-        <!--              <el-icon><Delete /></el-icon>-->
-        <!--              删除-->
-        <!--            </el-button>-->
-        <!--          </template>-->
-        <!--        </el-table-column>-->
-      </el-table>
-
-      <div class="pagination mt-4">
-        <el-pagination
-          v-model:current-page="currentPage"
-          v-model:page-size="pageSize"
-          :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next, jumper"
-          :total="total"
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-        />
-      </div>
-    </el-card>
-
-    <!-- 培养方案表单对话框 -->
-    <el-dialog v-model="dialogVisible" title="培养方案信息" width="600px">
-      <el-form :model="programForm" label-width="120px">
-        <el-form-item label="专业名称" required>
-          <el-input
-            v-model="programForm.majorName"
-            placeholder="请输入专业名称"
-          />
-        </el-form-item>
-        <el-form-item label="学制" required>
-          <el-input
-            v-model.number="programForm.duration"
-            placeholder="请输入学制（年）"
-            type="number"
-            min="1"
-            max="8"
-          />
-        </el-form-item>
-        <el-form-item label="总学分" required>
-          <el-input
-            v-model.number="programForm.totalCredit"
-            placeholder="请输入总学分要求"
-            type="number"
-            step="0.5"
-            min="0"
-          />
-        </el-form-item>
-        <el-form-item label="生效年份" required>
-          <el-input
-            v-model.number="programForm.effectiveYear"
-            placeholder="请输入生效年份"
-            type="number"
-            min="2000"
-            max="2100"
-          />
-        </el-form-item>
-        <el-form-item label="培养方案描述">
-          <el-input
-            v-model="programForm.description"
-            placeholder="请输入培养方案描述"
-            type="textarea"
-            rows="3"
-          />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleSaveProgram">确定</el-button>
-        </span>
-      </template>
-    </el-dialog>
-
-    <!-- 课程管理对话框 -->
-    <el-dialog
-      v-model="courseDialogVisible"
-      :title="`${currentProgram.majorName} - 课程管理`"
-      width="900px"
-    >
-      <div class="course-management-container">
-        <!-- 课程列表 -->
-        <el-card class="mb-4">
-          <template #header>
-            <div class="card-header">
-              <span>课程列表</span>
-              <div class="header-actions">
-                <el-button
-                  v-if="shouldShowCourseToggle"
-                  size="small"
-                  @click="toggleCourseCollapse"
-                >
-                  <el-icon><View /></el-icon>
-                  {{ showAllCourses ? "收起" : "展开" }}
-                </el-button>
-                <el-button type="primary" size="small" @click="handleAddCourse">
-                  <el-icon><Plus /></el-icon>
-                  添加课程
-                </el-button>
-              </div>
-            </div>
-          </template>
-          <el-table :data="visibleProgramCourses" border stripe>
-            <el-table-column prop="courseId" label="课程ID" width="80" />
-            <el-table-column
-              prop="courseName"
-              label="课程名称"
-              width="200"
-              show-overflow-tooltip
-            />
-            <el-table-column
-              prop="courseCode"
-              label="课程代码"
-              width="120"
-              show-overflow-tooltip
-            />
-            <el-table-column prop="credit" label="学分" width="80" />
-            <el-table-column prop="totalHours" label="总学时" width="80" />
-            <el-table-column prop="courseType" label="课程类型" width="120" />
-            <el-table-column prop="courseNature" label="课程性质" width="120" />
-            <el-table-column
-              label="操作"
-              width="110"
-              fixed="right"
-              align="center"
-            >
-              <template #default="scope">
-                <el-space :size="6">
-                  <el-tooltip content="编辑" placement="top">
-                    <el-button
-                      v-if="hasPermission?.('course:edit') ?? true"
-                      circle
-                      type="primary"
-                      size="small"
-                      @click="handleEditCourse(scope.row)"
-                    >
-                      <el-icon><Edit /></el-icon>
-                    </el-button>
-                  </el-tooltip>
-
-                  <el-tooltip content="删除" placement="top">
-                    <el-button
-                      v-if="hasPermission?.('course:delete') ?? true"
-                      circle
-                      type="danger"
-                      size="small"
-                      @click="handleDeleteCourse(scope.row.courseId)"
-                    >
-                      <el-icon><Delete /></el-icon>
-                    </el-button>
-                  </el-tooltip>
-                </el-space>
-              </template>
-            </el-table-column>
-
-            <!--            <el-table-column label="操作" width="150" fixed="right">-->
-            <!--              <template #default="scope">-->
-            <!--                <el-button-->
-            <!--                  type="primary"-->
-            <!--                  size="small"-->
-            <!--                  @click="handleEditCourse(scope.row)"-->
-            <!--                >-->
-            <!--                  <el-icon><Edit /></el-icon>-->
-            <!--                  编辑-->
-            <!--                </el-button>-->
-            <!--                <el-button-->
-            <!--                  type="danger"-->
-            <!--                  size="small"-->
-            <!--                  @click="handleDeleteCourse(scope.row.courseId)"-->
-            <!--                >-->
-            <!--                  <el-icon><Delete /></el-icon>-->
-            <!--                  删除-->
-            <!--                </el-button>-->
-            <!--              </template>-->
-            <!--            </el-table-column>-->
-          </el-table>
-        </el-card>
-
-        <!-- 课程学期安排 -->
-        <el-card class="mb-4">
-          <template #header>
-            <div class="card-header">
-              <div class="header-title">
-                <span>课程学期安排</span>
-                <span class="header-subtitle"
-                  >按学期查看课程安排与统计数据</span
-                >
-              </div>
-              <div class="header-actions">
-                <el-tag effect="light" type="info"
-                  >当前：第{{ selectedSemester }}学期</el-tag
-                >
-              </div>
-            </div>
-          </template>
-          <el-steps :active="activeStep" simple class="semester-steps">
-            <el-step v-for="i in 8" :key="i" :title="`第${i}学期`" />
-          </el-steps>
-          <div class="semester-toolbar">
-            <div class="semester-picker">
-              <span class="toolbar-label">选择学期</span>
-              <el-select
-                v-model="selectedSemester"
-                placeholder="选择学期"
-                style="width: 200px"
-              >
-                <el-option
-                  v-for="i in 8"
-                  :key="i"
-                  :label="`第${i}学期`"
-                  :value="i"
-                />
-              </el-select>
-            </div>
-            <el-button type="primary" @click="handleViewSemesterCourses">
-              <el-icon><Search /></el-icon>
-              查看课程
-            </el-button>
           </div>
+        </template>
+        <div class="export-hint">
+          生成课程安排后可直接下载为HTML格式，支持本地打开与归档。
+        </div>
 
-          <!-- 学期课程列表 -->
-          <el-table
-            v-if="semesterCourses.length > 0"
-            :data="semesterCourses"
-            border
-            stripe
-            class="mt-4 semester-course-table"
+        <!-- 完整课程安排表格 -->
+        <el-table
+          v-if="showFullScheduleTable"
+          :data="visibleFullScheduleTableData"
+          border
+          stripe
+          style="margin-bottom: 20px"
+        >
+          <el-table-column prop="semester" label="学期" width="100" />
+          <el-table-column prop="courseName" label="课程名称" width="200" />
+          <el-table-column prop="courseCode" label="课程代码" width="120" />
+          <el-table-column prop="credit" label="学分" width="80" />
+          <el-table-column prop="totalHours" label="总学时" width="80" />
+          <el-table-column
+            prop="theoreticalHours"
+            label="理论学时"
+            width="100"
+          />
+          <el-table-column
+            prop="practicalHours"
+            label="实践学时"
+            width="100"
+          />
+          <el-table-column prop="courseType" label="课程类型" width="120" />
+          <el-table-column prop="courseNature" label="课程性质" width="120" />
+          <el-table-column prop="examMark" label="考核方式" width="100" />
+          <el-table-column
+            prop="courseCategory"
+            label="课程类别"
+            width="120"
+          />
+          <el-table-column label="授课教师" width="150">
+            <template #default="scope">
+              {{ formatTeacherNames(scope.row.teacherIds) }}
+            </template>
+          </el-table-column>
+        </el-table>
+
+        <div class="text-center mt-4">
+          <el-button
+            type="success"
+            size="large"
+            :loading="exportingFullSchedule"
+            @click="handleExportFullSchedule"
           >
-            <el-table-column prop="courseName" label="课程名称" width="200" />
-            <el-table-column prop="credit" label="学分" width="80" />
-            <el-table-column prop="totalHours" label="总学时" width="80" />
-            <el-table-column prop="courseType" label="课程类型" width="120" />
-            <el-table-column prop="courseNature" label="课程性质" width="120" />
-            <el-table-column label="授课教师" width="150">
-              <template #default="scope">
-                {{ formatTeacherNames(scope.row.teacherIds) }}
-              </template>
-            </el-table-column>
-          </el-table>
-          <div v-if="semesterStats" class="mt-4 semester-stats">
-            <div class="stats-header">学期统计</div>
-            <el-row :gutter="12" class="stats-grid">
-              <el-col :span="8">
-                <div class="stat-card">
-                  <span class="stat-label">课程数量</span>
-                  <span class="stat-value">{{
-                    semesterStats.totalCourses
-                  }}</span>
-                </div>
-              </el-col>
-              <el-col :span="8">
-                <div class="stat-card">
-                  <span class="stat-label">总学分</span>
-                  <span class="stat-value">{{
-                    semesterStats.totalCredit
-                  }}</span>
-                </div>
-              </el-col>
-              <el-col :span="8">
-                <div class="stat-card">
-                  <span class="stat-label">总学时</span>
-                  <span class="stat-value">{{ semesterStats.totalHours }}</span>
-                </div>
-              </el-col>
-              <el-col :span="12">
-                <div class="stat-card">
-                  <span class="stat-label">理论学时</span>
-                  <span class="stat-value">{{
-                    semesterStats.totalTheoreticalHours
-                  }}</span>
-                </div>
-              </el-col>
-              <el-col :span="12">
-                <div class="stat-card">
-                  <span class="stat-label">实践学时</span>
-                  <span class="stat-value">{{
-                    semesterStats.totalPracticalHours
-                  }}</span>
-                </div>
-              </el-col>
-            </el-row>
-            <div class="stats-tags">
-              <div class="stat-group">
-                <span class="stat-label">课程性质：</span>
-                <el-tag
-                  v-for="(count, key) in semesterStats.courseNatureCount || {}"
-                  :key="`nature-${key}`"
-                  class="stat-tag"
-                  type="info"
-                >
-                  {{ key }} {{ count }}
-                </el-tag>
-              </div>
-              <div class="stat-group">
-                <span class="stat-label">课程类别：</span>
-                <el-tag
-                  v-for="(count, key) in semesterStats.courseCategoryCount ||
-                  {}"
-                  :key="`category-${key}`"
-                  class="stat-tag"
-                >
-                  {{ key }} {{ count }}
-                </el-tag>
-              </div>
-            </div>
-          </div>
-          <el-empty
-            v-if="semesterCourses.length === 0 && !semesterStats"
-            description="该学期暂无课程"
-            class="mt-4"
-          />
-        </el-card>
-
-        <!-- 导出完整课程安排 -->
-        <el-card>
-          <template #header>
-            <div class="card-header">
-              <div class="header-title">
-                <span>完整课程安排</span>
-                <span class="header-subtitle"
-                  >覆盖四年八个学期的课程分布与统计</span
-                >
-              </div>
-              <div class="header-actions">
-                <el-button
-                  type="success"
-                  :loading="exportingFullSchedule"
-                  @click="handleExportFullSchedule"
-                >
-                  <el-icon><Download /></el-icon>
-                  导出HTML
-                </el-button>
-                <el-button
-                  type="primary"
-                  @click="showFullScheduleTable = !showFullScheduleTable"
-                >
-                  <el-icon><View /></el-icon>
-                  {{ showFullScheduleTable ? "隐藏表格" : "显示表格" }}
-                </el-button>
-                <el-button
-                  v-if="showFullScheduleTable && shouldShowScheduleToggle"
-                  @click="toggleScheduleCollapse"
-                >
-                  <el-icon><View /></el-icon>
-                  {{ showAllScheduleRows ? "收起" : "展开" }}
-                </el-button>
-              </div>
-            </div>
-          </template>
-          <div class="export-hint">
-            生成课程安排后可直接下载为HTML格式，支持本地打开与归档。
-          </div>
-
-          <!-- 完整课程安排表格 -->
-          <el-table
-            v-if="showFullScheduleTable"
-            :data="visibleFullScheduleTableData"
-            border
-            stripe
-            style="margin-bottom: 20px"
-          >
-            <el-table-column prop="semester" label="学期" width="100" />
-            <el-table-column prop="courseName" label="课程名称" width="200" />
-            <el-table-column prop="courseCode" label="课程代码" width="120" />
-            <el-table-column prop="credit" label="学分" width="80" />
-            <el-table-column prop="totalHours" label="总学时" width="80" />
-            <el-table-column
-              prop="theoreticalHours"
-              label="理论学时"
-              width="100"
-            />
-            <el-table-column
-              prop="practicalHours"
-              label="实践学时"
-              width="100"
-            />
-            <el-table-column prop="courseType" label="课程类型" width="120" />
-            <el-table-column prop="courseNature" label="课程性质" width="120" />
-            <el-table-column prop="examMark" label="考核方式" width="100" />
-            <el-table-column
-              prop="courseCategory"
-              label="课程类别"
-              width="120"
-            />
-            <el-table-column label="授课教师" width="150">
-              <template #default="scope">
-                {{ formatTeacherNames(scope.row.teacherIds) }}
-              </template>
-            </el-table-column>
-          </el-table>
-
-          <div class="text-center mt-4">
-            <el-button
-              type="success"
-              size="large"
-              :loading="exportingFullSchedule"
-              @click="handleExportFullSchedule"
-            >
-              <el-icon><Download /></el-icon>
-              导出四年八个学期完整课程安排（HTML）
-            </el-button>
-          </div>
-        </el-card>
-      </div>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="courseDialogVisible = false">关闭</el-button>
-        </span>
-      </template>
-    </el-dialog>
+            <el-icon><Download /></el-icon>
+            导出四年八个学期完整课程安排（HTML）
+          </el-button>
+        </div>
+      </el-card>
+    </div>
 
     <!-- 课程表单对话框 -->
     <el-dialog
@@ -682,43 +474,9 @@ import {
 } from "../api/course";
 import { getUsers } from "../api/user";
 
-// 表格数据
-const programs = ref([]);
-const total = ref(0);
-const currentPage = ref(1);
-const pageSize = ref(10);
-const selectedProgramIds = ref([]);
-
-// 对话框
-const dialogVisible = ref(false);
-const programForm = reactive({
-  programId: null,
-  majorName: "",
-  duration: 4,
-  totalCredit: 160,
-  effectiveYear: new Date().getFullYear(),
-  description: "",
-});
-
 // 课程管理相关状态
-const courseDialogVisible = ref(false);
 const currentProgram = reactive({});
 const programCourses = ref([]);
-
-// 课程学期安排相关状态
-const activeStep = ref(0);
-const selectedSemester = ref(1);
-const semesterCourses = ref([]);
-const semesterStats = ref(null);
-const showAllCourses = ref(false);
-const showAllScheduleRows = ref(false);
-const courseCollapseLimit = 8;
-const scheduleCollapseLimit = 12;
-const exportingFullSchedule = ref(false);
-
-// 完整课程安排表格相关状态
-const showFullScheduleTable = ref(false);
-const fullScheduleTableData = ref([]);
 const visibleProgramCourses = computed(() => {
   if (showAllCourses.value) return programCourses.value;
   return programCourses.value.slice(0, courseCollapseLimit);
@@ -726,6 +484,21 @@ const visibleProgramCourses = computed(() => {
 const shouldShowCourseToggle = computed(
   () => programCourses.value.length > courseCollapseLimit
 );
+const showAllCourses = ref(false);
+const courseCollapseLimit = 8;
+
+// 课程学期安排相关状态
+const activeStep = ref(0);
+const selectedSemester = ref(1);
+const semesterCourses = ref([]);
+const semesterStats = ref(null);
+const showAllScheduleRows = ref(false);
+const scheduleCollapseLimit = 12;
+const exportingFullSchedule = ref(false);
+
+// 完整课程安排表格相关状态
+const showFullScheduleTable = ref(false);
+const fullScheduleTableData = ref([]);
 const visibleFullScheduleTableData = computed(() => {
   if (showAllScheduleRows.value) return fullScheduleTableData.value;
   return fullScheduleTableData.value.slice(0, scheduleCollapseLimit);
@@ -919,26 +692,6 @@ const formatTeacherNames = (teacherIds) => {
     .join("、");
 };
 
-// 获取培养方案列表
-const fetchPrograms = async () => {
-  try {
-    // 获取当前用户信息
-    const userStr = localStorage.getItem("user");
-    const user = userStr ? JSON.parse(userStr) : null;
-
-    const response = await getTrainingPrograms(
-      currentPage.value,
-      pageSize.value,
-      user?.programId || null // 传递专业ID，只获取当前用户专业的培养方案
-    );
-    programs.value = response.records;
-    total.value = response.total;
-  } catch (error) {
-    ElMessage.error("获取培养方案列表失败");
-    console.error("获取培养方案列表失败:", error);
-  }
-};
-
 const fetchTeachers = async () => {
   try {
     const response = await getUsers();
@@ -949,131 +702,6 @@ const fetchTeachers = async () => {
     ElMessage.error("获取教师列表失败");
     console.error("获取教师列表失败:", error);
   }
-};
-
-// 分页处理
-const handleSizeChange = (size) => {
-  pageSize.value = size;
-  fetchPrograms();
-};
-
-const handleCurrentChange = (page) => {
-  currentPage.value = page;
-  fetchPrograms();
-};
-
-// 选择处理
-const handleSelectionChange = (selection) => {
-  selectedProgramIds.value = selection.map((item) => item.programId);
-};
-
-// 批量删除
-const handleBatchDelete = async () => {
-  try {
-    await ElMessageBox.confirm(
-      `确定要删除选中的 ${selectedProgramIds.value.length} 条培养方案记录吗？`,
-      "删除确认",
-      {
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
-        type: "warning",
-      }
-    );
-
-    await deleteProgramBatch(selectedProgramIds.value);
-    ElMessage.success("批量删除成功");
-    selectedProgramIds.value = [];
-    fetchPrograms();
-  } catch (error) {
-    if (error !== "cancel") {
-      ElMessage.error("批量删除失败");
-      console.error("批量删除失败:", error);
-    }
-  }
-};
-
-// 添加培养方案
-const handleAddProgram = () => {
-  Object.assign(programForm, {
-    programId: null,
-    majorName: "",
-    duration: 4,
-    totalCredit: 160,
-    effectiveYear: new Date().getFullYear(),
-    description: "",
-  });
-  dialogVisible.value = true;
-};
-
-// 编辑培养方案
-const handleEditProgram = (row) => {
-  Object.assign(programForm, row);
-  dialogVisible.value = true;
-};
-
-// 保存培养方案
-const handleSaveProgram = async () => {
-  try {
-    console.log("保存培养方案数据:", programForm);
-    // 移除空的description字段，避免后端处理问题
-    const formData = { ...programForm };
-    if (!formData.description) {
-      delete formData.description;
-    }
-    if (formData.programId) {
-      // 更新培养方案
-      await updateTrainingProgram(formData.programId, formData);
-      ElMessage.success("培养方案更新成功");
-    } else {
-      // 添加培养方案
-      const response = await addTrainingProgram(formData);
-      console.log("添加培养方案响应:", response);
-      ElMessage.success("培养方案添加成功");
-    }
-    dialogVisible.value = false;
-    fetchPrograms();
-  } catch (error) {
-    console.error("保存培养方案失败详细信息:", error);
-    console.error("错误状态:", error.response?.status);
-    console.error("错误数据:", error.response?.data);
-    ElMessage.error(
-      programForm.programId ? "培养方案更新失败" : "培养方案添加失败"
-    );
-    console.error("保存培养方案失败:", error);
-  }
-};
-
-// 删除培养方案
-const handleDeleteProgram = async (programId) => {
-  try {
-    await ElMessageBox.confirm("确定要删除该培养方案记录吗？", "删除确认", {
-      confirmButtonText: "确定",
-      cancelButtonText: "取消",
-      type: "warning",
-    });
-
-    await deleteTrainingProgram(programId);
-    ElMessage.success("培养方案删除成功");
-    fetchPrograms();
-  } catch (error) {
-    if (error !== "cancel") {
-      ElMessage.error("培养方案删除失败");
-      console.error("删除培养方案失败:", error);
-    }
-  }
-};
-
-// 管理课程
-const handleManageCourses = async (program) => {
-  Object.assign(currentProgram, program);
-  showAllCourses.value = false;
-  showAllScheduleRows.value = false;
-  semesterCourses.value = [];
-  semesterStats.value = null;
-  activeStep.value = 0;
-  selectedSemester.value = 1;
-  await fetchProgramCourses(program.programId);
-  courseDialogVisible.value = true;
 };
 
 // 获取培养方案的课程列表
@@ -1224,9 +852,39 @@ const handleExportFullSchedule = async () => {
   }
 };
 
-// 页面挂载时获取培养方案列表
+// 获取当前用户负责的培养方案
+const fetchUserProgram = async () => {
+  try {
+    // 获取当前用户信息
+    const userStr = localStorage.getItem("user");
+    const user = userStr ? JSON.parse(userStr) : null;
+    
+    if (!user) {
+      ElMessage.error("请先登录");
+      return;
+    }
+    
+    // 获取用户负责的培养方案
+    const response = await getTrainingPrograms(1, 10, null, user.userId);
+    const programs = response.records || [];
+    
+    if (programs.length > 0) {
+      // 使用第一个培养方案作为当前方案
+      Object.assign(currentProgram, programs[0]);
+      // 获取该培养方案的课程
+      await fetchProgramCourses(programs[0].programId);
+    } else {
+      ElMessage.warning("您没有负责的培养方案");
+    }
+  } catch (error) {
+    ElMessage.error("获取培养方案失败");
+    console.error("获取培养方案失败:", error);
+  }
+};
+
+// 页面挂载时获取数据
 onMounted(() => {
-  fetchPrograms();
+  fetchUserProgram();
   fetchTeachers();
 });
 </script>

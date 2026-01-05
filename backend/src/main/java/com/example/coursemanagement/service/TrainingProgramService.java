@@ -45,9 +45,19 @@ public interface TrainingProgramService {
     List<TrainingProgram> listPage(Integer page, Integer limit);
 
     /**
+     * 分页查询培养方案（支持过滤）
+     */
+    List<TrainingProgram> listPage(Integer page, Integer limit, Integer programId, Integer teacherId);
+
+    /**
      * 查询培养方案总数
      */
     int count();
+
+    /**
+     * 查询培养方案总数（支持过滤）
+     */
+    int count(Integer programId, Integer teacherId);
     
     /**
      * 根据老师ID查询培养方案列表

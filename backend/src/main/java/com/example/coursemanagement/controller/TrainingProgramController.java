@@ -33,9 +33,13 @@ public class TrainingProgramController {
      * 分页查询培养方案
      */
     @GetMapping("/page")
-    public ResponseEntity<Map<String, Object>> getTrainingProgramPage(@RequestParam(defaultValue = "1") Integer page, @RequestParam(defaultValue = "10") Integer limit) {
-        List<TrainingProgram> programs = trainingProgramService.listPage(page, limit);
-        int total = trainingProgramService.count();
+    public ResponseEntity<Map<String, Object>> getTrainingProgramPage(
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "10") Integer limit,
+            @RequestParam(required = false) Integer programId,
+            @RequestParam(required = false) Integer teacherId) {
+        List<TrainingProgram> programs = trainingProgramService.listPage(page, limit, programId, teacherId);
+        int total = trainingProgramService.count(programId, teacherId);
         Map<String, Object> result = new HashMap<>();
         result.put("records", programs);
         result.put("total", total);

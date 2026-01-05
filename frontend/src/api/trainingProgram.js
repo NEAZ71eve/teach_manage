@@ -5,12 +5,16 @@ import request from './request'
  * @param {number} page - 当前页码
  * @param {number} pageSize - 每页大小
  * @param {number|null} programId - 专业ID，用于过滤特定专业的培养方案
+ * @param {number|null} teacherId - 老师ID，用于过滤老师负责的培养方案
  * @returns {Promise}
  */
-export const getTrainingPrograms = (page, pageSize, programId = null) => {
+export const getTrainingPrograms = (page, pageSize, programId = null, teacherId = null) => {
   let url = `/training-program/page?page=${page}&limit=${pageSize}`;
   if (programId) {
     url += `&programId=${programId}`;
+  }
+  if (teacherId) {
+    url += `&teacherId=${teacherId}`;
   }
   return request({
     url: url,
