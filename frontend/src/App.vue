@@ -259,9 +259,13 @@ const canAccessMenu = (menuPath) => {
   }
 
   if (isProgramTeacher) {
-    return ["/courses", "/training-programs", "/semester-schedule"].includes(
-      menuPath
-    );
+    return [
+      "/courses",
+      "/training-programs",
+      "/semester-schedule",
+      "/knowledge-points",
+      "/question-bank",
+    ].includes(menuPath);
   }
 
   if (isNormalTeacher) {

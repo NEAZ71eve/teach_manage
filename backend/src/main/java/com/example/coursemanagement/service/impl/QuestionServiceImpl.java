@@ -62,11 +62,6 @@ public class QuestionServiceImpl implements QuestionService {
     }
     
     @Override
-    public List<Question> listByCategoryId(Integer categoryId) {
-        return questionRepository.findByCategoryId(categoryId);
-    }
-
-    @Override
     public boolean save(Question question) {
         System.out.println("=== 开始保存题目 ===");
         System.out.println("题目类型: " + question.getQuestionType());
@@ -122,13 +117,13 @@ public class QuestionServiceImpl implements QuestionService {
     }
 
     @Override
-    public List<Question> listPage(Integer page, Integer limit, Integer questionType, String difficulty, Integer categoryId, Integer kpId, String keyword) {
-        return questionRepository.findByPage(page, limit, questionType, difficulty, categoryId, kpId, keyword);
+    public List<Question> listPage(Integer page, Integer limit, Integer questionType, String difficulty, Integer kpId, Integer courseId, String keyword) {
+        return questionRepository.findByPage(page, limit, questionType, difficulty, kpId, courseId, keyword);
     }
 
     @Override
-    public int count(Integer questionType, String difficulty, Integer categoryId, Integer kpId, String keyword) {
-        return questionRepository.count(questionType, difficulty, categoryId, kpId, keyword);
+    public int count(Integer questionType, String difficulty, Integer kpId, Integer courseId, String keyword) {
+        return questionRepository.count(questionType, difficulty, kpId, courseId, keyword);
     }
     
     @Override

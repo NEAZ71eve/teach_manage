@@ -42,11 +42,6 @@ public interface QuestionService {
     List<Question> listByDifficulty(String difficulty);
 
     /**
-     * 根据分类查询题目
-     */
-    List<Question> listByCategoryId(Integer categoryId);
-
-    /**
      * 新增题目
      */
     boolean save(Question question);
@@ -69,12 +64,12 @@ public interface QuestionService {
     /**
      * 分页查询题目
      */
-    List<Question> listPage(Integer page, Integer limit, Integer questionType, String difficulty, Integer categoryId, Integer kpId, String keyword);
+    List<Question> listPage(Integer page, Integer limit, Integer questionType, String difficulty, Integer kpId, Integer courseId, String keyword);
 
     /**
      * 查询题目总数
      */
-    int count(Integer questionType, String difficulty, Integer categoryId, Integer kpId, String keyword);
+    int count(Integer questionType, String difficulty, Integer kpId, Integer courseId, String keyword);
     
     /**
      * 查询所有题目分类

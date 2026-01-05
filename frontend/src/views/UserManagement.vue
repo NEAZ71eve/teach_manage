@@ -13,8 +13,6 @@
           {{ displayRoleName(scope.row.roleName) }}
         </template>
       </el-table-column>
-      <el-table-column prop="email" label="邮箱" />
-      <el-table-column prop="phone" label="电话" width="120" />
       <el-table-column prop="programId" label="负责专业" width="140">
         <template #default="scope">
           {{ getProgramName(scope.row.programId) }}
@@ -71,16 +69,6 @@
         </el-form-item>
         <el-form-item label="真实姓名" required>
           <el-input v-model="formData.realName" placeholder="请输入真实姓名" />
-        </el-form-item>
-        <el-form-item label="邮箱" required>
-          <el-input
-            v-model="formData.email"
-            placeholder="请输入邮箱"
-            type="email"
-          />
-        </el-form-item>
-        <el-form-item label="电话" required>
-          <el-input v-model="formData.phone" placeholder="请输入电话" />
         </el-form-item>
         <el-form-item label="角色" required>
           <el-select

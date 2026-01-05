@@ -18,10 +18,10 @@ export const getQuestions = (page, pageSize, searchParams) => {
     params.append("questionType", searchParams.questionType);
   if (searchParams.difficulty)
     params.append("difficulty", searchParams.difficulty);
-  if (searchParams.categoryId)
-    params.append("categoryId", searchParams.categoryId);
   if (searchParams.kpId)
     params.append("kpId", searchParams.kpId);
+  if (searchParams.courseId)
+    params.append("courseId", searchParams.courseId);
   if (searchParams.keyword)
     params.append("keyword", searchParams.keyword);
 

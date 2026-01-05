@@ -197,9 +197,13 @@ const hasPermission = (to, permissions) => {
   }
 
   if (isProgramTeacher) {
-    return ["/courses", "/training-programs", "/semester-schedule"].includes(
-      to.path
-    );
+    return [
+      "/courses",
+      "/training-programs",
+      "/semester-schedule",
+      "/knowledge-points",
+      "/question-bank",
+    ].includes(to.path);
   }
 
   if (isNormalTeacher) {

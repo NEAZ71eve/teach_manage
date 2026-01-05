@@ -94,8 +94,8 @@ public class QuestionRepository {
                 return 0;
             }
             
-            // 直接执行INSERT语句，包含category_id字段
-            String sql = "INSERT INTO question (question_type, question_content, kp_id, category_id, difficulty, score, correct_answer, create_time, update_time) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
+            // 直接执行INSERT语句
+            String sql = "INSERT INTO question (question_type, question_content, kp_id, difficulty, score, correct_answer, create_time, update_time) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())";
             System.out.println("执行的SQL语句: " + sql);
             
             // 使用PreparedStatement直接执行，不使用GeneratedKeyHolder获取主键
@@ -104,7 +104,6 @@ public class QuestionRepository {
                 question.getQuestionType(),
                 question.getQuestionContent(),
                 question.getKpId(),
-                question.getCategoryId(),
                 question.getDifficulty(),
                 question.getScore(),
                 question.getCorrectAnswer()
@@ -152,13 +151,12 @@ public class QuestionRepository {
         }
         
         // 执行UPDATE语句，更新question表
-        String sql = "UPDATE question SET question_type = ?, question_content = ?, kp_id = ?, category_id = ?, difficulty = ?, score = ?, correct_answer = ?, analysis = ?, update_time = NOW() WHERE question_id = ?";
+        String sql = "UPDATE question SET question_type = ?, question_content = ?, kp_id = ?, difficulty = ?, score = ?, correct_answer = ?, analysis = ?, update_time = NOW() WHERE question_id = ?";
         int result = jdbcTemplate.update(
                 sql, 
                 question.getQuestionType(), 
                 question.getQuestionContent(), 
                 question.getKpId(),
-                question.getCategoryId(),
                 question.getDifficulty(), 
                 question.getScore(),
                 question.getCorrectAnswer(),
@@ -332,22 +330,6 @@ public class QuestionRepository {
     }
     
     /**
-     * 根据分类ID查询题目
-     */
-    public List<Question> findByCategoryId(Integer categoryId) {
-        String sql = "SELECT q.question_id, q.question_type, q.question_content, q.kp_id, q.difficulty, q.score, q.correct_answer, q.analysis, q.is_used, q.create_time, q.update_time, kp.kp_name, kp.course_id, c.course_name " +
-                "FROM question q " +
-                "JOIN knowledge_point kp ON q.kp_id = kp.kp_id " +
-                "JOIN course c ON kp.course_id = c.course_id " +
-                "WHERE q.category_id = ?";
-        List<Question> questions = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Question.class), categoryId);
-        questions.forEach(this::loadQuestionOptions);
-        questions.forEach(this::loadQuestionTags);
-        questions.forEach(this::loadQuestionStatistics);
-        return questions;
-    }
-    
-    /**
      * 更新题目使用状态
      */
     public int updateUsedStatus(String sql, Integer isUsed, Integer questionId) {
@@ -357,7 +339,7 @@ public class QuestionRepository {
     /**
      * 带条件的分页查询题目
      */
-    public List<Question> findByPage(int page, int limit, Integer questionType, String difficulty, Integer categoryId, Integer kpId, String keyword) {
+    public List<Question> findByPage(int page, int limit, Integer questionType, String difficulty, Integer kpId, Integer courseId, String keyword) {
         int offset = (page - 1) * limit;
         StringBuilder sql = new StringBuilder("SELECT q.question_id, q.question_type, q.question_content, q.kp_id, q.difficulty, q.score, q.correct_answer, q.analysis, q.is_used, q.create_time, q.update_time, kp.kp_name, kp.course_id, c.course_name " +
                 "FROM question q " +
@@ -376,14 +358,14 @@ public class QuestionRepository {
             params.add(difficulty);
         }
         
-        if (categoryId != null) {
-            sql.append(" AND q.category_id = ?");
-            params.add(categoryId);
-        }
-        
         if (kpId != null) {
             sql.append(" AND q.kp_id = ?");
             params.add(kpId);
+        }
+
+        if (courseId != null) {
+            sql.append(" AND kp.course_id = ?");
+            params.add(courseId);
         }
         
         if (keyword != null && !keyword.isEmpty()) {
@@ -405,7 +387,7 @@ public class QuestionRepository {
     /**
      * 带条件的题目计数
      */
-    public int count(Integer questionType, String difficulty, Integer categoryId, Integer kpId, String keyword) {
+    public int count(Integer questionType, String difficulty, Integer kpId, Integer courseId, String keyword) {
         StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM question q JOIN knowledge_point kp ON q.kp_id = kp.kp_id WHERE 1=1");
         List<Object> params = new ArrayList<>();
         
@@ -419,14 +401,14 @@ public class QuestionRepository {
             params.add(difficulty);
         }
         
-        if (categoryId != null) {
-            sql.append(" AND q.category_id = ?");
-            params.add(categoryId);
-        }
-        
         if (kpId != null) {
             sql.append(" AND q.kp_id = ?");
             params.add(kpId);
+        }
+
+        if (courseId != null) {
+            sql.append(" AND kp.course_id = ?");
+            params.add(courseId);
         }
         
         if (keyword != null && !keyword.isEmpty()) {

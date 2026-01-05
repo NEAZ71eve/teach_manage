@@ -50,6 +50,21 @@
             </el-select>
 
             <el-select
+                v-model="searchParams.courseId"
+                placeholder="选择课程"
+                style="width: 180px; margin-right: 10px"
+                clearable
+            >
+              <el-option label="全部课程" value="" />
+              <el-option
+                  v-for="course in courses"
+                  :key="course.courseId"
+                  :label="course.courseName"
+                  :value="course.courseId"
+              />
+            </el-select>
+
+            <el-select
                 v-model="searchParams.categoryId"
                 placeholder="选择分类"
                 style="width: 120px; margin-right: 10px"
@@ -71,7 +86,7 @@
             >
               <el-option label="全部知识点" value="" />
               <el-option
-                  v-for="kp in knowledgePoints"
+                  v-for="kp in filteredKnowledgePoints"
                   :key="kp.kpId"
                   :label="kp.kpName"
                   :value="kp.kpId"
@@ -425,7 +440,7 @@
 import { ref, onMounted, reactive, watch, computed } from "vue";
 import { Plus, Edit, Delete, View } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { getAllCourses } from "../api/course";
+import { getAllCourses, getCoursesByProgram } from "../api/course";
 import { getAllKnowledgePoints, getKnowledgePointsByCourseId } from "../api/knowledgePoint";
 import {
   getQuestions,
@@ -449,6 +464,7 @@ const selectedQuestionIds = ref([]);
 const searchParams = reactive({
   questionType: "",
   difficulty: "",
+  courseId: "",
   categoryId: "",
   kpId: "",
   keyword: "",
@@ -540,6 +556,15 @@ const allowedCourseIds = computed(() => {
   return new Set(courses.value.map((course) => course.courseId));
 });
 
+const filteredKnowledgePoints = computed(() => {
+  if (searchParams.courseId) {
+    return allKnowledgePoints.value.filter(
+      (point) => point.courseId === Number(searchParams.courseId)
+    );
+  }
+  return allKnowledgePoints.value;
+});
+
 const resolveQuestionCourseNature = (question) => {
   const courseId = kpCourseMap.value[question.kpId];
   return courseNatureMap.value[courseId];
@@ -566,6 +591,10 @@ const applyQuestionFilters = (list) => {
     if (searchParams.kpId && Number(question.kpId) !== Number(searchParams.kpId)) {
       return false;
     }
+    if (searchParams.courseId) {
+      const courseId = kpCourseMap.value[question.kpId];
+      if (Number(courseId) !== Number(searchParams.courseId)) return false;
+    }
     if (
       keyword &&
       !String(question.questionContent || "")
@@ -578,7 +607,7 @@ const applyQuestionFilters = (list) => {
       const nature = resolveQuestionCourseNature(question);
       if (nature !== courseNatureFilter.value) return false;
     }
-    if (isNormalTeacher.value) {
+    if (isNormalTeacher.value || isProgramTeacher.value) {
       const courseId = kpCourseMap.value[question.kpId];
       if (!allowedCourseIds.value.has(courseId)) return false;
     }
@@ -602,8 +631,12 @@ const selectedTags = ref([]);
 // 获取课程列表
 const fetchCourses = async () => {
   try {
-    const response = await getAllCourses();
-    const allCourses = response || [];
+    let allCourses = [];
+    if (isProgramTeacher.value && currentUser.value?.programId) {
+      allCourses = (await getCoursesByProgram(currentUser.value.programId)) || [];
+    } else {
+      allCourses = (await getAllCourses()) || [];
+    }
     if (isNormalTeacher.value) {
       const teacherId = currentUser.value?.userId;
       courses.value = allCourses.filter((course) =>
@@ -639,7 +672,7 @@ const fetchAllKnowledgePoints = async () => {
   try {
     const response = await getAllKnowledgePoints();
     const points = response || [];
-    if (isNormalTeacher.value) {
+    if (isNormalTeacher.value || isProgramTeacher.value) {
       const allowed = allowedCourseIds.value;
       allKnowledgePoints.value = points.filter((point) =>
         allowed.has(point.courseId)
@@ -671,7 +704,7 @@ const fetchKnowledgePointsByCourse = async () => {
 // 获取题目列表
 const fetchQuestions = async () => {
   try {
-    if (courseNatureFilter.value || isNormalTeacher.value) {
+    if (courseNatureFilter.value || isNormalTeacher.value || isProgramTeacher.value) {
       const response = await getAllQuestions();
       const filtered = applyQuestionFilters(response || []);
       total.value = filtered.length;
@@ -792,6 +825,20 @@ watch(courseNatureFilter, () => {
   currentPage.value = 1;
   fetchQuestions();
 });
+
+watch(
+  () => searchParams.courseId,
+  () => {
+    if (
+      searchParams.kpId &&
+      !filteredKnowledgePoints.value.some(
+        (point) => Number(point.kpId) === Number(searchParams.kpId)
+      )
+    ) {
+      searchParams.kpId = "";
+    }
+  }
+);
 
 // 批量删除
 const handleBatchDelete = async () => {

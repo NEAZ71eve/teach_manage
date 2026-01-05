@@ -258,7 +258,7 @@
 import { ref, onMounted, reactive, computed } from "vue";
 import { Plus, Edit, Delete } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { getAllCourses } from "../api/course";
+import { getAllCourses, getCoursesByProgram } from "../api/course";
 import {
   getAllKnowledgePoints,
   getKnowledgePointsByCourseId,
@@ -343,8 +343,12 @@ const difficultyTagType = (difficulty) => {
 // 获取课程列表
 const fetchCourses = async () => {
   try {
-    const response = await getAllCourses();
-    const allCourses = response || [];
+    let allCourses = [];
+    if (isProgramTeacher.value && currentUser.value?.programId) {
+      allCourses = (await getCoursesByProgram(currentUser.value.programId)) || [];
+    } else {
+      allCourses = (await getAllCourses()) || [];
+    }
     if (isNormalTeacher.value) {
       const teacherId = currentUser.value?.userId;
       courses.value = allCourses.filter((course) =>
@@ -376,7 +380,7 @@ const fetchKnowledgePointTree = async () => {
       allPoints = await getAllKnowledgePoints();
     }
 
-    if (isNormalTeacher.value) {
+    if (isNormalTeacher.value || isProgramTeacher.value) {
       const allowedCourseIds = new Set(
         courses.value.map((course) => course.courseId)
       );
@@ -418,9 +422,9 @@ const fetchKnowledgePointTree = async () => {
 
 // 筛选指定课程的所有知识点（用于父知识点选择）
 const getFilteredKnowledgePoints = () => {
-  if (selectedCourse.value === 0) return allKnowledgePoints.value;
+  if (!pointForm.courseId) return allKnowledgePoints.value;
   return allKnowledgePoints.value.filter(
-    (point) => point.courseId === selectedCourse.value
+    (point) => point.courseId === pointForm.courseId
   );
 };
 

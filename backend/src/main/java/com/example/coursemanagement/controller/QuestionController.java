@@ -39,11 +39,11 @@ public class QuestionController {
                                                                @RequestParam(defaultValue = "10") Integer limit,
                                                                @RequestParam(required = false) Integer questionType,
                                                                @RequestParam(required = false) String difficulty,
-                                                               @RequestParam(required = false) Integer categoryId,
                                                                @RequestParam(required = false) Integer kpId,
+                                                               @RequestParam(required = false) Integer courseId,
                                                                @RequestParam(required = false) String keyword) {
-        List<Question> questions = questionService.listPage(page, limit, questionType, difficulty, categoryId, kpId, keyword);
-        int total = questionService.count(questionType, difficulty, categoryId, kpId, keyword);
+        List<Question> questions = questionService.listPage(page, limit, questionType, difficulty, kpId, courseId, keyword);
+        int total = questionService.count(questionType, difficulty, kpId, courseId, keyword);
         Map<String, Object> result = new HashMap<>();
         result.put("records", questions);
         result.put("total", total);
@@ -136,9 +136,10 @@ public class QuestionController {
                                                                           @RequestParam(defaultValue = "10") Integer limit, 
                                                                           @RequestParam(required = false) Integer questionType, 
                                                                           @RequestParam(required = false) String difficulty, 
-                                                                          @RequestParam(required = false) Integer categoryId) {
-        List<Question> questions = questionService.listPage(page, limit, questionType, difficulty, categoryId, null, null);
-        int total = questionService.count(questionType, difficulty, categoryId, null, null);
+                                                                          @RequestParam(required = false) Integer kpId,
+                                                                          @RequestParam(required = false) Integer courseId) {
+        List<Question> questions = questionService.listPage(page, limit, questionType, difficulty, kpId, courseId, null);
+        int total = questionService.count(questionType, difficulty, kpId, courseId, null);
         Map<String, Object> result = new HashMap<>();
         result.put("records", questions);
         result.put("total", total);
