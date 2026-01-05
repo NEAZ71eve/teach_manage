@@ -265,6 +265,7 @@ const canAccessMenu = (menuPath) => {
       "/semester-schedule",
       "/knowledge-points",
       "/question-bank",
+      "/practice-projects",
     ].includes(menuPath);
   }
 

@@ -19,6 +19,11 @@
         <el-table-column prop="id" label="项目ID" width="100" />
         <el-table-column prop="courseCode" label="课号" width="140" />
         <el-table-column prop="projectName" label="名称" min-width="200" />
+        <el-table-column label="负责教师" width="160">
+          <template #default="scope">
+            {{ formatTeacherName(scope.row.teacherId) }}
+          </template>
+        </el-table-column>
         <el-table-column
             prop="remarks"
             label="备注"
@@ -70,6 +75,16 @@
               <el-option v-for="n in 8" :key="n" :label="`第${n}学期`" :value="n" />
             </el-select>
           </el-form-item>
+          <el-form-item label="负责教师" prop="teacherId">
+            <el-select v-model="form.teacherId" placeholder="选择普通教师">
+              <el-option
+                v-for="teacher in teachers"
+                :key="teacher.userId"
+                :label="formatTeacherOption(teacher)"
+                :value="teacher.userId"
+              />
+            </el-select>
+          </el-form-item>
           <el-form-item label="周数" prop="weeks">
             <el-input v-model.number="form.weeks" type="number" placeholder="请输入周数" />
           </el-form-item>
@@ -97,11 +112,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { Plus } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   getPracticeProjects,
+  getPracticeProjectTeachers,
   addPracticeProject,
   updatePracticeProject,
   deletePracticeProject
@@ -119,6 +135,7 @@ const form = ref({
   courseCode: '',
   projectName: '',
   semester: null,
+  teacherId: null,
   weeks: null,
   credit: null,
   remarks: ''
@@ -128,9 +145,27 @@ const rules = ref({
   courseCode: [{ required: true, message: '请输入课号', trigger: 'blur' }],
   projectName: [{ required: true, message: '请输入名称', trigger: 'blur' }],
   semester: [{ required: true, message: '请选择学期', trigger: 'change' }],
+  teacherId: [{ required: true, message: '请选择负责教师', trigger: 'change' }],
   weeks: [{ required: true, message: '请输入周数', trigger: 'blur' }],
   credit: [{ required: true, message: '请输入学分', trigger: 'blur' }]
 })
+
+const teachers = ref([])
+const teacherNameMap = computed(() => {
+  const map = {}
+  teachers.value.forEach((teacher) => {
+    map[teacher.userId] = teacher.realName || teacher.username
+  })
+  return map
+})
+const formatTeacherOption = (teacher) => {
+  const name = teacher.realName || teacher.username
+  return name ? `${name}（${teacher.username}）` : teacher.username
+}
+const formatTeacherName = (teacherId) => {
+  if (!teacherId) return '未分配'
+  return teacherNameMap.value[teacherId] || `教师${teacherId}`
+}
 
 // 格式化日期时间
 const formatDateTime = (row, column, cellValue) => {
@@ -151,6 +186,7 @@ const openDialog = (project = null) => {
       courseCode: '',
       projectName: '',
       semester: null,
+      teacherId: null,
       weeks: null,
       credit: null,
       remarks: ''
@@ -224,9 +260,19 @@ const loadProjects = () => {
   })
 }
 
+const loadTeachers = () => {
+  const userStr = localStorage.getItem('user')
+  const currentUser = userStr ? JSON.parse(userStr) : null
+  const programId = currentUser?.programId || null
+  getPracticeProjectTeachers(programId).then((res) => {
+    teachers.value = res || []
+  })
+}
+
 // 组件挂载时加载数据
 onMounted(() => {
   loadProjects()
+  loadTeachers()
 })
 </script>
 

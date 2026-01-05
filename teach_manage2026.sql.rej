@@ -1,0 +1,129 @@
+diff a/teach_manage2026.sql b/teach_manage2026.sql	(rejected hunks)
+@@ -545,100 +545,101 @@ UNLOCK TABLES;
+ --
+ -- Table structure for table `permission`
+ --
+ 
+ DROP TABLE IF EXISTS `permission`;
+ /*!40101 SET @saved_cs_client     = @@character_set_client */;
+ /*!50503 SET character_set_client = utf8mb4 */;
+ CREATE TABLE `permission` (
+   `permission_id` int NOT NULL AUTO_INCREMENT,
+   `permission_name` varchar(100) NOT NULL,
+   `permission_code` varchar(100) NOT NULL,
+   `description` varchar(255) DEFAULT NULL,
+   `url` varchar(255) DEFAULT NULL,
+   `method` varchar(20) DEFAULT NULL,
+   PRIMARY KEY (`permission_id`),
+   UNIQUE KEY `permission_code` (`permission_code`)
+ ) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+ /*!40101 SET character_set_client = @saved_cs_client */;
+ 
+ --
+ -- Dumping data for table `permission`
+ --
+ 
+ LOCK TABLES `permission` WRITE;
+ /*!40000 ALTER TABLE `permission` DISABLE KEYS */;
+-INSERT INTO `permission` VALUES (1,'查看用户列表','user:list','查看所有用户信息','/users','GET'),(2,'新增用户','user:add','创建新用户','/users','POST'),(3,'编辑用户','user:edit','修改用户信息','/users/{id}','PUT'),(4,'删除用户','user:delete','删除用户','/users/{id}','DELETE'),(5,'查看角色列表','role:list','查看所有角色信息','/roles','GET'),(6,'新增角色','role:add','创建新角色','/roles','POST'),(7,'编辑角色','role:edit','修改角色信息','/roles/{id}','PUT'),(8,'删除角色','role:delete','删除角色','/roles/{id}','DELETE'),(9,'查看权限列表','permission:list','查看所有权限信息','/permissions','GET'),(10,'新增权限','permission:add','创建新权限','/permissions','POST'),(11,'编辑权限','permission:edit','修改权限信息','/permissions/{id}','PUT'),(12,'删除权限','permission:delete','删除权限','/permissions/{id}','DELETE'),(13,'查看课程列表','course:list','查看所有课程信息','/courses','GET'),(14,'新增课程','course:add','创建新课程','/courses','POST'),(15,'编辑课程','course:edit','修改课程信息','/courses/{id}','PUT'),(16,'删除课程','course:delete','删除课程','/courses/{id}','DELETE'),(17,'查看培养方案列表','training-program:list','查看所有培养方案信息','/training-programs','GET'),(18,'新增培养方案','training-program:add','创建新培养方案','/training-programs','POST'),(19,'编辑培养方案','training-program:edit','修改培养方案信息','/training-programs/{id}','PUT'),(20,'删除培养方案','training-program:delete','删除培养方案','/training-programs/{id}','DELETE');
++INSERT INTO `permission` VALUES (1,'查看用户列表','user:list','查看所有用户信息','/users','GET'),(2,'新增用户','user:add','创建新用户','/users','POST'),(3,'编辑用户','user:edit','修改用户信息','/users/{id}','PUT'),(4,'删除用户','user:delete','删除用户','/users/{id}','DELETE'),(5,'查看角色列表','role:list','查看所有角色信息','/roles','GET'),(6,'新增角色','role:add','创建新角色','/roles','POST'),(7,'编辑角色','role:edit','修改角色信息','/roles/{id}','PUT'),(8,'删除角色','role:delete','删除角色','/roles/{id}','DELETE'),(9,'查看权限列表','permission:list','查看所有权限信息','/permissions','GET'),(10,'新增权限','permission:add','创建新权限','/permissions','POST'),(11,'编辑权限','permission:edit','修改权限信息','/permissions/{id}','PUT'),(12,'删除权限','permission:delete','删除权限','/permissions/{id}','DELETE'),(13,'查看课程列表','course:list','查看所有课程信息','/courses','GET'),(14,'新增课程','course:add','创建新课程','/courses','POST'),(15,'编辑课程','course:edit','修改课程信息','/courses/{id}','PUT'),(16,'删除课程','course:delete','删除课程','/courses/{id}','DELETE'),(17,'查看培养方案列表','training-program:list','查看所有培养方案信息','/training-programs','GET'),(18,'新增培养方案','training-program:add','创建新培养方案','/training-programs','POST'),(19,'编辑培养方案','training-program:edit','修改培养方案信息','/training-programs/{id}','PUT'),(20,'删除培养方案','training-program:delete','删除培养方案','/training-programs/{id}','DELETE'),(21,'查看实践项目列表','practice-project:list','查看所有实践项目','/practice-project','GET'),(22,'新增实践项目','practice-project:add','创建实践项目','/practice-project','POST'),(23,'编辑实践项目','practice-project:edit','修改实践项目','/practice-project/{id}','PUT'),(24,'删除实践项目','practice-project:delete','删除实践项目','/practice-project/{id}','DELETE');
+ /*!40000 ALTER TABLE `permission` ENABLE KEYS */;
+ UNLOCK TABLES;
+ 
+ --
+ -- Table structure for table `practice_project`
+ --
+ 
+ DROP TABLE IF EXISTS `practice_project`;
+ /*!40101 SET @saved_cs_client     = @@character_set_client */;
+ /*!50503 SET character_set_client = utf8mb4 */;
+ CREATE TABLE `practice_project` (
+   `id` int NOT NULL AUTO_INCREMENT,
+   `course_code` varchar(20) NOT NULL COMMENT '课号',
+   `project_name` varchar(100) NOT NULL COMMENT '名称',
+-  `semester` int NOT NULL COMMENT '学期',
+-  `weeks` int NOT NULL COMMENT '周数',
+-  `credit` decimal(3,1) NOT NULL COMMENT '学分',
+-  `remarks` text COMMENT '备注',
+-  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+-  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+-  PRIMARY KEY (`id`),
+-  UNIQUE KEY `course_code` (`course_code`)
++  `semester` int NOT NULL COMMENT '学期',
++  `weeks` int NOT NULL COMMENT '周数',
++  `credit` decimal(3,1) NOT NULL COMMENT '学分',
++  `remarks` text COMMENT '备注',
++  `teacher_id` int DEFAULT NULL COMMENT '负责教师',
++  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
++  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
++  PRIMARY KEY (`id`),
++  UNIQUE KEY `course_code` (`course_code`)
+ ) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='专业实习与课程设计实践表';
+ /*!40101 SET character_set_client = @saved_cs_client */;
+ 
+ --
+ -- Dumping data for table `practice_project`
+ --
+ 
+ LOCK TABLES `practice_project` WRITE;
+ /*!40000 ALTER TABLE `practice_project` DISABLE KEYS */;
+ INSERT INTO `practice_project` VALUES
+-(1,'14500012','军事技能','1','3','2','集中实践','2026-01-05 09:00:00','2026-01-05 09:00:00'),
+-(2,'11629211','科学计算实践','2','1','1','第17周','2026-01-05 09:00:00','2026-01-05 09:00:00'),
+-(3,'11629201','基础开发劳动教育实习','2','1','1','第18周（2学时理论）','2026-01-05 09:00:00','2026-01-05 09:00:00'),
+-(4,'11614201','高级语言编程实践','2','8','1','分散实习(1-8周，32学时，周学时4)','2026-01-05 09:00:00','2026-01-05 09:00:00'),
+-(5,'11629302','Web开发实习','3','2','2','分散实习(9-16周，48学时，周学时6)','2026-01-05 09:00:00','2026-01-05 09:00:00'),
+-(6,'11620421','数据库课程设计','3','1','1','第18周','2026-01-05 09:00:00','2026-01-05 09:00:00'),
+-(7,'11691311','数据结构课程设计','3','1','1','第19周','2026-01-05 09:00:00','2026-01-05 09:00:00'),
+-(8,'11629402','Linux系统开发','4','2','2','第17-18周','2026-01-05 09:00:00','2026-01-05 09:00:00'),
+-(9,'11629452','数据采集与处理','4','2','2','分散实习（1-15周，48学时，周学时6）','2026-01-05 09:00:00','2026-01-05 09:00:00'),
+-(10,'11629502','分布式系统实践C','5','2','2','第18-19周','2026-01-05 09:00:00','2026-01-05 09:00:00'),
+-(11,'11629532','数据可视化','5','2','2','分散实习(9-16周，48学时，周学时6)','2026-01-05 09:00:00','2026-01-05 09:00:00'),
+-(12,'11629512','数据科学算法实践','5','2','2','分散实习(9-16周，48学时，周学时6)','2026-01-05 09:00:00','2026-01-05 09:00:00'),
+-(13,'11629501','算法设计实践','6','1','1','分散实习(9-16周，24学时，周学时3)','2026-01-05 09:00:00','2026-01-05 09:00:00'),
+-(14,'11629602','大数据应用开发实习P','6','2','2','第17-18周','2026-01-05 09:00:00','2026-01-05 09:00:00'),
+-(15,'11620703','专业方向实习','7','3','3','第1～3周','2026-01-05 09:00:00','2026-01-05 09:00:00'),
+-(16,'11690802','毕业实习','7','2','2','第18-19周','2026-01-05 09:00:00','2026-01-05 09:00:00'),
+-(17,'11610808','毕业设计','8','15','8','第1-15周','2026-01-05 09:00:00','2026-01-05 09:00:00');
++(1,'14500012','军事技能','1','3','2','集中实践',NULL,'2026-01-05 09:00:00','2026-01-05 09:00:00'),
++(2,'11629211','科学计算实践','2','1','1','第17周',NULL,'2026-01-05 09:00:00','2026-01-05 09:00:00'),
++(3,'11629201','基础开发劳动教育实习','2','1','1','第18周（2学时理论）',NULL,'2026-01-05 09:00:00','2026-01-05 09:00:00'),
++(4,'11614201','高级语言编程实践','2','8','1','分散实习(1-8周，32学时，周学时4)',NULL,'2026-01-05 09:00:00','2026-01-05 09:00:00'),
++(5,'11629302','Web开发实习','3','2','2','分散实习(9-16周，48学时，周学时6)',NULL,'2026-01-05 09:00:00','2026-01-05 09:00:00'),
++(6,'11620421','数据库课程设计','3','1','1','第18周',NULL,'2026-01-05 09:00:00','2026-01-05 09:00:00'),
++(7,'11691311','数据结构课程设计','3','1','1','第19周',NULL,'2026-01-05 09:00:00','2026-01-05 09:00:00'),
++(8,'11629402','Linux系统开发','4','2','2','第17-18周',NULL,'2026-01-05 09:00:00','2026-01-05 09:00:00'),
++(9,'11629452','数据采集与处理','4','2','2','分散实习（1-15周，48学时，周学时6）',NULL,'2026-01-05 09:00:00','2026-01-05 09:00:00'),
++(10,'11629502','分布式系统实践C','5','2','2','第18-19周',NULL,'2026-01-05 09:00:00','2026-01-05 09:00:00'),
++(11,'11629532','数据可视化','5','2','2','分散实习(9-16周，48学时，周学时6)',NULL,'2026-01-05 09:00:00','2026-01-05 09:00:00'),
++(12,'11629512','数据科学算法实践','5','2','2','分散实习(9-16周，48学时，周学时6)',NULL,'2026-01-05 09:00:00','2026-01-05 09:00:00'),
++(13,'11629501','算法设计实践','6','1','1','分散实习(9-16周，24学时，周学时3)',NULL,'2026-01-05 09:00:00','2026-01-05 09:00:00'),
++(14,'11629602','大数据应用开发实习P','6','2','2','第17-18周',NULL,'2026-01-05 09:00:00','2026-01-05 09:00:00'),
++(15,'11620703','专业方向实习','7','3','3','第1～3周',NULL,'2026-01-05 09:00:00','2026-01-05 09:00:00'),
++(16,'11690802','毕业实习','7','2','2','第18-19周',NULL,'2026-01-05 09:00:00','2026-01-05 09:00:00'),
++(17,'11610808','毕业设计','8','15','8','第1-15周',NULL,'2026-01-05 09:00:00','2026-01-05 09:00:00');
+ /*!40000 ALTER TABLE `practice_project` ENABLE KEYS */;
+ UNLOCK TABLES;
+ 
+ --
+ -- Table structure for table `question`
+ --
+ 
+ DROP TABLE IF EXISTS `question`;
+ /*!40101 SET @saved_cs_client     = @@character_set_client */;
+ /*!50503 SET character_set_client = utf8mb4 */;
+ CREATE TABLE `question` (
+   `question_id` int NOT NULL AUTO_INCREMENT,
+   `question_type` varchar(20) NOT NULL,
+   `question_content` text NOT NULL,
+   `kp_id` int NOT NULL,
+   `difficulty` varchar(20) DEFAULT '???',
+   `score` decimal(3,1) NOT NULL,
+   `option_a` varchar(200) DEFAULT NULL,
+   `option_b` varchar(200) DEFAULT NULL,
+   `option_c` varchar(200) DEFAULT NULL,
+   `option_d` varchar(200) DEFAULT NULL,
+   `option_e` varchar(200) DEFAULT NULL,
+   `correct_answer` text NOT NULL,
+   `analysis` text,
+   `is_used` tinyint DEFAULT '0',

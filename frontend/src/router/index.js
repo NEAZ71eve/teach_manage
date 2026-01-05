@@ -203,6 +203,7 @@ const hasPermission = (to, permissions) => {
       "/semester-schedule",
       "/knowledge-points",
       "/question-bank",
+      "/practice-projects",
     ].includes(to.path);
   }
 

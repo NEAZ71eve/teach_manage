@@ -17,6 +17,7 @@ public class PracticeProject {
     private Integer weeks;
     private Double credit;
     private String remarks;
+    private Integer teacherId;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 }

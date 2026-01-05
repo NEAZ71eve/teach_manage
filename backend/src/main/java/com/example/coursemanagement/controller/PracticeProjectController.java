@@ -1,12 +1,15 @@
 package com.example.coursemanagement.controller;
 
 import com.example.coursemanagement.entity.PracticeProject;
+import com.example.coursemanagement.entity.User;
 import com.example.coursemanagement.service.PracticeProjectService;
+import com.example.coursemanagement.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 实践项目Controller
@@ -18,6 +21,8 @@ public class PracticeProjectController {
     @Autowired
     private PracticeProjectService practiceProjectService;
 
+    @Autowired
+    private UserService userService;
 
     /**
      * 获取所有实践项目
@@ -25,6 +30,20 @@ public class PracticeProjectController {
     @GetMapping
     public ResponseEntity<List<PracticeProject>> listAll() {
         return ResponseEntity.ok(practiceProjectService.list());
+    }
+
+    /**
+     * 获取可分配的普通教师列表
+     */
+    @GetMapping("/teachers")
+    public ResponseEntity<List<User>> listTeachers(@RequestParam(required = false) Integer programId) {
+        List<User> users = userService.findAll();
+        List<User> teachers = users.stream()
+                .filter(user -> "教师".equals(user.getRoleName()))
+                .filter(user -> programId == null || programId.equals(user.getProgramId()))
+                .peek(user -> user.setPassword(null))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(teachers);
     }
 
 

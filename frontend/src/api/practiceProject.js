@@ -11,6 +11,17 @@ export const getPracticeProjects = () => {
 }
 
 /**
+ * 获取可分配的普通教师
+ */
+export const getPracticeProjectTeachers = (programId) => {
+  return request({
+    url: '/practice-project/teachers',
+    method: 'GET',
+    params: programId ? { programId } : {}
+  });
+}
+
+/**
  * 添加实践项目
  */
 export const addPracticeProject = (data) => {

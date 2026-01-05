@@ -39,21 +39,7 @@ public class PracticeProjectRepository {
      * 插入新项目
      */
     public int save(PracticeProject project) {
-        String sql = "INSERT INTO practice_project (course_code, project_name, semester, weeks, credit, remarks, create_time, update_time) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())";
-        return jdbcTemplate.update(sql,
-                project.getCourseCode(),
-                project.getProjectName(),
-                project.getSemester(),
-                project.getWeeks(),
-                project.getCredit(),
-                project.getRemarks());
-    }
-
-    /**
-     * 更新项目
-     */
-    public int update(PracticeProject project) {
-        String sql = "UPDATE practice_project SET course_code = ?, project_name = ?, semester = ?, weeks = ?, credit = ?, remarks = ?, update_time = NOW() WHERE id = ?";
+        String sql = "INSERT INTO practice_project (course_code, project_name, semester, weeks, credit, remarks, teacher_id, create_time, update_time) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
         return jdbcTemplate.update(sql,
                 project.getCourseCode(),
                 project.getProjectName(),
@@ -61,6 +47,22 @@ public class PracticeProjectRepository {
                 project.getWeeks(),
                 project.getCredit(),
                 project.getRemarks(),
+                project.getTeacherId());
+    }
+
+    /**
+     * 更新项目
+     */
+    public int update(PracticeProject project) {
+        String sql = "UPDATE practice_project SET course_code = ?, project_name = ?, semester = ?, weeks = ?, credit = ?, remarks = ?, teacher_id = ?, update_time = NOW() WHERE id = ?";
+        return jdbcTemplate.update(sql,
+                project.getCourseCode(),
+                project.getProjectName(),
+                project.getSemester(),
+                project.getWeeks(),
+                project.getCredit(),
+                project.getRemarks(),
+                project.getTeacherId(),
                 project.getId());
     }
 

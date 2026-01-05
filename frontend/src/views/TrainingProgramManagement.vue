@@ -432,7 +432,7 @@
                   @click="handleExportFullSchedule"
                 >
                   <el-icon><Download /></el-icon>
-                  导出Excel
+                  导出HTML
                 </el-button>
                 <el-button
                   type="primary"
@@ -452,7 +452,7 @@
             </div>
           </template>
           <div class="export-hint">
-            生成课程安排后可直接下载为Excel格式（CSV），支持本地打开与归档。
+            生成课程安排后可直接下载为HTML格式，支持本地打开与归档。
           </div>
 
           <!-- 完整课程安排表格 -->
@@ -501,7 +501,7 @@
               @click="handleExportFullSchedule"
             >
               <el-icon><Download /></el-icon>
-              导出四年八个学期完整课程安排
+              导出四年八个学期完整课程安排（HTML）
             </el-button>
           </div>
         </el-card>
@@ -742,25 +742,9 @@ const toggleScheduleCollapse = () => {
   showAllScheduleRows.value = !showAllScheduleRows.value;
 };
 
-const escapeCsvValue = (value) => {
-  if (value === null || value === undefined) return "";
-  const stringValue = String(value);
-  if (
-    stringValue.includes(",") ||
-    stringValue.includes('"') ||
-    stringValue.includes("\n")
-  ) {
-    return `"${stringValue.replace(/"/g, '""')}"`;
-  }
-  return stringValue;
-};
-
-const downloadCsv = (rows, filename) => {
-  const content = rows
-    .map((row) => row.map(escapeCsvValue).join(","))
-    .join("\n");
-  const blob = new Blob([`\ufeff${content}`], {
-    type: "text/csv;charset=utf-8;",
+const downloadHtml = (content, filename) => {
+  const blob = new Blob([content], {
+    type: "text/html;charset=utf-8;",
   });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
@@ -1135,38 +1119,15 @@ const handleExportFullSchedule = async () => {
     showFullScheduleTable.value = true;
     showAllScheduleRows.value = false;
 
-    const header = [
-      "学期",
-      "课程名称",
-      "课程代码",
-      "学分",
-      "总学时",
-      "理论学时",
-      "实践学时",
-      "课程类型",
-      "课程性质",
-      "考核方式",
-      "课程类别",
-      "授课教师",
-    ];
-    const rows = tableData.map((course) => [
-      course.semester,
-      course.courseName,
-      course.courseCode,
-      course.credit,
-      course.totalHours,
-      course.theoreticalHours,
-      course.practicalHours,
-      course.courseType,
-      course.courseNature,
-      course.examMark,
-      course.courseCategory,
-      course.teacherIds,
-    ]);
     const fileBaseName = currentProgram.majorName
       ? `${currentProgram.majorName}_完整课程安排`
       : "培养方案_完整课程安排";
-    downloadCsv([header, ...rows], `${fileBaseName}.csv`);
+    const response = await fetch("/培养方案.html");
+    if (!response.ok) {
+      throw new Error("模板加载失败");
+    }
+    const templateContent = await response.text();
+    downloadHtml(templateContent, `${fileBaseName}.html`);
 
     ElMessage.success("完整课程安排已导出");
   } catch (error) {

@@ -68,7 +68,11 @@ INSERT INTO `permission` (`permission_name`, `permission_code`, `description`, `
 ('查看权限列表', 'permission:list', '查看所有权限信息', '/permissions', 'GET'),
 ('新增权限', 'permission:add', '创建新权限', '/permissions', 'POST'),
 ('编辑权限', 'permission:edit', '修改权限信息', '/permissions/{id}', 'PUT'),
-('删除权限', 'permission:delete', '删除权限', '/permissions/{id}', 'DELETE');
+('删除权限', 'permission:delete', '删除权限', '/permissions/{id}', 'DELETE'),
+('查看实践项目列表', 'practice-project:list', '查看所有实践项目', '/practice-project', 'GET'),
+('新增实践项目', 'practice-project:add', '创建实践项目', '/practice-project', 'POST'),
+('编辑实践项目', 'practice-project:edit', '修改实践项目', '/practice-project/{id}', 'PUT'),
+('删除实践项目', 'practice-project:delete', '删除实践项目', '/practice-project/{id}', 'DELETE');
 
 -- 插入初始用户数据（密码：123456）
 INSERT INTO `user` (`username`, `password`, `real_name`, `email`, `phone`, `status`) VALUES 

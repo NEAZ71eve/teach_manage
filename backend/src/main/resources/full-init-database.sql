@@ -296,7 +296,11 @@ INSERT INTO `permission` (permission_name, permission_code, description, url, me
 ('编辑试卷', 'examPaper:edit', '修改试卷', '/exam-papers/{id}', 'PUT'),
 ('删除试卷', 'examPaper:delete', '删除试卷', '/exam-papers/{id}', 'DELETE'),
 ('生成试卷', 'examPaper:generate', '自动生成试卷', '/exam-papers/generate', 'POST'),
-('查看统计数据', 'statistics:view', '查看系统统计数据', '/statistics', 'GET');
+('查看统计数据', 'statistics:view', '查看系统统计数据', '/statistics', 'GET'),
+('查看实践项目列表', 'practice-project:list', '查看所有实践项目', '/practice-project', 'GET'),
+('新增实践项目', 'practice-project:add', '创建实践项目', '/practice-project', 'POST'),
+('编辑实践项目', 'practice-project:edit', '修改实践项目', '/practice-project/{id}', 'PUT'),
+('删除实践项目', 'practice-project:delete', '删除实践项目', '/practice-project/{id}', 'DELETE');
 
 -- 8. 插入系统管理员用户（密码：admin123，使用BCrypt加密）
 INSERT INTO `user` (username, password, real_name, email, phone, status) VALUES 
