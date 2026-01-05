@@ -262,7 +262,6 @@ const canAccessMenu = (menuPath) => {
     return [
       "/courses",
       "/training-programs",
-      "/semester-schedule",
       "/knowledge-points",
       "/question-bank",
       "/practice-projects",
